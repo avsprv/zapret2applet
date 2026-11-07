@@ -197,6 +197,14 @@ class StateTests(unittest.TestCase):
                 pass
         self.assertFalse((real_parent / "state").exists())
 
+    def test_nonblocking_lock_rejects_active_operation(self):
+        self.state.mkdir(mode=0o700)
+        contender = StateStore(self.state, str(self.fake))
+        with self.store.locked():
+            with self.assertRaisesRegex(StateError, "another Blockcheck lifecycle operation is active"):
+                with contender.locked(blocking=False):
+                    pass
+
     def test_lock_serializes_threads(self):
         self.store.directory.mkdir(mode=0o700)
         # Reuse one StateStore instance to verify per-thread descriptor ownership.
