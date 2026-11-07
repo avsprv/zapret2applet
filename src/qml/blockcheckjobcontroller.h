@@ -94,6 +94,7 @@ private:
     bool m_busy = false, m_updateBusy = false, m_serviceBusy = false, m_recoveryRequired = false;
     bool m_cancelRequested = false, m_finalLogsPending = false;
     int m_found = 0, m_pollTicks = 0;
+    qint64 m_startedAtSecs = 0;
     ProcessTask m_task = ProcessTask::None;
     QProcess *m_process = nullptr;
     QByteArray m_stdout, m_stderr;
