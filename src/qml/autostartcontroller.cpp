@@ -42,7 +42,7 @@ bool readDesktopEntryValue(const QString &path, const QString &key, QString *val
         if (!inDesktopEntry)
             continue;
         const qsizetype separator = line.indexOf(QLatin1Char('='));
-        if (separator < 0 || line.first(separator) != key)
+        if (separator < 0 || line.left(separator) != key)
             continue;
         if (found)
             return false;
