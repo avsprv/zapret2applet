@@ -152,11 +152,17 @@ void BlockcheckJobController::launch(ProcessTask task,const QStringList &argumen
     });
     connect(process,&QProcess::errorOccurred,this,[this,process](QProcess::ProcessError error){
         if(error!=QProcess::FailedToStart||m_process!=process)return;
-        const QString reason=process->errorString();m_process=nullptr;m_task=ProcessTask::None;
+        const QString reason=process->errorString();
+        const ProcessTask failedTask=m_task;
+        m_process=nullptr;m_task=ProcessTask::None;
         process->deleteLater();appendLog(tr("Не удалось запустить helper: %1").arg(reason));
-        if(m_operationId.isEmpty())finish(false);
+        if(failedTask==ProcessTask::Recovery){
+            setBusy(false);
+            setStatus(tr("Не удалось повторить восстановление службы. Маркер сохранён."),StatusType::Error);
+        }
+        else if(m_operationId.isEmpty())finish(false);
         else if(m_terminalPhase.isEmpty())setStatus(tr("Связь с заданием потеряна; состояние будет проверено повторно."),StatusType::Warning);
-        else finish(false,m_cancelRequested);
+        else finish(m_terminalPhase==QLatin1String("completed"),m_cancelRequested&&m_terminalPhase!=QLatin1String("completed"));
     });
     Helper::start(process,arguments);
 }
