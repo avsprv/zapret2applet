@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """Secure one-shot Blockcheck option staging, serialized by StateStore.locked()."""
 from __future__ import annotations
 import json
