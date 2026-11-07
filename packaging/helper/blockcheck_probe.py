@@ -5,7 +5,6 @@ import os
 import stat
 from pathlib import Path
 
-from blockcheck_manager import BlockcheckOptions
 from blockcheck_staging import StagedOptionsStore
 from blockcheck_state import StateError, StateStore
 from blockcheck_status import (
@@ -30,6 +29,7 @@ def _open_directory_or_missing(path: str, owner: int) -> int | None:
                 next_fd = os.open(component, flags, dir_fd=current)
             except FileNotFoundError:
                 os.close(current)
+                current = -1
                 return None
             os.close(current)
             current = next_fd
