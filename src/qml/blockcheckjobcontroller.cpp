@@ -173,7 +173,7 @@ void BlockcheckJobController::handleProcessFinished(QProcess *process,int exitCo
         else if(task==ProcessTask::Cancel)setStatus(tr("Не удалось отправить запрос отмены; проверка состояния продолжается."),StatusType::Warning);
         else if(task==ProcessTask::Status)setStatus(tr("Не удалось получить состояние задания; повторная проверка будет выполнена."),StatusType::Warning);
         else if(task==ProcessTask::Logs&&m_terminalPhase.isEmpty())setStatus(tr("Не удалось обновить журнал Blockcheck."),StatusType::Warning);
-        if(task==ProcessTask::Logs&&!m_terminalPhase.isEmpty())finish(m_terminalPhase==QLatin1String("completed"),m_cancelRequested);
+        if(task==ProcessTask::Logs&&!m_terminalPhase.isEmpty())finish(m_terminalPhase==QLatin1String("completed"),m_cancelRequested&&m_terminalPhase!=QLatin1String("completed"));
         return;
     }
     if(task==ProcessTask::Submit){
@@ -184,7 +184,7 @@ void BlockcheckJobController::handleProcessFinished(QProcess *process,int exitCo
         return;
     }
     if(task==ProcessTask::Status)processStatus(m_stdout);
-    else if(task==ProcessTask::Logs){processLogs(m_stdout);if(!m_terminalPhase.isEmpty())finish(m_terminalPhase==QLatin1String("completed"),m_cancelRequested);}
+    else if(task==ProcessTask::Logs){processLogs(m_stdout);if(!m_terminalPhase.isEmpty())finish(m_terminalPhase==QLatin1String("completed"),m_cancelRequested&&m_terminalPhase!=QLatin1String("completed"));}
     else if(task==ProcessTask::Cancel)setStatus(tr("Запрос отмены отправлен. Ожидается завершение worker и восстановление службы."),StatusType::Warning);
 }
 
@@ -269,9 +269,10 @@ void BlockcheckJobController::cancel()
         }
         return;
     }
-    if(m_task==ProcessTask::None){
+    if(m_terminalPhase.isEmpty()){
         m_cancelRequested=true;
-        launch(ProcessTask::Cancel,{QStringLiteral("blockcheck-job-cancel")});
+        if(m_task==ProcessTask::None)
+            launch(ProcessTask::Cancel,{QStringLiteral("blockcheck-job-cancel")});
     }
 }
 
