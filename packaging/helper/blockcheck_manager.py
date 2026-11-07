@@ -15,7 +15,7 @@ SCHEMA_VERSION = 1
 MAX_OPTIONS_SIZE = 4096
 _ALLOWED_IPVS = frozenset({"4", "6", "46"})
 _ALLOWED_SCAN_LEVELS = frozenset({"veryquick", "quick", "standard", "force"})
-_DOMAIN_LABEL = re.compile(r"[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?\\Z")
+_DOMAIN_LABEL = re.compile(r"[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?\Z")
 
 
 class OptionsError(ValueError):
@@ -38,14 +38,14 @@ class BlockcheckOptions:
             raise OptionsError("domains must contain between 1 and 10 entries")
         for domain in self.domains:
             _validate_domain(domain)
-        if self.ipvs not in _ALLOWED_IPVS:
+        if not isinstance(self.ipvs, str) or self.ipvs not in _ALLOWED_IPVS:
             raise OptionsError("ipvs must be 4, 6, or 46")
         for name in ("http", "tls12", "tls13", "http3"):
             if type(getattr(self, name)) is not bool:
                 raise OptionsError(f"{name} must be a boolean")
         if type(self.repeats) is not int or not 1 <= self.repeats <= 10:
             raise OptionsError("repeats must be an integer from 1 to 10")
-        if self.scan_level not in _ALLOWED_SCAN_LEVELS:
+        if not isinstance(self.scan_level, str) or self.scan_level not in _ALLOWED_SCAN_LEVELS:
             raise OptionsError("unsupported scan level")
 
     def to_json(self) -> bytes:
@@ -60,7 +60,7 @@ class BlockcheckOptions:
             "repeats": self.repeats,
             "scan_level": self.scan_level,
         }
-        raw = (json.dumps(payload, sort_keys=True, separators=(",", ":")) + "\\n").encode("ascii")
+        raw = (json.dumps(payload, sort_keys=True, separators=(",", ":")) + "\n").encode("ascii")
         if len(raw) > MAX_OPTIONS_SIZE:
             raise OptionsError("options exceed size limit")
         return raw
