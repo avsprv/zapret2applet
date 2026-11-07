@@ -12,7 +12,18 @@ Kirigami.ApplicationWindow {
     height: 680
     minimumWidth: 640
     minimumHeight: 480
-    pageStack.initialPage: dashboardPage\n\n    function showWindow() {\n        show()\n        raise()\n        requestActivate()\n    }\n\n    function openSettings() {\n        showWindow()\n        pageStack.push(settingsPageComponent)\n    }
+    pageStack.initialPage: dashboardPage
+
+    function showWindow() {
+        show()
+        raise()
+        requestActivate()
+    }
+
+    function openSettings() {
+        showWindow()
+        pageStack.push(settingsPageComponent)
+    }
 
     globalDrawer: Kirigami.GlobalDrawer {
         title: qsTr("zapret2applet")
