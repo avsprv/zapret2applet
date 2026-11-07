@@ -161,6 +161,14 @@ target_link_libraries(zapret2applet-qml-preview PRIVATE
     Qt6::Core Qt6::Gui Qt6::Network Qt6::Qml Qt6::Quick Qt6::QuickControls2 Qt6::QuickDialogs2 Qt6::DBus
     zapret2applet_i18n
 )
+
+# Keep the QML process independent from Qt Widgets. This is an architectural
+# boundary, not merely a current implementation detail.
+get_target_property(QZAPRET_QML_LINK_LIBRARIES zapret2applet-qml-preview LINK_LIBRARIES)
+if("Qt6::Widgets" IN_LIST QZAPRET_QML_LINK_LIBRARIES)
+    message(FATAL_ERROR "The QML preview target must not link Qt6::Widgets")
+endif()
+
 target_compile_definitions(zapret2applet-qml-preview PRIVATE
     QZAPRET_VERSION="${PROJECT_VERSION}"
     QZAPRET_HELPER_PATH="${QZAPRET_HELPER}")
