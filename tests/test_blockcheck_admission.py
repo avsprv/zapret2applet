@@ -8,10 +8,11 @@ import sys
 import tempfile
 import threading
 import unittest
+from unittest.mock import patch
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "packaging" / "helper"))
-from blockcheck_admission import AdmissionError, admission_guard, run_guarded
+from blockcheck_admission import AdmissionError, GUARD_ENV, admission_guard, main as admission_main, run_guarded
 from blockcheck_manager import BlockcheckOptions
 from blockcheck_staging import StagedOptionsStore
 from blockcheck_state import StateStore
@@ -108,6 +109,26 @@ sys.exit(0)
             with self.assertRaisesRegex(AdmissionError, "another Blockcheck lifecycle operation"):
                 with admission_guard(contender, self.staged):
                     self.fail("guard admitted lock contention")
+
+    def test_clean_install_command_runs_under_admission_guard(self):
+        runtime = self.root / "install-run"
+        captured = {}
+
+        def capture(command, env=None):
+            captured["command"] = command
+            captured["env"] = env
+            return 0
+
+        overrides = {
+            "QZAPRET_TEST_BASE": str(self.root / "install-base"),
+            "QZAPRET_TEST_RUNDIR": str(runtime),
+            "QZAPRET_TEST_SYSTEMCTL": str(self.systemctl),
+        }
+        with patch.dict(os.environ, overrides), patch("blockcheck_admission._run_command", side_effect=capture):
+            self.assertEqual(admission_main(["install", "v1.2.3"]), 0)
+
+        self.assertEqual(captured["command"][-2:], ["install-locked", "v1.2.3"])
+        self.assertEqual(captured["env"][GUARD_ENV], "held-v1")
 
     def test_unit_command_executes_while_guard_is_held(self):
         def operation():
