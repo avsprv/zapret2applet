@@ -77,7 +77,7 @@ class BlockcheckWorker:
         """
         script_fd = self._open_upstream_script()
         try:
-            with self.state_store.locked(create=False):
+            with self.state_store.locked(create=True):
                 options: BlockcheckOptions = self.staged_store.read_locked(operation_id)
                 marker = self.state_store.prepare_locked(operation_id)
                 self.staged_store.consume_locked(operation_id)
