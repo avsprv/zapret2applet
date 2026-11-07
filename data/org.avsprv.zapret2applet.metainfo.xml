@@ -27,5 +27,4 @@
   <provides>
     <binary>zapret2applet</binary>
   </provides>
-  <icon type="stock">zapret2applet</icon>
 </component>
