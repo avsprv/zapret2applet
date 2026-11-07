@@ -83,7 +83,7 @@ sys.exit(1)
 
     def test_second_submit_rejected_while_request_is_pending(self):
         self.submitter.submit(BlockcheckOptions())
-        with self.assertRaises(StagingError):
+        with self.assertRaisesRegex(SubmitError, "already pending"):
             self.submitter.submit(BlockcheckOptions())
 
 if __name__ == "__main__":
