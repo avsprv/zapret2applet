@@ -79,7 +79,7 @@ class BlockcheckOptionsTests(unittest.TestCase):
             BlockcheckOptions.from_json(json.dumps(value).encode("ascii"))
 
     def test_invalid_json_encoding_and_size_rejected(self):
-        for raw in (b"", b"\\xff", b"{" + b" " * 4096):
+        for raw in (b"", bytes([255]), b"{" + b" " * 4096):
             with self.subTest(raw_length=len(raw)):
                 with self.assertRaises(OptionsError):
                     BlockcheckOptions.from_json(raw)
