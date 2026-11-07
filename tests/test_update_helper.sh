@@ -147,7 +147,22 @@ prepare_install() {
     mkdir -p "$W/opt" "$W/systemd" "$W/run" "$W/bin"
     cat > "$W/bin/systemctl" <<'EOS'
 #!/bin/sh
-printf '%s\n' "$*" >> "$SYSTEMCTL_LOG"
+case "$1" in
+    show)
+        for unit do :; done
+        case "$unit" in
+            zapret2applet-blockcheck.service|zapret2applet-blockcheck-recovery.service) ;;
+            *) exit 4 ;;
+        esac
+        printf 'LoadState=loaded\\nActiveState=inactive\\nSubState=dead\\nResult=success\\nExecMainStatus=0\\n'
+        ;;
+    daemon-reload)
+        printf '%s\\n' "$*" >> "$SYSTEMCTL_LOG"
+        ;;
+    *)
+        printf '%s\\n' "$*" >> "$SYSTEMCTL_LOG"
+        ;;
+esac
 EOS
     chmod +x "$W/bin/systemctl"
 }
@@ -155,7 +170,8 @@ EOS
 run_install() {
     PATH="$W/bin:$PATH" SYSTEMCTL_LOG="$W/systemctl.log" \
     QZAPRET_TEST_BASE=$W/opt/zapret2 QZAPRET_TEST_RUNDIR=$W/run \
-    QZAPRET_TEST_UNIT_DIR=$W/systemd QZAPRET_TEST_URLBASE="file://$W/rel" "$H" install "$1" 2>&1
+    QZAPRET_TEST_UNIT_DIR=$W/systemd QZAPRET_TEST_SYSTEMCTL=$W/bin/systemctl \
+    QZAPRET_TEST_URLBASE="file://$W/rel" "$H" install "$1" 2>&1
 }
 
 expect_no_install() {
