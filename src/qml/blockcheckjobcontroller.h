@@ -26,6 +26,7 @@ class BlockcheckJobController final : public QObject
     Q_PROPERTY(QString statusSeverity READ statusSeverity NOTIFY statusChanged)
     Q_PROPERTY(bool busy READ busy NOTIFY busyChanged)
     Q_PROPERTY(bool recoveryRequired READ recoveryRequired NOTIFY recoveryRequiredChanged)
+    Q_PROPERTY(bool recoveryRetryAvailable READ recoveryRetryAvailable NOTIFY recoveryRequiredChanged)
     Q_PROPERTY(bool updateBusy READ updateBusy WRITE setUpdateBusy NOTIFY updateBusyChanged)
 
 public:
@@ -47,6 +48,7 @@ public:
     QString statusSeverity() const;
     bool busy() const;
     bool recoveryRequired() const;
+    bool recoveryRetryAvailable() const;
     bool updateBusy() const;
     void setUpdateBusy(bool value);
     void setServiceBusy(bool value);
