@@ -8,6 +8,7 @@ import unittest
 import uuid
 from pathlib import Path
 import sys
+import threading
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "packaging" / "helper"))
 
@@ -86,6 +87,26 @@ for key, value in zip(keys, states[unit]):
         self.states["zapret2applet-blockcheck.service"] = ("loaded", "active", "start", "success", "0")
         self._write_fixture()
         self.assertEqual(self._status()["phase"], "running")
+
+    def test_worker_lock_contention_still_reports_running_unit(self):
+        self.states["zapret2applet-blockcheck.service"] = ("loaded", "active", "running", "success", "0")
+        self._write_fixture()
+        acquired = threading.Event()
+        release = threading.Event()
+
+        def hold_lock():
+            with self.state.locked():
+                acquired.set()
+                release.wait(3)
+
+        thread = threading.Thread(target=hold_lock)
+        thread.start()
+        try:
+            self.assertTrue(acquired.wait(2))
+            self.assertEqual(self._status()["phase"], "running")
+        finally:
+            release.set()
+            thread.join(3)
 
     def test_durable_marker_waits_for_recovery_verification(self):
         with self.state.locked():
