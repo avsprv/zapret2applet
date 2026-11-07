@@ -411,6 +411,16 @@ unit)
         *) die "bad unit action" ;;
     esac
     ;;
+blockcheck-worker)
+    [ "$#" -eq 1 ] || die "usage: blockcheck-worker"
+    module_dir=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd) || die "cannot locate helper modules"
+    exec /usr/bin/python3 "$module_dir/blockcheck_worker.py"
+    ;;
+blockcheck-recover)
+    [ "$#" -eq 1 ] || die "usage: blockcheck-recover"
+    module_dir=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd) || die "cannot locate helper modules"
+    exec /usr/bin/python3 "$module_dir/blockcheck_recovery.py"
+    ;;
 blockcheck)
     shift
     domains=rutracker.org ipvs=4 http=1 tls12=1 tls13=0 http3=0 repeats=1 scan=standard
