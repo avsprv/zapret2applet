@@ -116,6 +116,11 @@ for key, value in zip(keys, states[unit]):
         self._write_fixture()
         self.assertEqual(self._status()["phase"], "failed")
 
+    def test_removed_systemd_runtime_directory_means_no_staged_request(self):
+        self.runtime_dir.rmdir()
+        self._write_fixture()
+        self.assertEqual(self._status()["phase"], "completed")
+
     def test_different_operation_id_is_stale(self):
         with self.state.locked():
             self.staged.stage_locked(str(uuid.uuid4()), BlockcheckOptions())
