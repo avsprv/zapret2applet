@@ -122,9 +122,10 @@ class StagedOptionsStore:
                 pass
             os.close(directory_fd)
 
-    def read_locked(self, expected_operation_id: str) -> BlockcheckOptions:
+    def _read_document_locked(self, expected_operation_id: str | None = None) -> tuple[str, BlockcheckOptions]:
         self._require_lock()
-        expected_operation_id = self._operation_id(expected_operation_id)
+        if expected_operation_id is not None:
+            expected_operation_id = self._operation_id(expected_operation_id)
         directory_fd = self._open_directory()
         try:
             try:
@@ -167,11 +168,19 @@ class StagedOptionsStore:
                 raise StagingError("staged options schema or operation ID mismatch")
             try:
                 options_raw = (json.dumps(value["options"], sort_keys=True, separators=(",", ":")) + "\n").encode("ascii")
-                return BlockcheckOptions.from_json(options_raw)
+                options = BlockcheckOptions.from_json(options_raw)
+                return operation_id, options
             except (UnicodeEncodeError, ValueError) as exc:
                 raise StagingError(f"staged Blockcheck options are invalid: {exc}") from exc
         finally:
             os.close(directory_fd)
+
+    def read_locked(self, expected_operation_id: str) -> BlockcheckOptions:
+        return self._read_document_locked(expected_operation_id)[1]
+
+    def read_pending_locked(self) -> tuple[str, BlockcheckOptions]:
+        \"\"\"Read the next queued request without requiring a unit argument.\"\"\"
+        return self._read_document_locked()
 
     def consume_locked(self, expected_operation_id: str) -> None:
         """Consume only after prepare_locked(operation_id) persisted recovery state."""
