@@ -60,7 +60,7 @@ class BlockcheckWorkerTests(unittest.TestCase):
 
     def test_active_service_is_stopped_and_recovery_marker_retained(self):
         self.submit()
-        self.assertEqual(self.worker.run(self.operation_id), 0)
+        self.assertEqual(self.worker.run(), 0)
         self.assertEqual(self.state_file.read_text(), "inactive")
         self.assertTrue((self.root / "state" / "state.json").exists())
         self.assertTrue(self.recover())
