@@ -154,8 +154,10 @@ TrayController::TrayController(QObject *parent)
                         .arg(QCoreApplication::applicationPid()))
 {
     connect(m_watcher, &QDBusServiceWatcher::serviceOwnerChanged,
-            this, [this](const QString &, const QString &, const QString &newOwner) {
+            this, [this](const QString &, const QString &oldOwner, const QString &newOwner) {
         m_watcherOwner = newOwner;
+        if (!oldOwner.isEmpty() && oldOwner != newOwner)
+            setRegistered(false);
         const bool available = !newOwner.isEmpty();
         if (m_watcherAvailable != available) {
             m_watcherAvailable = available;
@@ -275,8 +277,9 @@ void TrayController::registerWithWatcher()
             qWarning() << "StatusNotifierItem registration failed:"
                        << reply.error().message();
         } else {
-            const QDBusReply<QString> currentOwner =
-                m_bus.interface()->serviceOwner(QString::fromLatin1(watcherService));
+            const QDBusReply<QString> currentOwner = m_bus.isConnected() && m_bus.interface()
+                ? m_bus.interface()->serviceOwner(QString::fromLatin1(watcherService))
+                : QDBusReply<QString>{};
             if (m_watcherAvailable && currentOwner.isValid()
                 && currentOwner.value() == expectedOwner) {
                 setRegistered(true);
