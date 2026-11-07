@@ -2,6 +2,7 @@
 
 #include <QDBusConnectionInterface>
 #include <QDBusServiceWatcher>
+#include <QDBusReply>
 
 namespace {
 constexpr auto watcherService = "org.freedesktop.StatusNotifierWatcher";
