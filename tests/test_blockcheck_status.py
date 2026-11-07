@@ -130,6 +130,19 @@ for key, value in zip(keys, states[unit]):
         self._write_fixture()
         self.assertEqual(self._status()["phase"], "failed")
 
+    def test_never_run_recovery_unit_with_empty_result_does_not_fail_successful_job(self):
+        self.states["zapret2applet-blockcheck-recovery.service"] = ("loaded", "inactive", "dead", "", "0")
+        self._write_fixture()
+        self.assertEqual(self._status()["phase"], "completed")
+
+    def test_persistent_marker_with_empty_unit_results_is_pending_not_failed(self):
+        with self.state.locked():
+            self.state.prepare_locked(self.operation_id)
+        self.states["zapret2applet-blockcheck.service"] = ("loaded", "inactive", "dead", "", "0")
+        self.states["zapret2applet-blockcheck-recovery.service"] = ("loaded", "inactive", "dead", "", "0")
+        self._write_fixture()
+        self.assertEqual(self._status()["phase"], "recovery_pending")
+
     def test_removed_systemd_runtime_directory_means_no_staged_request(self):
         self.runtime_dir.rmdir()
         self._write_fixture()
