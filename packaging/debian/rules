@@ -3,3 +3,6 @@ export QT_QPA_PLATFORM=offscreen
 
 %:
 	dh $@ --buildsystem=cmake+ninja
+
+override_dh_installsystemd:
+	dh_installsystemd --no-start
