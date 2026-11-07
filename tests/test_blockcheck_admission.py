@@ -103,10 +103,9 @@ sys.exit(0)
                 self.fail("guard admitted staged request")
 
     def test_lifecycle_lock_contention_rejected(self):
-        contender = StateStore(self.state.directory, systemctl=str(self.systemctl))
         with self.state.locked(create=True):
             with self.assertRaisesRegex(AdmissionError, "another Blockcheck lifecycle operation"):
-                with admission_guard(contender, self.staged):
+                with admission_guard(self.state, self.staged):
                     self.fail("guard admitted lock contention")
 
     def test_unit_command_executes_while_guard_is_held(self):
