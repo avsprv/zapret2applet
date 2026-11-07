@@ -45,6 +45,13 @@ Kirigami.ScrollablePage {
 
         Kirigami.InlineMessage {
             Layout.fillWidth: true
+            visible: blockcheckController.recoveryRequired
+            type: Kirigami.MessageType.Error
+            text: qsTr("Восстановление zapret2 не подтверждено. Управление службой и обновление заблокированы; проверьте журнал и повторите восстановление после устранения причины.")
+        }
+
+        Kirigami.InlineMessage {
+            Layout.fillWidth: true
             visible: blockcheckController.status.length > 0
             text: blockcheckController.status
             type: {
@@ -109,7 +116,7 @@ Kirigami.ScrollablePage {
                     Controls.Button {
                         text: qsTr("Начать подбор")
                         icon.name: "media-playback-start"
-                        enabled: !blockcheckController.busy && !blockcheckController.updateBusy
+                        enabled: !blockcheckController.busy && !blockcheckController.updateBusy && !blockcheckController.recoveryRequired
                         onClicked: blockcheckController.start()
                     }
                     Controls.Button {
