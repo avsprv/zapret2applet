@@ -124,8 +124,9 @@ class StateStore:
         detail = result.stderr.decode("utf-8", "replace").strip()
         raise StateError(f"systemctl is-active failed ({result.returncode}): {detail}")
 
-    def _read_marker(self) -> dict | None:
-        dir_fd = self._require_lock()
+    def _read_marker(self, dir_fd: int | None = None) -> dict | None:
+        if dir_fd is None:
+            dir_fd = self._require_lock()
         try:
             fd = os.open("state.json", os.O_RDONLY | os.O_NOFOLLOW, dir_fd=dir_fd)
         except FileNotFoundError:
@@ -175,6 +176,19 @@ class StateStore:
         except ValueError as exc:
             raise StateError("recovery marker has an invalid operation ID") from exc
         return value
+
+    def read_marker_snapshot(self) -> dict | None:
+        """Read the atomically replaced marker without taking the lifecycle lock.
+
+        This is for status reporting only. Marker contents are validated exactly as
+        in the locked path; callers must not make lifecycle decisions from this
+        snapshot or modify service state based on it.
+        """
+        dir_fd = self._open_directory(create=False)
+        try:
+            return self._read_marker(dir_fd)
+        finally:
+            os.close(dir_fd)
 
     def _write_marker(self, value: dict) -> None:
         dir_fd = self._require_lock()
