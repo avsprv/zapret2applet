@@ -1,6 +1,7 @@
 #include "blockcheckjobcontroller.h"
 
 #include <QClipboard>
+#include <QDateTime>
 #include <QFileInfo>
 #include <QGuiApplication>
 #include <QJsonDocument>
@@ -116,6 +117,7 @@ void BlockcheckJobController::confirmStop(bool accepted)
     if(!accepted){finish(false,true);return;}
     QStringList domains;
     if(!validateOptions(&domains)){finish(false);return;}
+    m_startedAtSecs=QDateTime::currentSecsSinceEpoch();
     launch(ProcessTask::Submit,{
         QStringLiteral("blockcheck-submit"),QStringLiteral("--domains"),domains.join(QLatin1Char(' ')),
         QStringLiteral("--ipvs"),m_ipVersion,QStringLiteral("--http"),flag(m_http),
@@ -215,9 +217,9 @@ void BlockcheckJobController::poll()
     if(m_process||m_operationId.isEmpty())return;
     ++m_pollTicks;
     if(!m_terminalPhase.isEmpty()){
-        m_pollTimer->stop();launch(ProcessTask::Logs,{QStringLiteral("blockcheck-job-logs"),QStringLiteral("500")});return;
+        m_pollTimer->stop();launch(ProcessTask::Logs,{QStringLiteral("blockcheck-job-logs"),QStringLiteral("500"),QString::number(m_startedAtSecs)});return;
     }
-    if(m_pollTicks%3==0)launch(ProcessTask::Logs,{QStringLiteral("blockcheck-job-logs"),QStringLiteral("200")});
+    if(m_pollTicks%3==0)launch(ProcessTask::Logs,{QStringLiteral("blockcheck-job-logs"),QStringLiteral("200"),QString::number(m_startedAtSecs)});
     else launch(ProcessTask::Status,{QStringLiteral("blockcheck-job-status"),m_operationId});
 }
 
