@@ -1,4 +1,5 @@
 #include "traycontroller.h"
+#include "dbusmenu.h"
 
 #include <QDBusConnectionInterface>
 #include <QDBusMessage>
@@ -17,6 +18,7 @@ constexpr auto watcherService = "org.freedesktop.StatusNotifierWatcher";
 constexpr auto watcherPath = "/StatusNotifierWatcher";
 constexpr auto watcherInterface = "org.freedesktop.StatusNotifierWatcher";
 constexpr auto itemPath = "/StatusNotifierItem";
+constexpr auto menuPath = "/Menu";
 }
 
 struct TrayImage
@@ -121,7 +123,7 @@ public:
         return {iconName(), {}, title(), QStringLiteral("Управление zapret2")};
     }
     bool itemIsMenu() const { return false; }
-    QDBusObjectPath menu() const { return QDBusObjectPath(QStringLiteral("/")); }
+    QDBusObjectPath menu() const { return QDBusObjectPath(QStringLiteral("/Menu")); }
 
 public slots:
     void ContextMenu(int, int) {}
@@ -147,6 +149,7 @@ TrayController::TrayController(QObject *parent)
                                         QDBusServiceWatcher::WatchForOwnerChange,
                                         this))
     , m_item(new StatusNotifierItem(this))
+    , m_menu(new DBusMenu(this))
     , m_serviceName(QStringLiteral("org.freedesktop.StatusNotifierItem-%1-1")
                         .arg(QCoreApplication::applicationPid()))
 {
@@ -168,7 +171,7 @@ TrayController::TrayController(QObject *parent)
     refreshWatcherAvailability();
 }
 
-bool TrayController::watcherAvailable() const
+void TrayController::setServiceState(const QString &state, bool active, bool busy)\n{\n    m_menu->setServiceState(state, active, busy);\n}\n\nbool TrayController::watcherAvailable() const
 {
     return m_watcherAvailable;
 }
