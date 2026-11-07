@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """Crash-safe, root-owned Blockcheck recovery state primitives.
 
 The caller must hold StateStore.locked() from prepare_locked() until the
