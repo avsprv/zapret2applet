@@ -11,7 +11,7 @@ import uuid
 
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parents[1] / "packaging" / "helper"))
 from blockcheck_manager import BlockcheckOptions
-from blockcheck_staging import StagedOptionsStore
+from blockcheck_staging import StagedOptionsStore, StagingError
 from blockcheck_state import StateStore
 from blockcheck_worker import BlockcheckWorker, WorkerError
 
@@ -85,7 +85,7 @@ class BlockcheckWorkerTests(unittest.TestCase):
         self.assertEqual(self.state_file.read_text(), "active")
 
     def test_missing_staged_request_does_not_stop_service(self):
-        with self.assertRaises(Exception):
+        with self.assertRaises(StagingError):
             self.worker.run(self.operation_id)
         self.assertEqual(self.state_file.read_text(), "active")
         self.assertFalse((self.root / "state" / "state.json").exists())
