@@ -26,6 +26,7 @@ Requires:       python3
 Requires:       tar
 Requires:       coreutils
 Requires:       systemd
+Requires:       util-linux-core
 Recommends:     qt6-qttranslations
 
 %description
