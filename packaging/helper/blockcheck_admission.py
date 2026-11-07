@@ -29,8 +29,12 @@ class AdmissionError(StateError):
 
 
 def _paths() -> tuple[str, str, str]:
-    # Test-only overrides are enabled by the helper's non-system-path test harness.
-    if os.environ.get("QZAPRET_TEST_BASE") and os.environ.get("QZAPRET_TEST_RUNDIR"):
+    # Match the helper's test-mode boundary: production installs ignore all
+    # QZAPRET_TEST_* overrides, even if an invoking environment supplies them.
+    module_path = str(Path(__file__).resolve())
+    installed = module_path.startswith(("/usr/", "/opt/", "/etc/", "/bin/", "/sbin/", "/lib/", "/var/"))
+    if (not installed and os.environ.get("QZAPRET_TEST_BASE")
+            and os.environ.get("QZAPRET_TEST_RUNDIR")):
         root = os.environ["QZAPRET_TEST_RUNDIR"]
         return (
             os.environ.get("QZAPRET_TEST_STATE_DIRECTORY", os.path.join(root, "blockcheck-state")),
