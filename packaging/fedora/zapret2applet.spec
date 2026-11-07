@@ -67,8 +67,8 @@ desktop-file-validate %{buildroot}%{_datadir}/applications/zapret2applet.desktop
 %{_bindir}/zapret2applet
 %{_libexecdir}/zapret2applet/zapret2applet-helper
 %{_libexecdir}/zapret2applet/blockcheck_*.py
-%{_prefix}/lib/systemd/system/zapret2applet-blockcheck.service
-%{_prefix}/lib/systemd/system/zapret2applet-blockcheck-recovery.service
+%{_unitdir}/zapret2applet-blockcheck.service
+%{_unitdir}/zapret2applet-blockcheck-recovery.service
 %{_datadir}/polkit-1/actions/org.zapret2applet.policy
 %{_datadir}/applications/zapret2applet.desktop
 %{_datadir}/icons/hicolor/scalable/apps/zapret2applet.svg
