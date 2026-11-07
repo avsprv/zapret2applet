@@ -19,7 +19,7 @@
     <annotate key="org.freedesktop.policykit.exec.path">@QZAPRET_HELPER@</annotate>
   </action>
 
-  <action id="org.zapret2applet.config-read">
+  <action id="org.zapret2applet.blockcheck-recovery-probe">\n    <description>Read Blockcheck recovery state</description>\n    <description xml:lang="ru">Проверка состояния восстановления Blockcheck</description>\n    <message>Read-only Blockcheck recovery status</message>\n    <message xml:lang="ru">Проверка состояния Blockcheck без изменения системы</message>\n    <defaults>\n      <allow_any>no</allow_any>\n      <allow_inactive>no</allow_inactive>\n      <allow_active>yes</allow_active>\n    </defaults>\n    <annotate key="org.freedesktop.policykit.exec.path">@QZAPRET_HELPER@</annotate>\n    <annotate key="org.freedesktop.policykit.exec.argv1">blockcheck-recovery-probe</annotate>\n  </action>\n\n  <action id="org.zapret2applet.config-read">
     <description>Read the zapret2 configuration</description>
     <description xml:lang="ru">Чтение конфигурации zapret2</description>
     <message>Authentication is required to read the zapret2 configuration</message>
