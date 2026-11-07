@@ -47,7 +47,7 @@ Kirigami.ScrollablePage {
             Layout.fillWidth: true
             visible: blockcheckController.recoveryRequired
             type: Kirigami.MessageType.Error
-            text: qsTr("Восстановление zapret2 не подтверждено. Управление службой и обновление заблокированы; проверьте журнал и повторите восстановление после устранения причины.")
+            text: qsTr("Восстановление zapret2 не подтверждено. Управление службой и обновление заблокированы. Проверьте журнал; после устранения причины можно повторить восстановление.")
         }
 
         Kirigami.InlineMessage {
@@ -124,6 +124,13 @@ Kirigami.ScrollablePage {
                         icon.name: "dialog-cancel"
                         enabled: blockcheckController.busy
                         onClicked: blockcheckController.cancel()
+                    }
+                    Controls.Button {
+                        text: qsTr("Повторить восстановление")
+                        icon.name: "view-refresh"
+                        visible: blockcheckController.recoveryRequired
+                        enabled: !blockcheckController.busy
+                        onClicked: blockcheckController.retryRecovery()
                     }
                 }
             }
