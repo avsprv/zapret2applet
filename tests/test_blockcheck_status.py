@@ -102,6 +102,20 @@ for key, value in zip(keys, states[unit]):
         self._write_fixture()
         self.assertEqual(self._status()["phase"], "recovering")
 
+    def test_worker_exec_stop_post_is_reported_as_recovering(self):
+        with self.state.locked():
+            self.state.prepare_locked(self.operation_id)
+        self.states["zapret2applet-blockcheck.service"] = ("loaded", "deactivating", "stop-post", "success", "0")
+        self._write_fixture()
+        self.assertEqual(self._status()["phase"], "recovering")
+
+    def test_failed_exec_stop_post_with_marker_is_recovery_failed(self):
+        with self.state.locked():
+            self.state.prepare_locked(self.operation_id)
+        self.states["zapret2applet-blockcheck.service"] = ("loaded", "failed", "failed", "exit-code", "1")
+        self._write_fixture()
+        self.assertEqual(self._status()["phase"], "recovery_failed")
+
     def test_failed_recovery_retains_failed_state(self):
         with self.state.locked():
             self.state.prepare_locked(self.operation_id)
