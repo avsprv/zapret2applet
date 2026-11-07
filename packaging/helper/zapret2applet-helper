@@ -725,6 +725,6 @@ update)
     echo "OK: zapret2 updated to $tag (previous version kept in $bak)"
     ;;
 *)
-    die "usage: zapret2applet-helper logs-read {50|100|200|500} | lists-read NAME | lists-write NAME | config-read | config-write [EXPECTED_SHA256] | config-rollback | unit {start|stop|enable|disable} | blockcheck [opts] | blockcheck-cancel | install vX.Y.Z | update vX.Y.Z"
+    die "usage: zapret2applet-helper logs-read {50|100|200|500} | lists-read NAME | lists-write NAME | config-read | config-write [EXPECTED_SHA256] | config-rollback | unit {start|stop|enable|disable} | blockcheck-submit [opts] | blockcheck-worker | blockcheck-recover | blockcheck-job-status | blockcheck-job-cancel | blockcheck [opts] | blockcheck-cancel | install vX.Y.Z | update vX.Y.Z"
     ;;
 esac
