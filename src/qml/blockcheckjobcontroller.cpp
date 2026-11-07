@@ -169,7 +169,12 @@ void BlockcheckJobController::handleProcessFinished(QProcess *process,int exitCo
     const QString error=QString::fromUtf8(m_stderr).trimmed();
     if(exitStatus!=QProcess::NormalExit||exitCode!=0){
         appendLog(error.isEmpty()?tr("Helper завершился с кодом %1.").arg(exitCode):error);
-        if(task==ProcessTask::Submit)finish(false);
+        if(task==ProcessTask::Submit){
+            if(error.contains(QStringLiteral("recovery is still pending"),Qt::CaseInsensitive)
+                || error.contains(QStringLiteral("recovery marker"),Qt::CaseInsensitive))
+                setRecoveryRequired(true);
+            finish(false);
+        }
         else if(task==ProcessTask::Cancel)setStatus(tr("Не удалось отправить запрос отмены; проверка состояния продолжается."),StatusType::Warning);
         else if(task==ProcessTask::Status)setStatus(tr("Не удалось получить состояние задания; повторная проверка будет выполнена."),StatusType::Warning);
         else if(task==ProcessTask::Logs&&m_terminalPhase.isEmpty())setStatus(tr("Не удалось обновить журнал Blockcheck."),StatusType::Warning);
