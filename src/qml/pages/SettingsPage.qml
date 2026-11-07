@@ -71,6 +71,30 @@ Kirigami.ScrollablePage {
         Kirigami.Heading {
             Layout.fillWidth: true
             level: 2
+            text: qsTr("Запуск приложения")
+        }
+
+        Controls.CheckBox {
+            Layout.fillWidth: true
+            text: qsTr("Запускать приложение при входе в систему")
+            checked: autostartController.enabled
+            onToggled: autostartController.setEnabled(checked)
+        }
+
+        Kirigami.InlineMessage {
+            Layout.fillWidth: true
+            visible: autostartController.errorMessage.length > 0
+            type: Kirigami.MessageType.Error
+            text: autostartController.errorMessage
+        }
+
+        Kirigami.Separator {
+            Layout.fillWidth: true
+        }
+
+        Kirigami.Heading {
+            Layout.fillWidth: true
+            level: 2
             text: qsTr("Обновления")
         }
 
