@@ -91,8 +91,10 @@ def get_job_status(state: StateStore, staged: StagedOptionsStore, operation_id: 
             phase = "recovering"
         elif worker["ActiveState"] in {"active", "activating"}:
             phase = "running"
-        elif (worker["ActiveState"] == "failed" or worker["Result"] != "success"
-              or recovery["ActiveState"] == "failed" or recovery["Result"] != "success"):
+        elif (worker["ActiveState"] == "failed"
+              or (worker["Result"] and worker["Result"] not in {"success", "start-limit-hit"})
+              or recovery["ActiveState"] == "failed"
+              or (recovery["Result"] and recovery["Result"] not in {"success", "start-limit-hit"})):
             phase = "recovery_failed"
         else:
             phase = "recovery_pending"
@@ -107,7 +109,7 @@ def get_job_status(state: StateStore, staged: StagedOptionsStore, operation_id: 
         phase = "running"
     elif recovery["ActiveState"] in {"active", "activating", "deactivating"}:
         phase = "recovering"
-    elif worker["Result"] == "success" and recovery["Result"] == "success":
+    elif worker["Result"] == "success" and recovery["ActiveState"] != "failed":
         phase = "completed"
     else:
         phase = "failed"
