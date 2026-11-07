@@ -140,12 +140,17 @@ void BlockcheckJobController::launch(ProcessTask task,const QStringList &argumen
         if(m_process!=process)return;
         handleProcessFinished(process,code,state);
         process->deleteLater();
+        if (m_cancelRequested && !m_operationId.isEmpty()
+            && m_terminalPhase.isEmpty() && m_task == ProcessTask::None)
+            launch(ProcessTask::Cancel,{QStringLiteral("blockcheck-job-cancel")});
     });
     connect(process,&QProcess::errorOccurred,this,[this,process](QProcess::ProcessError error){
         if(error!=QProcess::FailedToStart||m_process!=process)return;
         const QString reason=process->errorString();m_process=nullptr;m_task=ProcessTask::None;
         process->deleteLater();appendLog(tr("Не удалось запустить helper: %1").arg(reason));
-        if(m_operationId.isEmpty())finish(false);else setStatus(tr("Связь с заданием потеряна; состояние будет проверено повторно."),StatusType::Warning);
+        if(m_operationId.isEmpty())finish(false);
+        else if(m_terminalPhase.isEmpty())setStatus(tr("Связь с заданием потеряна; состояние будет проверено повторно."),StatusType::Warning);
+        else finish(false,m_cancelRequested);
     });
     Helper::start(process,arguments);
 }
@@ -248,6 +253,10 @@ void BlockcheckJobController::cancel()
     if(!m_busy)return;
     if(m_operationId.isEmpty()){
         if(m_task==ProcessTask::None)finish(false,true);
+        else if(m_task==ProcessTask::Submit){
+            m_cancelRequested=true;
+            setStatus(tr("Отмена будет отправлена после получения идентификатора задания."),StatusType::Warning);
+        }
         return;
     }
     if(m_task==ProcessTask::None){
