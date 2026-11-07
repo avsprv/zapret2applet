@@ -82,6 +82,8 @@ qt_add_translations(zapret2applet_i18n
         src/qml/blockcheckcontroller.cpp
         src/qml/blockcheckjobcontroller.cpp
         src/qml/updatecontroller.cpp
+        src/qml/autostartcontroller.cpp
+        src/qml/autostartcontroller.h
         src/qml/Main.qml
         src/qml/pages/SettingsPage.qml
         src/qml/pages/ConfigPage.qml
