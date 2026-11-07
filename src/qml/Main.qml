@@ -111,7 +111,7 @@ Kirigami.ApplicationWindow {
                                 width: 12
                                 height: 12
                                 radius: width / 2
-                                color: appController.serviceStateCode === "inactive" ? Kirigami.Theme.neutralTextColor
+                                color: appController.serviceStateCode === "inactive" ? "#d79921"
                                      : appController.serviceStateCode === "failed" ? Kirigami.Theme.negativeTextColor
                                      : Kirigami.Theme.textColor
                                 Accessible.ignored: true
