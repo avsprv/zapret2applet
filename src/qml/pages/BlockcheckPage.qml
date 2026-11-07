@@ -129,7 +129,7 @@ Kirigami.ScrollablePage {
                         text: qsTr("Повторить восстановление")
                         icon.name: "view-refresh"
                         visible: blockcheckController.recoveryRequired
-                        enabled: !blockcheckController.busy
+                        enabled: blockcheckController.recoveryRetryAvailable
                         onClicked: blockcheckController.retryRecovery()
                     }
                 }
