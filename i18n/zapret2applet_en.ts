@@ -1658,6 +1658,38 @@
         <source>Повторная попытка восстановления службы zapret2…</source>
         <translation>Retrying zapret2 service recovery…</translation>
     </message>
+    <message>
+        <source>Проверка состояния восстановления Blockcheck…</source>
+        <translation>Checking Blockcheck recovery state…</translation>
+    </message>
+    <message>
+        <source>Не удалось проверить состояние восстановления Blockcheck. Операции заблокированы.</source>
+        <translation>Could not check Blockcheck recovery state. Operations are blocked.</translation>
+    </message>
+    <message>
+        <source>Не удалось достоверно определить состояние восстановления Blockcheck. Операции заблокированы.</source>
+        <translation>Could not reliably determine Blockcheck recovery state. Operations are blocked.</translation>
+    </message>
+    <message>
+        <source>Команда восстановления выполнена; проверяется состояние Blockcheck…</source>
+        <translation>The recovery command completed; verifying Blockcheck state…</translation>
+    </message>
+    <message>
+        <source>Обнаружена выполняющаяся операция Blockcheck. Ожидается безопасное завершение…</source>
+        <translation>An active Blockcheck operation was detected. Waiting for it to finish safely…</translation>
+    </message>
+    <message>
+        <source>Обнаружено незавершённое восстановление zapret2. Управление службой и обновление заблокированы.</source>
+        <translation>Unfinished zapret2 recovery was detected. Service controls and updates are blocked.</translation>
+    </message>
+    <message>
+        <source>Состояние восстановления Blockcheck неизвестно. Операции заблокированы.</source>
+        <translation>Blockcheck recovery state is unknown. Operations are blocked.</translation>
+    </message>
+    <message>
+        <source>Не удалось проверить восстановление Blockcheck: %1. Операции заблокированы.</source>
+        <translation>Could not verify Blockcheck recovery: %1. Operations are blocked.</translation>
+    </message>
 </context>
 <context>
     <name>BlockcheckPage</name>
