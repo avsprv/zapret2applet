@@ -21,6 +21,10 @@ BlockcheckJobController::BlockcheckJobController(QObject *parent)
 {
     m_pollTimer->setInterval(1000);
     connect(m_pollTimer, &QTimer::timeout, this, &BlockcheckJobController::poll);
+    m_probePending = true;
+    setBusy(true);
+    setStatus(tr("Проверка состояния восстановления Blockcheck…"));
+    launch(ProcessTask::Probe, {QStringLiteral("blockcheck-recovery-probe")});
 }
 
 QString BlockcheckJobController::domains() const { return m_domains; }
@@ -52,8 +56,9 @@ QString BlockcheckJobController::statusSeverity() const {
     return QStringLiteral("Information");
 }
 bool BlockcheckJobController::busy() const { return m_busy; }
+bool BlockcheckJobController::cancelAvailable() const { return m_busy && !m_probePending; }
 bool BlockcheckJobController::recoveryRequired() const { return m_recoveryRequired; }
-bool BlockcheckJobController::recoveryRetryAvailable() const { return m_recoveryRequired && !m_busy && !m_operationId.isEmpty(); }
+bool BlockcheckJobController::recoveryRetryAvailable() const { return m_recoveryRequired && !m_busy; }
 bool BlockcheckJobController::updateBusy() const { return m_updateBusy; }
 void BlockcheckJobController::setUpdateBusy(bool v) { if (m_updateBusy != v) { m_updateBusy=v; emit updateBusyChanged(); } }
 void BlockcheckJobController::setServiceBusy(bool v) { m_serviceBusy=v; }
@@ -159,7 +164,13 @@ void BlockcheckJobController::launch(ProcessTask task,const QStringList &argumen
         const ProcessTask failedTask=m_task;
         m_process=nullptr;m_task=ProcessTask::None;
         process->deleteLater();appendLog(tr("Не удалось запустить helper: %1").arg(reason));
-        if(failedTask==ProcessTask::Recovery){
+        if(failedTask==ProcessTask::Probe){
+            m_probePending=false;
+            setRecoveryRequired(true);
+            setBusy(false);
+            setStatus(tr("Не удалось проверить состояние восстановления Blockcheck. Операции заблокированы."),StatusType::Error);
+        }
+        else if(failedTask==ProcessTask::Recovery){
             setBusy(false);
             setStatus(tr("Не удалось повторить восстановление службы. Маркер сохранён."),StatusType::Error);
         }
@@ -176,6 +187,7 @@ void BlockcheckJobController::handleProcessFinished(QProcess *process,int exitCo
     m_stdout+=process->readAllStandardOutput();m_stderr+=process->readAllStandardError();
     const ProcessTask task=m_task;m_process=nullptr;m_task=ProcessTask::None;
     const QString error=QString::fromUtf8(m_stderr).trimmed();
+    if(task==ProcessTask::Probe){ processProbe(m_stdout); return; }
     if(exitStatus!=QProcess::NormalExit||exitCode!=0){
         appendLog(error.isEmpty()?tr("Helper завершился с кодом %1.").arg(exitCode):error);
         if(task==ProcessTask::Recovery){
@@ -202,9 +214,10 @@ void BlockcheckJobController::handleProcessFinished(QProcess *process,int exitCo
     }
     if(task==ProcessTask::Recovery){
         m_terminalPhase.clear();
-        m_pollTicks=0;
-        m_pollTimer->start();
-        setStatus(tr("Команда восстановления выполнена; проверяется состояние службы…"),StatusType::Information);
+        m_operationId.clear();
+        m_probePending=false;
+        setStatus(tr("Команда восстановления выполнена; проверяется состояние Blockcheck…"),StatusType::Information);
+        launch(ProcessTask::Probe, {QStringLiteral("blockcheck-recovery-probe")});
         return;
     }
     if(task==ProcessTask::Submit){
@@ -221,13 +234,52 @@ void BlockcheckJobController::handleProcessFinished(QProcess *process,int exitCo
 
 void BlockcheckJobController::poll()
 {
-    if(m_process||m_operationId.isEmpty())return;
+    if(m_process)return;
+    if(m_probePending){launch(ProcessTask::Probe,{QStringLiteral("blockcheck-recovery-probe")});return;}
+    if(m_operationId.isEmpty())return;
     ++m_pollTicks;
     if(!m_terminalPhase.isEmpty()){
         m_pollTimer->stop();launch(ProcessTask::Logs,{QStringLiteral("blockcheck-job-logs"),QStringLiteral("500"),QString::number(m_startedAtSecs)});return;
     }
     if(m_pollTicks%3==0)launch(ProcessTask::Logs,{QStringLiteral("blockcheck-job-logs"),QStringLiteral("200"),QString::number(m_startedAtSecs)});
     else launch(ProcessTask::Status,{QStringLiteral("blockcheck-job-status"),m_operationId});
+}
+
+void BlockcheckJobController::processProbe(const QByteArray &output)
+{
+    QJsonParseError parseError;
+    const QJsonDocument document=QJsonDocument::fromJson(output,&parseError);
+    if(parseError.error!=QJsonParseError::NoError||!document.isObject()
+        ||document.object().value(QStringLiteral("version")).toInt()!=1){
+        m_probePending=false; setRecoveryRequired(true); setBusy(false);
+        setStatus(tr("Не удалось достоверно определить состояние восстановления Blockcheck. Операции заблокированы."),StatusType::Error);
+        return;
+    }
+    const QJsonObject object=document.object();
+    const QString state=object.value(QStringLiteral("state")).toString();
+    if(state==QLatin1String("safe")){
+        m_probePending=false; m_operationId.clear(); setRecoveryRequired(false); setBusy(false); setStatus(QString());
+        return;
+    }
+    if(state==QLatin1String("busy")){
+        m_probePending=true; setRecoveryRequired(false); setBusy(true);
+        setStatus(tr("Обнаружена выполняющаяся операция Blockcheck. Ожидается безопасное завершение…"),StatusType::Warning);
+        m_pollTimer->start();
+        return;
+    }
+    m_probePending=false; m_operationId.clear();
+    if(state==QLatin1String("recovery_required")){
+        const QString id=object.value(QStringLiteral("operation_id")).toString();
+        static const QRegularExpression uuidRe(QStringLiteral("^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"));
+        if(uuidRe.match(id).hasMatch()) m_operationId=id;
+        setRecoveryRequired(true); setBusy(false);
+        setStatus(tr("Обнаружено незавершённое восстановление zapret2. Управление службой и обновление заблокированы."),StatusType::Error);
+        return;
+    }
+    setRecoveryRequired(true); setBusy(false);
+    const QString reason=object.value(QStringLiteral("reason")).toString();
+    setStatus(reason.isEmpty() ? tr("Состояние восстановления Blockcheck неизвестно. Операции заблокированы.")
+        : tr("Не удалось проверить восстановление Blockcheck: %1. Операции заблокированы.").arg(reason), StatusType::Error);
 }
 
 void BlockcheckJobController::processStatus(const QByteArray &output)
@@ -308,7 +360,7 @@ void BlockcheckJobController::finish(bool success,bool canceled)
 
 void BlockcheckJobController::cancel()
 {
-    if(!m_busy)return;
+    if(!m_busy||m_probePending)return;
     if(m_operationId.isEmpty()){
         if(m_task==ProcessTask::None)finish(false,true);
         else if(m_task==ProcessTask::Submit){

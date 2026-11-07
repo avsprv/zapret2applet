@@ -122,7 +122,7 @@ Kirigami.ScrollablePage {
                     Controls.Button {
                         text: qsTr("Отмена")
                         icon.name: "dialog-cancel"
-                        enabled: blockcheckController.busy
+                        enabled: blockcheckController.cancelAvailable
                         onClicked: blockcheckController.cancel()
                     }
                     Controls.Button {

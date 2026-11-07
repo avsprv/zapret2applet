@@ -25,6 +25,7 @@ class BlockcheckJobController final : public QObject
     Q_PROPERTY(QString status READ status NOTIFY statusChanged)
     Q_PROPERTY(QString statusSeverity READ statusSeverity NOTIFY statusChanged)
     Q_PROPERTY(bool busy READ busy NOTIFY busyChanged)
+    Q_PROPERTY(bool cancelAvailable READ cancelAvailable NOTIFY busyChanged)
     Q_PROPERTY(bool recoveryRequired READ recoveryRequired NOTIFY recoveryRequiredChanged)
     Q_PROPERTY(bool recoveryRetryAvailable READ recoveryRetryAvailable NOTIFY recoveryRetryAvailableChanged)
     Q_PROPERTY(bool updateBusy READ updateBusy WRITE setUpdateBusy NOTIFY updateBusyChanged)
@@ -47,6 +48,7 @@ public:
     QString status() const;
     QString statusSeverity() const;
     bool busy() const;
+    bool cancelAvailable() const;
     bool recoveryRequired() const;
     bool recoveryRetryAvailable() const;
     bool updateBusy() const;
@@ -73,7 +75,7 @@ signals:
     void scanFinished(int found, bool canceled);
 
 private:
-    enum class ProcessTask { None, Submit, Status, Logs, Cancel, Recovery };
+    enum class ProcessTask { None, Probe, Submit, Status, Logs, Cancel, Recovery };
     void setStatus(const QString &value, StatusType type = StatusType::Information);
     void setBusy(bool value);
     void setRecoveryRequired(bool value);
@@ -81,6 +83,7 @@ private:
     void launch(ProcessTask task, const QStringList &arguments);
     void handleProcessFinished(QProcess *process, int exitCode, QProcess::ExitStatus exitStatus);
     void poll();
+    void processProbe(const QByteArray &output);
     void processStatus(const QByteArray &output);
     void processLogs(const QByteArray &output);
     void finish(bool success, bool canceled = false);
@@ -95,7 +98,7 @@ private:
     QVariantList m_results;
     StatusType m_statusType = StatusType::Information;
     bool m_busy = false, m_updateBusy = false, m_serviceBusy = false, m_recoveryRequired = false;
-    bool m_cancelRequested = false, m_finalLogsPending = false;
+    bool m_cancelRequested = false, m_finalLogsPending = false, m_probePending = false;
     int m_found = 0, m_pollTicks = 0;
     qint64 m_startedAtSecs = 0;
     ProcessTask m_task = ProcessTask::None;

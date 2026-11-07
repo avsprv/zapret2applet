@@ -16,6 +16,8 @@ private slots:
     void submitsAndWaitsForVerifiedCompletion();
     void failedRecoveryKeepsServiceOperationsLocked();
     void pendingRecoveryCanBeRetriedAfterSubmitRejection();
+    void startupProbeFindsRecoveryWithoutAnOperationId();
+    void startupProbeWaitsWhileAnotherJobIsActive();
 
 private:
     QTemporaryDir m_temp;
@@ -30,6 +32,15 @@ void BlockcheckJobControllerTest::initTestCase()
     QVERIFY(file.open(QIODevice::WriteOnly|QIODevice::Text));
     const QByteArray script=R"(#!/bin/sh
 case "$1" in
+  blockcheck-recovery-probe)
+    if [ "${QZAPRET_TEST_PROBE_BUSY:-0}" = 1 ]; then
+      echo '{"version":1,"state":"busy","reason":"systemd_operation"}'
+    elif [ "${QZAPRET_TEST_PROBE_RECOVERY:-0}" = 1 ]; then
+      echo '{"version":1,"state":"recovery_required","reason":"durable_marker","operation_id":"123e4567-e89b-42d3-a456-426614174000"}'
+    else
+      echo '{"version":1,"state":"safe","reason":"no_pending_recovery"}'
+    fi
+    ;;
   blockcheck-submit)
     if [ "${QZAPRET_TEST_PENDING_RECOVERY:-0}" = 1 ]; then
       echo 'a previous Blockcheck recovery is still pending (operation_id=123e4567-e89b-42d3-a456-426614174000)' >&2
@@ -71,6 +82,7 @@ void BlockcheckJobControllerTest::cleanupTestCase()
 void BlockcheckJobControllerTest::validatesOptionsBeforeConfirmation()
 {
     BlockcheckJobController controller;
+    QTRY_VERIFY_WITH_TIMEOUT(!controller.busy(),5000);
     QSignalSpy confirmation(&controller,&BlockcheckJobController::confirmationRequired);
     controller.setDomains(QStringLiteral("example..org"));
     controller.start();
@@ -82,6 +94,7 @@ void BlockcheckJobControllerTest::validatesOptionsBeforeConfirmation()
 void BlockcheckJobControllerTest::declineDoesNotSubmit()
 {
     BlockcheckJobController controller;
+    QTRY_VERIFY_WITH_TIMEOUT(!controller.busy(),5000);
     QSignalSpy confirmation(&controller,&BlockcheckJobController::confirmationRequired);
     QSignalSpy finished(&controller,&BlockcheckJobController::scanFinished);
     controller.start();
@@ -96,6 +109,7 @@ void BlockcheckJobControllerTest::declineDoesNotSubmit()
 void BlockcheckJobControllerTest::submitsAndWaitsForVerifiedCompletion()
 {
     BlockcheckJobController controller;
+    QTRY_VERIFY_WITH_TIMEOUT(!controller.busy(),5000);
     QSignalSpy finished(&controller,&BlockcheckJobController::scanFinished);
     QSignalSpy results(&controller,&BlockcheckJobController::resultsChanged);
     controller.start();
@@ -115,6 +129,7 @@ void BlockcheckJobControllerTest::pendingRecoveryCanBeRetriedAfterSubmitRejectio
 {
     qputenv("QZAPRET_TEST_PENDING_RECOVERY","1");
     BlockcheckJobController controller;
+    QTRY_VERIFY_WITH_TIMEOUT(!controller.busy(),5000);
     controller.start();
     controller.confirmStop(true);
     QTRY_VERIFY_WITH_TIMEOUT(!controller.busy(),5000);
@@ -130,6 +145,7 @@ void BlockcheckJobControllerTest::failedRecoveryKeepsServiceOperationsLocked()
 {
     qputenv("QZAPRET_TEST_RECOVERY_FAILED","1");
     BlockcheckJobController controller;
+    QTRY_VERIFY_WITH_TIMEOUT(!controller.busy(),5000);
     controller.start();
     controller.confirmStop(true);
     QTRY_VERIFY_WITH_TIMEOUT(!controller.busy(),5000);
@@ -144,6 +160,31 @@ void BlockcheckJobControllerTest::failedRecoveryKeepsServiceOperationsLocked()
     QTRY_VERIFY_WITH_TIMEOUT(!controller.busy(),5000);
     QVERIFY(!controller.recoveryRequired());
     QCOMPARE(controller.statusSeverity(),QStringLiteral("Success"));
+}
+
+void BlockcheckJobControllerTest::startupProbeFindsRecoveryWithoutAnOperationId()
+{
+    qputenv("QZAPRET_TEST_PROBE_RECOVERY","1");
+    BlockcheckJobController controller;
+    QTRY_VERIFY_WITH_TIMEOUT(!controller.busy(),5000);
+    QVERIFY(controller.recoveryRequired());
+    QVERIFY(controller.recoveryRetryAvailable());
+    qunsetenv("QZAPRET_TEST_PROBE_RECOVERY");
+    controller.retryRecovery();
+    QTRY_VERIFY_WITH_TIMEOUT(!controller.busy(),5000);
+    QVERIFY(!controller.recoveryRequired());
+}
+
+void BlockcheckJobControllerTest::startupProbeWaitsWhileAnotherJobIsActive()
+{
+    qputenv("QZAPRET_TEST_PROBE_BUSY","1");
+    BlockcheckJobController controller;
+    QTRY_VERIFY_WITH_TIMEOUT(controller.busy(),1000);
+    QVERIFY(!controller.cancelAvailable());
+    QVERIFY(!controller.recoveryRetryAvailable());
+    qunsetenv("QZAPRET_TEST_PROBE_BUSY");
+    QTRY_VERIFY_WITH_TIMEOUT(!controller.busy(),5000);
+    QVERIFY(!controller.recoveryRequired());
 }
 
 QTEST_GUILESS_MAIN(BlockcheckJobControllerTest)
