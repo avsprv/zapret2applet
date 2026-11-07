@@ -34,9 +34,9 @@ case "$1" in
     ;;
   blockcheck-job-status)
     if [ "${QZAPRET_TEST_RECOVERY_FAILED:-0}" = 1 ]; then
-      printf '%s\\n' '{"version":1,"operation_id":"123e4567-e89b-42d3-a456-426614174000","phase":"recovery_failed","worker":{"ActiveState":"failed","Result":"exit-code"},"recovery":{"ActiveState":"inactive","Result":"success"},"recovery_marker":true,"staged_options":false}'
+      printf '%s\n' '{"version":1,"operation_id":"123e4567-e89b-42d3-a456-426614174000","phase":"recovery_failed","worker":{"ActiveState":"failed","Result":"exit-code"},"recovery":{"ActiveState":"inactive","Result":"success"},"recovery_marker":true,"staged_options":false}'
     else
-      printf '%s\\n' '{"version":1,"operation_id":"123e4567-e89b-42d3-a456-426614174000","phase":"completed","worker":{"ActiveState":"inactive","Result":"success"},"recovery":{"ActiveState":"inactive","Result":"success"},"recovery_marker":false,"staged_options":false}'
+      printf '%s\n' '{"version":1,"operation_id":"123e4567-e89b-42d3-a456-426614174000","phase":"completed","worker":{"ActiveState":"inactive","Result":"success"},"recovery":{"ActiveState":"inactive","Result":"success"},"recovery_marker":false,"staged_options":false}'
     fi
     ;;
   blockcheck-job-logs)
