@@ -19,6 +19,7 @@ public:
     bool failNextStateQueryToStart = false;
     int activeQueryCount = 0;
     bool holdPrivilegedProcessOpen = false;
+    bool delayFirstStateQuery = false;
     QPointer<QProcess> lastPrivilegedProcess;
 
 protected:
@@ -68,7 +69,7 @@ protected:
 
         if (arguments.value(0) == QLatin1String("is-active")) {
             ++activeQueryCount;
-            if (activeQueryCount == 1) {
+            if (activeQueryCount == 1 && delayFirstStateQuery) {
                 process->start(QStringLiteral("/bin/sh"),
                                {QStringLiteral("-c"), QStringLiteral("sleep 0.15; printf inactive")});
                 return;
@@ -175,6 +176,7 @@ void SystemdBackendTest::ordinaryVerificationPublishesGlobalState()
 void SystemdBackendTest::newerRefreshSupersedesOlderStateQuery()
 {
     TestSystemdBackend backend;
+    backend.delayFirstStateQuery = true;
     QSignalSpy globalState(&backend, &ZapretBackend::stateChanged);
 
     backend.refresh();
@@ -189,6 +191,7 @@ void SystemdBackendTest::newerRefreshSupersedesOlderStateQuery()
 void SystemdBackendTest::correlatedVerificationInvalidatesOlderRefresh()
 {
     TestSystemdBackend backend;
+    backend.delayFirstStateQuery = true;
     QSignalSpy globalState(&backend, &ZapretBackend::stateChanged);
     QSignalSpy verified(&backend, &ZapretBackend::stateVerifiedForRequest);
 
