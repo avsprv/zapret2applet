@@ -256,6 +256,12 @@ if(BUILD_TESTING)
     target_link_libraries(test_settingsmanager PRIVATE Qt6::Test Qt6::Core)
     add_test(NAME settingsmanager COMMAND test_settingsmanager)
 
+    qt_add_executable(test_dbusmenu tests/test_dbusmenu.cpp
+        src/qml/dbusmenu.cpp src/qml/dbusmenu.h)
+    target_include_directories(test_dbusmenu PRIVATE src src/qml)
+    target_link_libraries(test_dbusmenu PRIVATE Qt6::Test Qt6::Core Qt6::DBus)
+    add_test(NAME dbusmenu COMMAND test_dbusmenu)
+
     qt_add_executable(test_i18n tests/test_i18n.cpp)
     target_link_libraries(test_i18n PRIVATE Qt6::Test zapret2applet_i18n)
     target_compile_definitions(test_i18n PRIVATE QZAPRET_I18N_DIR="${CMAKE_SOURCE_DIR}/i18n")
