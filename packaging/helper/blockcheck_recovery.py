@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """Idempotent recovery entry point for ExecStopPost and boot recovery."""
 from __future__ import annotations
 
