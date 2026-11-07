@@ -17,6 +17,7 @@ BuildRequires:  cmake(Qt6Network) >= 6.8
 BuildRequires:  cmake(Qt6LinguistTools) >= 6.8
 BuildRequires:  cmake(Qt6Test) >= 6.8
 BuildRequires:  desktop-file-utils
+BuildRequires:  systemd-rpm-macros
 # test dependencies for the privileged helper
 BuildRequires:  curl
 BuildRequires:  tar
@@ -39,6 +40,15 @@ installed separately.
 %prep
 %autosetup
 
+%post
+%systemd_post zapret2applet-blockcheck-recovery.service
+
+%preun
+%systemd_preun zapret2applet-blockcheck-recovery.service
+
+%postun
+%systemd_postun
+
 %build
 %cmake -G Ninja -DCMAKE_SKIP_RPATH=ON
 %cmake_build
@@ -56,6 +66,9 @@ desktop-file-validate %{buildroot}%{_datadir}/applications/zapret2applet.desktop
 %doc README.md
 %{_bindir}/zapret2applet
 %{_libexecdir}/zapret2applet/zapret2applet-helper
+%{_libexecdir}/zapret2applet/blockcheck_*.py
+%{_prefix}/lib/systemd/system/zapret2applet-blockcheck.service
+%{_prefix}/lib/systemd/system/zapret2applet-blockcheck-recovery.service
 %{_datadir}/polkit-1/actions/org.zapret2applet.policy
 %{_datadir}/applications/zapret2applet.desktop
 %{_datadir}/icons/hicolor/scalable/apps/zapret2applet.svg
