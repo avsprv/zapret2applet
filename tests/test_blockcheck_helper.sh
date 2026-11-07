@@ -46,16 +46,19 @@ chmod 755 "$W/runtime-insecure"
 expect_reject 'runtime directory' QZAPRET_TEST_RUNDIR="$W/runtime-insecure"
 
 mkdir "$W/runtime-pid-link"
+chmod 700 "$W/runtime-pid-link"
 ln -s "$W/target/pid" "$W/runtime-pid-link/blockcheck.pid"
 expect_reject 'runtime PID file' QZAPRET_TEST_RUNDIR="$W/runtime-pid-link"
 
 mkdir "$W/runtime-pid-hardlink"
+chmod 700 "$W/runtime-pid-hardlink"
 printf '99999999 1\n' > "$W/runtime-pid-hardlink/pid-target"
 chmod 600 "$W/runtime-pid-hardlink/pid-target"
 ln "$W/runtime-pid-hardlink/pid-target" "$W/runtime-pid-hardlink/blockcheck.pid"
 expect_reject 'runtime PID file' QZAPRET_TEST_RUNDIR="$W/runtime-pid-hardlink"
 
 mkdir "$W/runtime-private"
+chmod 700 "$W/runtime-private"
 # A stale PID must not prevent a new scan; PID identity includes kernel start time.
 printf '99999999 1\n' > "$W/runtime-private/blockcheck.pid"
 chmod 600 "$W/runtime-private/blockcheck.pid"
