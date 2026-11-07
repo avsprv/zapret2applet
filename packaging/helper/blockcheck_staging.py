@@ -49,10 +49,14 @@ class StagedOptionsStore:
                     nxt = os.open(part, flags, dir_fd=current)
                 os.close(current)
                 current = nxt
+        except FileNotFoundError as exc:
+            if current >= 0:
+                os.close(current)
+            raise StagingError("runtime directory does not exist") from exc
         except OSError as exc:
             if current >= 0:
                 os.close(current)
-            raise StagingError(f"unsafe or missing runtime directory: {exc}") from exc
+            raise StagingError(f"unsafe runtime directory: {exc}") from exc
         info = os.fstat(current)
         if not stat.S_ISDIR(info.st_mode) or info.st_uid != self.owner or stat.S_IMODE(info.st_mode) != 0o700:
             os.close(current)
@@ -126,7 +130,12 @@ class StagedOptionsStore:
         self._require_lock()
         if expected_operation_id is not None:
             expected_operation_id = self._operation_id(expected_operation_id)
-        directory_fd = self._open_directory()
+        try:
+            directory_fd = self._open_directory()
+        except StagingError as exc:
+            if missing_ok and str(exc) == "runtime directory does not exist":
+                return None
+            raise
         try:
             try:
                 fd = os.open(OPTIONS_FILE, os.O_RDONLY | os.O_NOFOLLOW | os.O_CLOEXEC,
