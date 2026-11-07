@@ -167,11 +167,21 @@ TrayController::TrayController(QObject *parent)
     });
     connect(m_item, &StatusNotifierItem::activateRequested,
             this, &TrayController::activateRequested);
+    connect(m_menu, &DBusMenu::activateRequested, this, &TrayController::activateRequested);
+    connect(m_menu, &DBusMenu::startRequested, this, &TrayController::startRequested);
+    connect(m_menu, &DBusMenu::stopRequested, this, &TrayController::stopRequested);
+    connect(m_menu, &DBusMenu::settingsRequested, this, &TrayController::settingsRequested);
+    connect(m_menu, &DBusMenu::quitRequested, this, &TrayController::quitRequested);
 
     refreshWatcherAvailability();
 }
 
-void TrayController::setServiceState(const QString &state, bool active, bool busy)\n{\n    m_menu->setServiceState(state, active, busy);\n}\n\nbool TrayController::watcherAvailable() const
+void TrayController::setServiceState(const QString &state, bool active, bool busy)
+{
+    m_menu->setServiceState(state, active, busy);
+}
+
+bool TrayController::watcherAvailable() const
 {
     return m_watcherAvailable;
 }
