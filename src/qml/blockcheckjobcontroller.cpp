@@ -66,12 +66,12 @@ void BlockcheckJobController::setStatus(const QString &v, StatusType type)
 void BlockcheckJobController::setBusy(bool v)
 {
     if (m_busy == v) return;
-    m_busy=v; emit busyChanged();
+    m_busy=v; emit busyChanged(); emit recoveryRetryAvailableChanged();
 }
 void BlockcheckJobController::setRecoveryRequired(bool v)
 {
     if (m_recoveryRequired == v) return;
-    m_recoveryRequired=v; emit recoveryRequiredChanged();
+    m_recoveryRequired=v; emit recoveryRequiredChanged(); emit recoveryRetryAvailableChanged();
 }
 void BlockcheckJobController::appendLog(const QString &line)
 {
@@ -190,6 +190,7 @@ void BlockcheckJobController::handleProcessFinished(QProcess *process,int exitCo
                 const auto match=pendingIdRe.match(error);
                 if(match.hasMatch())m_operationId=match.captured(1);
                 setRecoveryRequired(true);
+                emit recoveryRetryAvailableChanged();
             }
             finish(false);
         }
@@ -260,6 +261,7 @@ void BlockcheckJobController::processStatus(const QByteArray &output)
             m_operationId=recoveryOperationId;
             m_startedAtSecs=QDateTime::currentSecsSinceEpoch();
             emit recoveryRequiredChanged();
+            emit recoveryRetryAvailableChanged();
         }
         m_terminalPhase=phase;
         m_pollTimer->stop();
