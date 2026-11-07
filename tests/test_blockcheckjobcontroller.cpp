@@ -14,6 +14,7 @@ private slots:
     void validatesOptionsBeforeConfirmation();
     void declineDoesNotSubmit();
     void submitsAndWaitsForVerifiedCompletion();
+    void failedRecoveryKeepsServiceOperationsLocked();
 
 private:
     QTemporaryDir m_temp;
@@ -32,7 +33,11 @@ case "$1" in
     printf '%s\n' '123e4567-e89b-42d3-a456-426614174000'
     ;;
   blockcheck-job-status)
-    printf '%s\n' '{"version":1,"operation_id":"123e4567-e89b-42d3-a456-426614174000","phase":"completed","worker":{"ActiveState":"inactive","Result":"success"},"recovery":{"ActiveState":"inactive","Result":"success"},"recovery_marker":false,"staged_options":false}'
+    if [ "${QZAPRET_TEST_RECOVERY_FAILED:-0}" = 1 ]; then
+      printf '%s\\n' '{"version":1,"operation_id":"123e4567-e89b-42d3-a456-426614174000","phase":"recovery_failed","worker":{"ActiveState":"failed","Result":"exit-code"},"recovery":{"ActiveState":"inactive","Result":"success"},"recovery_marker":true,"staged_options":false}'
+    else
+      printf '%s\\n' '{"version":1,"operation_id":"123e4567-e89b-42d3-a456-426614174000","phase":"completed","worker":{"ActiveState":"inactive","Result":"success"},"recovery":{"ActiveState":"inactive","Result":"success"},"recovery_marker":false,"staged_options":false}'
+    fi
     ;;
   blockcheck-job-logs)
     printf '%s\n' '!!!!! curl_test_https_tls12: working strategy found for ipv4 example.org : nfqws2 --dpi-desync=fake !!!!!'
@@ -99,6 +104,21 @@ void BlockcheckJobControllerTest::submitsAndWaitsForVerifiedCompletion()
     QVERIFY(controller.logText().contains(QStringLiteral("working strategy found")));
     QCOMPARE(controller.statusSeverity(),QStringLiteral("Success"));
     QVERIFY(results.count()>0);
+}
+
+void BlockcheckJobControllerTest::failedRecoveryKeepsServiceOperationsLocked()
+{
+    qputenv("QZAPRET_TEST_RECOVERY_FAILED","1");
+    BlockcheckJobController controller;
+    controller.start();
+    controller.confirmStop(true);
+    QTRY_VERIFY_WITH_TIMEOUT(!controller.busy(),5000);
+    QVERIFY(controller.recoveryRequired());
+    QCOMPARE(controller.statusSeverity(),QStringLiteral("Error"));
+    controller.setServiceBusy(controller.recoveryRequired());
+    controller.start();
+    QVERIFY(controller.status().contains(QStringLiteral("другой операции")));
+    qunsetenv("QZAPRET_TEST_RECOVERY_FAILED");
 }
 
 QTEST_GUILESS_MAIN(BlockcheckJobControllerTest)
