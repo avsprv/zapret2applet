@@ -279,6 +279,10 @@ if(BUILD_TESTING)
              COMMAND sh ${CMAKE_SOURCE_DIR}/tests/test_helper.sh
                      ${CMAKE_SOURCE_DIR}/packaging/helper/zapret2applet-helper)
 
+    add_test(NAME blockcheck_helper
+             COMMAND sh ${CMAKE_SOURCE_DIR}/tests/test_blockcheck_helper.sh
+                     ${CMAKE_SOURCE_DIR}/packaging/helper/zapret2applet-helper)
+
     add_test(NAME config_helper
              COMMAND sh ${CMAKE_SOURCE_DIR}/tests/test_config_helper.sh
                      ${CMAKE_SOURCE_DIR}/packaging/helper/zapret2applet-helper)
