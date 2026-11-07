@@ -147,7 +147,7 @@ TrayController::TrayController(QObject *parent)
                                         QDBusServiceWatcher::WatchForOwnerChange,
                                         this))
     , m_item(new StatusNotifierItem(this))
-    , m_serviceName(QStringLiteral("org.kde.StatusNotifierItem-%1-1")
+    , m_serviceName(QStringLiteral("org.freedesktop.StatusNotifierItem-%1-1")
                         .arg(QCoreApplication::applicationPid()))
 {
     connect(m_watcher, &QDBusServiceWatcher::serviceOwnerChanged,
