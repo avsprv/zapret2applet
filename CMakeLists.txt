@@ -181,6 +181,7 @@ install(FILES
         packaging/helper/blockcheck_submit.py
         packaging/helper/blockcheck_status.py
         packaging/helper/blockcheck_probe.py
+        packaging/helper/blockcheck_admission.py
         DESTINATION ${CMAKE_INSTALL_LIBEXECDIR}/zapret2applet)
 install(FILES ${CMAKE_BINARY_DIR}/org.zapret2applet.policy
         DESTINATION ${CMAKE_INSTALL_DATADIR}/polkit-1/actions)

@@ -407,9 +407,11 @@ config-rollback)
 unit)
     [ "$#" -eq 2 ] || die "usage: unit {start|stop|enable|disable}"
     case "$2" in
-        start|stop|enable|disable) exec systemctl "$2" "$UNIT" ;;
+        start|stop|enable|disable) ;;
         *) die "bad unit action" ;;
     esac
+    module_dir=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd) || die "cannot locate helper modules"
+    exec /usr/bin/python3 "$module_dir/blockcheck_admission.py" unit "$2"
     ;;
 blockcheck-submit)
     shift
@@ -668,6 +670,13 @@ install)
     echo "The service was not started or enabled. NFQWS2_ENABLE=0; configure zapret2 before starting it."
     ;;
 update)
+    [ "$#" -eq 2 ] || die "usage: update vX.Y.Z"
+    module_dir=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd) || die "cannot locate helper modules"
+    exec /usr/bin/python3 "$module_dir/blockcheck_admission.py" update "$2"
+    ;;
+update-locked)
+    [ "${QZAPRET_BLOCKCHECK_GUARD:-}" = "held-v1" ] || die "update requires the Blockcheck lifecycle admission guard"
+    # The admission process holds the shared StateStore lock for this entire operation.
     # update vX.Y.Z — скачать релиз zapret2 с github.com/bol-van/zapret2 и обновить $BASE.
     # Файлы пользователя (config, ipset/zapret-hosts-user*.txt, init.d/*/custom.d) в архиве
     # отсутствуют, поэтому наложение файлов поверх их не затрагивает.
