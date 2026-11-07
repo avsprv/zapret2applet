@@ -252,6 +252,13 @@ void BlockcheckJobController::processStatus(const QByteArray &output)
     if(phase==QLatin1String("recovery_pending")){setStatus(tr("Восстановление службы ещё не подтверждено; задание остаётся активным."),StatusType::Warning);return;}
     if(phase==QLatin1String("recovery_failed")){m_terminalPhase=phase;setStatus(tr("Ошибка восстановления службы. Маркер восстановления сохранён."),StatusType::Error);m_pollTimer->stop();launch(ProcessTask::Logs,{QStringLiteral("blockcheck-job-logs"),QStringLiteral("500"),QString::number(m_startedAtSecs)});return;}
     if(phase==QLatin1String("stale")){
+        const QString recoveryOperationId=object.value(QStringLiteral("recovery_operation_id")).toString();
+        static const QRegularExpression uuidRe(
+            QStringLiteral("^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"));
+        if(uuidRe.match(recoveryOperationId).hasMatch()){
+            m_operationId=recoveryOperationId;
+            m_startedAtSecs=QDateTime::currentSecsSinceEpoch();
+        }
         m_terminalPhase=phase;
         m_pollTimer->stop();
         setStatus(tr("Идентификатор задания устарел; журнал другой операции не будет прочитан."),StatusType::Error);
