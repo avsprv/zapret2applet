@@ -54,7 +54,50 @@ env QZAPRET_TEST_BASE="$W/base" QZAPRET_TEST_RUNDIR="$W/runtime-private" \
 runner_pid=$!
 
 attempt=0
-while [ ! -s "$W/runtime-private/blockcheck.pid" ] && [ "$attempt" -lt 5 ]; do
+while { [ ! -s "$W/runtime-private/blockcheck.pid" ] || grep -q '^99999999 1
+    sleep 1
+    attempt=$((attempt + 1))
+done
+[ -s "$W/runtime-private/blockcheck.pid" ] || {
+    echo "FAIL: Blockcheck did not create its PID file"
+    cat "$W/output"
+    exit 1
+}
+[ "$(wc -w < "$W/runtime-private/blockcheck.pid" | tr -d ' ')" -eq 2 ] || {
+    echo "FAIL: PID file must contain PID and process start time"
+    exit 1
+}
+[ "$(stat -c '%a' "$W/runtime-private/blockcheck.pid")" = 600 ] || {
+    echo "FAIL: PID file permissions are not 0600"
+    exit 1
+}
+[ "$(stat -c '%a' "$W/runtime-private/blockcheck.lock")" = 600 ] || {
+    echo "FAIL: lock file permissions are not 0600"
+    exit 1
+}
+
+set +e
+out=$(env QZAPRET_TEST_BASE="$W/base" QZAPRET_TEST_RUNDIR="$W/runtime-private" \
+    "$H" blockcheck --domains example.org 2>&1)
+rc=$?
+set -e
+[ "$rc" -eq 2 ] && printf '%s' "$out" | grep -q 'blockcheck already running' || {
+    echo "FAIL: concurrent Blockcheck was not rejected (rc=$rc): $out"
+    exit 1
+}
+echo "ok: concurrent Blockcheck rejected by the runtime lock"
+
+env QZAPRET_TEST_BASE="$W/base" QZAPRET_TEST_RUNDIR="$W/runtime-private" \
+    "$H" blockcheck-cancel
+wait "$runner_pid"
+runner_pid=
+sleep 1
+flock -n "$W/runtime-private/blockcheck.lock" -c true || {
+    echo "FAIL: runtime lock remained held after Blockcheck exit"
+    exit 1
+}
+echo "ok: cancellation releases the runtime lock"
+ "$W/runtime-private/blockcheck.pid"; } && [ "$attempt" -lt 5 ]; do
     sleep 1
     attempt=$((attempt + 1))
 done
