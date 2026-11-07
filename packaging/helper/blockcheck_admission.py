@@ -61,7 +61,8 @@ def admission_guard(state: StateStore, staged: StagedOptionsStore) -> Iterator[N
                 properties = _unit_properties(state.systemctl, unit)
                 if properties["LoadState"] != "loaded":
                     raise AdmissionError(f"required systemd unit is not loaded: {unit}")
-                if properties["ActiveState"] != "inactive":
+                allowed_states = {"inactive", "failed"} if unit == WORKER_UNIT else {"inactive"}
+                if properties["ActiveState"] not in allowed_states:
                     raise AdmissionError(
                         f"Blockcheck lifecycle unit is not idle: {unit} "
                         f"(state: {properties['ActiveState']})"

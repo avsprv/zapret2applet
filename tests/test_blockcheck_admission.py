@@ -72,6 +72,17 @@ sys.exit(0)
             with admission_guard(self.state, self.staged):
                 self.fail("guard admitted active recovery")
 
+    def test_failed_worker_without_recovery_marker_does_not_block_service(self):
+        self.units.write_text(json.dumps({WORKER_UNIT: "failed", RECOVERY_UNIT: "inactive"}))
+        with admission_guard(self.state, self.staged):
+            pass
+
+    def test_failed_recovery_unit_remains_fail_closed(self):
+        self.units.write_text(json.dumps({WORKER_UNIT: "inactive", RECOVERY_UNIT: "failed"}))
+        with self.assertRaisesRegex(AdmissionError, "not idle"):
+            with admission_guard(self.state, self.staged):
+                self.fail("guard admitted failed recovery unit")
+
     def test_pending_recovery_marker_rejected(self):
         with self.state.locked(create=True):
             self.state._write_marker({
