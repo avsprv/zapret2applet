@@ -137,6 +137,31 @@ class StateTests(unittest.TestCase):
         with self.store.locked():
             self.assertFalse(self.store.recover_locked())
 
+    def test_lock_symlink_and_hardlink_rejected(self):
+        self.state.mkdir(mode=0o700)
+        target = self.root / "outside-lock"
+        target.write_text("")
+        (self.state / "lock").symlink_to(target)
+        with self.assertRaises(StateError):
+            with self.store.locked():
+                pass
+
+        (self.state / "lock").unlink()
+        (self.state / "lock").write_text("")
+        os.chmod(self.state / "lock", 0o600)
+        os.link(self.state / "lock", self.root / "linked-lock")
+        with self.assertRaises(StateError):
+            with self.store.locked():
+                pass
+
+    def test_state_directory_symlink_rejected(self):
+        real_state = self.root / "real-state"
+        real_state.mkdir(mode=0o700)
+        self.state.symlink_to(real_state, target_is_directory=True)
+        with self.assertRaises(StateError):
+            with self.store.locked(create=True):
+                pass
+
     def test_lock_serializes_threads(self):
         self.store.directory.mkdir(mode=0o700)
         second_store = StateStore(self.state, str(self.fake))
