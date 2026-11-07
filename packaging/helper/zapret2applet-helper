@@ -431,7 +431,7 @@ blockcheck-job-logs)
         die "cannot create temporary journal error output"
     }
     trap 'rm -f "$tmp" "$err"' EXIT HUP INT TERM
-    if ! "$JOURNALCTL" --unit=zapret2applet-blockcheck.service --lines="$lines" --no-pager --output=short-iso > "$tmp" 2> "$err"; then
+    if ! "$JOURNALCTL" --unit=zapret2applet-blockcheck.service --lines="$lines" --no-pager --output=cat > "$tmp" 2> "$err"; then
         message=$(cat "$err")
         [ -n "$message" ] || message="journalctl exited unsuccessfully"
         die "cannot read Blockcheck journal: $message"
