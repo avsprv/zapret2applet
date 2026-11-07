@@ -460,7 +460,8 @@ blockcheck)
         secure_runtime_file "$PIDFILE" || die "runtime PID file is unsafe"
         rm -f "$PIDFILE"
     fi
-    self_pid=$
+    IFS= read -r self_stat < /proc/self/stat || die "cannot identify helper process"
+    self_pid=${self_stat%% *}
     start_time=$(proc_start_time "$self_pid") || die "cannot determine helper process start time"
     printf '%s %s\n' "$self_pid" "$start_time" > "$PIDFILE"
     chmod 600 "$PIDFILE"
