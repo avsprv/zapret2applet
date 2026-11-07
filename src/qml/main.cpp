@@ -17,6 +17,7 @@
 #include "updatecontroller.h"
 #include "settingsmanager.h"
 #include "autostartcontroller.h"
+#include "traycontroller.h"
 
 namespace {
 QLocale localeForLanguage(const QString &language)
@@ -39,6 +40,7 @@ int main(int argc, char *argv[])
     ApplicationController controller;
     SettingsManager settingsManager;
     AutostartController autostartController;
+    TrayController trayController;
     const auto applyColorScheme = [&settingsManager] {
         Qt::ColorScheme scheme = Qt::ColorScheme::Unknown;
         if (settingsManager.theme() == QLatin1String("light"))
@@ -90,6 +92,7 @@ int main(int argc, char *argv[])
     engine.rootContext()->setContextProperty(QStringLiteral("appController"), &controller);
     engine.rootContext()->setContextProperty(QStringLiteral("settingsManager"), &settingsManager);
     engine.rootContext()->setContextProperty(QStringLiteral("autostartController"), &autostartController);
+    engine.rootContext()->setContextProperty(QStringLiteral("trayController"), &trayController);
     engine.rootContext()->setContextProperty(QStringLiteral("configController"), &configController);
     engine.rootContext()->setContextProperty(QStringLiteral("profileController"), &profileController);
     engine.rootContext()->setContextProperty(QStringLiteral("logsController"), &logsController);
