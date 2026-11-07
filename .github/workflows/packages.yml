@@ -2,7 +2,7 @@ name: Packages
 
 on:
   push:
-    branches: [main]
+    branches: [main, feature/migrate-qml-kirigami]
   pull_request:
     branches: [main]
 
