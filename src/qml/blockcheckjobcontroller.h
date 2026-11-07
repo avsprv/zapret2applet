@@ -54,6 +54,7 @@ public:
     Q_INVOKABLE void start();
     Q_INVOKABLE void confirmStop(bool accepted);
     Q_INVOKABLE void cancel();
+    Q_INVOKABLE void retryRecovery();
     Q_INVOKABLE void copyStrategy(int index);
     Q_INVOKABLE bool saveLog(const QUrl &url);
 
@@ -69,7 +70,7 @@ signals:
     void scanFinished(int found, bool canceled);
 
 private:
-    enum class ProcessTask { None, Submit, Status, Logs, Cancel };
+    enum class ProcessTask { None, Submit, Status, Logs, Cancel, Recovery };
     void setStatus(const QString &value, StatusType type = StatusType::Information);
     void setBusy(bool value);
     void setRecoveryRequired(bool value);
