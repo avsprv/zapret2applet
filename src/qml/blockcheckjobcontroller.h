@@ -26,7 +26,7 @@ class BlockcheckJobController final : public QObject
     Q_PROPERTY(QString statusSeverity READ statusSeverity NOTIFY statusChanged)
     Q_PROPERTY(bool busy READ busy NOTIFY busyChanged)
     Q_PROPERTY(bool recoveryRequired READ recoveryRequired NOTIFY recoveryRequiredChanged)
-    Q_PROPERTY(bool recoveryRetryAvailable READ recoveryRetryAvailable NOTIFY recoveryRequiredChanged)
+    Q_PROPERTY(bool recoveryRetryAvailable READ recoveryRetryAvailable NOTIFY recoveryRetryAvailableChanged)
     Q_PROPERTY(bool updateBusy READ updateBusy WRITE setUpdateBusy NOTIFY updateBusyChanged)
 
 public:
@@ -67,6 +67,7 @@ signals:
     void statusChanged();
     void busyChanged();
     void recoveryRequiredChanged();
+    void recoveryRetryAvailableChanged();
     void updateBusyChanged();
     void confirmationRequired(const QString &title, const QString &message);
     void scanFinished(int found, bool canceled);
