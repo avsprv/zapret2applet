@@ -23,18 +23,15 @@ class StateTests(unittest.TestCase):
         self.fake = self.root / "systemctl"
         self.log = self.root / "calls"
         self.active = self.root / "active"
-        self.fake.write_text("""#!/bin/sh
-set -eu
-printf '%s\\n' "$*" >> "$CALL_LOG"
-case "$1" in
-  is-active)
-    [ -e "$ACTIVE_FILE" ] && exit 0 || exit 3 ;;
-  start)
-    [ "${FAIL_START:-0}" = 1 ] && exit 1
-    : > "$ACTIVE_FILE" ;;
-  *) exit 64 ;;
-esac
-""")
+        self.fake.write_text(
+            "#!/bin/sh\nset -eu\n"
+            + "printf '%s\\\\n' \"$*\" >> " + repr(str(self.log)) + "\n"
+            + "case \"$1\" in\n"
+            + "  is-active) [ -e " + repr(str(self.active)) + " ] && exit 0 || exit 3 ;;\n"
+            + "  start) : > " + repr(str(self.active)) + " ;;\n"
+            + "  *) exit 64 ;;\n"
+            + "esac\n"
+        )
         self.fake.chmod(0o700)
         self.env = dict(os.environ, CALL_LOG=str(self.log), ACTIVE_FILE=str(self.active))
         self.store = StateStore(self.state, str(self.fake))
@@ -114,18 +111,24 @@ esac
             with self.assertRaises(StateError):
                 self.store.recover_locked()
 
-    def test_wrong_mode_and_wrong_owner_directory_rejected(self):
+    def test_wrong_mode_and_wrong_owner_rejected(self):
         self.prepare(True)
-        os.chmod(self.state / "state.json", 0o640)
+        marker = self.state / "state.json"
+        os.chmod(marker, 0o640)
         with self.store.locked():
             with self.assertRaises(StateError):
                 self.store.recover_locked()
-        os.chmod(self.state / "state.json", 0o600)
+        os.chmod(marker, 0o600)
+        if os.geteuid() == 0:
+            os.chown(marker, 65534, 65534)
+            with self.store.locked():
+                with self.assertRaises(StateError):
+                    self.store.recover_locked()
+            os.chown(marker, 0, 0)
         os.chmod(self.state, 0o750)
         with self.assertRaises(StateError):
             with self.store.locked():
                 pass
-
     def test_recovery_is_idempotent(self):
         self.prepare(False)
         with self.store.locked():
