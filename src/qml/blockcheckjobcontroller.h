@@ -99,6 +99,7 @@ private:
     StatusType m_statusType = StatusType::Information;
     bool m_busy = false, m_updateBusy = false, m_serviceBusy = false, m_recoveryRequired = false;
     bool m_cancelRequested = false, m_finalLogsPending = false, m_probePending = false;
+    bool m_recoveryRetryInProgress = false;
     int m_found = 0, m_pollTicks = 0;
     qint64 m_startedAtSecs = 0;
     ProcessTask m_task = ProcessTask::None;

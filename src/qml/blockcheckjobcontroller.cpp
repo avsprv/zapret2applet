@@ -258,7 +258,13 @@ void BlockcheckJobController::processProbe(const QByteArray &output)
     const QJsonObject object=document.object();
     const QString state=object.value(QStringLiteral("state")).toString();
     if(state==QLatin1String("safe")){
-        m_probePending=false; m_operationId.clear(); setRecoveryRequired(false); setBusy(false); setStatus(QString());
+        m_probePending=false; m_operationId.clear(); setRecoveryRequired(false); setBusy(false);
+        if (m_recoveryRetryInProgress) {
+            m_recoveryRetryInProgress=false;
+            setStatus(tr("Восстановление службы zapret2 подтверждено."),StatusType::Success);
+        } else {
+            setStatus(QString());
+        }
         return;
     }
     if(state==QLatin1String("busy")){
@@ -379,6 +385,7 @@ void BlockcheckJobController::cancel()
 void BlockcheckJobController::retryRecovery()
 {
     if(!recoveryRetryAvailable())return;
+    m_recoveryRetryInProgress=true;
     setBusy(true);
     setStatus(tr("Повторная попытка восстановления службы zapret2…"),StatusType::Warning);
     launch(ProcessTask::Recovery,{QStringLiteral("blockcheck-recover")});

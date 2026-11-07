@@ -1675,6 +1675,10 @@
         <translation>The recovery command completed; verifying Blockcheck state…</translation>
     </message>
     <message>
+        <source>Восстановление службы zapret2 подтверждено.</source>
+        <translation>zapret2 service recovery has been confirmed.</translation>
+    </message>
+    <message>
         <source>Обнаружена выполняющаяся операция Blockcheck. Ожидается безопасное завершение…</source>
         <translation>An active Blockcheck operation was detected. Waiting for it to finish safely…</translation>
     </message>
