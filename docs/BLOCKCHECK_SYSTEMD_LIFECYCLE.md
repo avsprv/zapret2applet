@@ -9,8 +9,11 @@ included in Debian/Fedora packaging metadata. The status helper reports queued,
 running, ExecStopPost recovery, pending/failed recovery, completion, and stale job
 identifiers while serializing reads against the lifecycle lock. It treats a removed
 systemd RuntimeDirectory as an absent staging file, but fails closed on unsafe paths
-or malformed state. The QML job client and end-to-end runtime validation on a systemd
-host are still pending; the production GUI continues to use its legacy Blockcheck path.
+or malformed state. The QML preview now uses an asynchronous job client for submit,
+status polling, cancellation, bounded journal reads, strategy extraction, and recovery
+state handling. An unresolved recovery marker keeps service and update operations
+locked. End-to-end runtime validation on a systemd host is still pending; the installed
+production Widgets application continues to use its legacy Blockcheck path.
 
 ## Problem
 
@@ -130,6 +133,12 @@ Replace direct service stop/start orchestration with a systemd job client:
 - keep the busy state until systemd confirms the job is finished and recovery has been
   verified;
 - surface a distinct recovery-pending/error state when the marker remains.
+- read the fixed Blockcheck unit journal through
+  `blockcheck-job-logs {50|100|200|500}`; helper output is capped at 1 MiB and the
+  GUI parses strategy records from the journal rather than relying on the worker's
+  process stream;
+- keep service and update operations disabled while a recovery marker remains after
+  a recovery failure.
 
 The GUI must not infer successful recovery from the worker exit code alone.
 
