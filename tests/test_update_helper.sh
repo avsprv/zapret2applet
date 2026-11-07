@@ -154,13 +154,13 @@ case "$1" in
             zapret2applet-blockcheck.service|zapret2applet-blockcheck-recovery.service) ;;
             *) exit 4 ;;
         esac
-        printf 'LoadState=loaded\\nActiveState=inactive\\nSubState=dead\\nResult=success\\nExecMainStatus=0\\n'
+        printf 'LoadState=loaded\nActiveState=inactive\nSubState=dead\nResult=success\nExecMainStatus=0\n'
         ;;
     daemon-reload)
-        printf '%s\\n' "$*" >> "$SYSTEMCTL_LOG"
+        printf '%s\n' "$*" >> "$SYSTEMCTL_LOG"
         ;;
     *)
-        printf '%s\\n' "$*" >> "$SYSTEMCTL_LOG"
+        printf '%s\n' "$*" >> "$SYSTEMCTL_LOG"
         ;;
 esac
 EOS
