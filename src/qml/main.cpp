@@ -55,16 +55,21 @@ int main(int argc, char *argv[])
     BlockcheckJobController blockcheckController;
     UpdateController updateController(&settingsManager);
 
-    updateController.setBlockcheckBusy(blockcheckController.busy());
+    updateController.setBlockcheckBusy(blockcheckController.busy() || blockcheckController.recoveryRequired());
     blockcheckController.setUpdateBusy(updateController.busy());
-    controller.setOperationsBusy(blockcheckController.busy() || updateController.busy());
+    controller.setOperationsBusy(blockcheckController.busy() || blockcheckController.recoveryRequired() || updateController.busy());
     blockcheckController.setServiceBusy(controller.operationsBusy());
     QObject::connect(&controller, &ApplicationController::operationsBusyChanged, &app,
                      [&] { blockcheckController.setServiceBusy(controller.operationsBusy()); });
     QObject::connect(&blockcheckController, &BlockcheckJobController::busyChanged, &app,
                      [&] {
-        updateController.setBlockcheckBusy(blockcheckController.busy());
-        controller.setOperationsBusy(blockcheckController.busy() || updateController.busy());
+        updateController.setBlockcheckBusy(blockcheckController.busy() || blockcheckController.recoveryRequired());
+        controller.setOperationsBusy(blockcheckController.busy() || blockcheckController.recoveryRequired() || updateController.busy());
+    });
+    QObject::connect(&blockcheckController, &BlockcheckJobController::recoveryRequiredChanged, &app,
+                     [&] {
+        updateController.setBlockcheckBusy(blockcheckController.busy() || blockcheckController.recoveryRequired());
+        controller.setOperationsBusy(blockcheckController.busy() || blockcheckController.recoveryRequired() || updateController.busy());
     });
     QObject::connect(&updateController, &UpdateController::stateChanged, &app,
                      [&] {
