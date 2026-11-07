@@ -122,7 +122,7 @@ class StagedOptionsStore:
                 pass
             os.close(directory_fd)
 
-    def _read_document_locked(self, expected_operation_id: str | None = None) -> tuple[str, BlockcheckOptions]:
+    def _read_document_locked(self, expected_operation_id: str | None = None, missing_ok: bool = False) -> tuple[str, BlockcheckOptions] | None:
         self._require_lock()
         if expected_operation_id is not None:
             expected_operation_id = self._operation_id(expected_operation_id)
@@ -131,6 +131,10 @@ class StagedOptionsStore:
             try:
                 fd = os.open(OPTIONS_FILE, os.O_RDONLY | os.O_NOFOLLOW | os.O_CLOEXEC,
                              dir_fd=directory_fd)
+            except FileNotFoundError:
+                if missing_ok:
+                    return None
+                raise StagingError("no staged Blockcheck operation is pending")
             except OSError as exc:
                 raise StagingError(f"cannot safely open staged options: {exc}") from exc
             try:
@@ -181,9 +185,9 @@ class StagedOptionsStore:
     def read_locked(self, expected_operation_id: str) -> BlockcheckOptions:
         return self._read_document_locked(expected_operation_id)[1]
 
-    def read_pending_locked(self) -> tuple[str, BlockcheckOptions]:
+    def read_pending_locked(self, missing_ok: bool = False) -> tuple[str, BlockcheckOptions] | None:
         # Read the next queued request without requiring a unit argument.
-        return self._read_document_locked()
+        return self._read_document_locked(missing_ok=missing_ok)
 
     def discard_locked(self, expected_operation_id: str) -> None:
         """Discard a failed submission only when no durable recovery marker exists."""
