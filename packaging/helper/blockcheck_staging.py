@@ -164,8 +164,11 @@ class StagedOptionsStore:
                 raise StagingError(f"staged options are malformed: {exc}") from exc
             if (not isinstance(value, dict) or set(value) != {"version", "operation_id", "options"}
                 or type(value["version"]) is not int or value["version"] != SCHEMA_VERSION
-                or value["operation_id"] != expected_operation_id or not isinstance(value["options"], dict)):
-                raise StagingError("staged options schema or operation ID mismatch")
+                or not isinstance(value["operation_id"], str) or not isinstance(value["options"], dict)):
+                raise StagingError("staged options schema is invalid")
+            operation_id = self._operation_id(value["operation_id"])
+            if expected_operation_id is not None and operation_id != expected_operation_id:
+                raise StagingError("staged options operation ID mismatch")
             try:
                 options_raw = (json.dumps(value["options"], sort_keys=True, separators=(",", ":")) + "\n").encode("ascii")
                 options = BlockcheckOptions.from_json(options_raw)
