@@ -52,9 +52,9 @@ prepare_runtime_dir() {
 secure_runtime_file() {
     [ -f "$1" ] && [ ! -L "$1" ] || return 1
     info=$(stat -c '%u %a %h' -- "$1" 2>/dev/null) || return 1
-    owner=$(printf '%s\\n' "$info" | cut -d ' ' -f 1)
-    perms=$(printf '%s\\n' "$info" | cut -d ' ' -f 2)
-    links=$(printf '%s\\n' "$info" | cut -d ' ' -f 3)
+    owner=$(printf '%s\n' "$info" | cut -d ' ' -f 1)
+    perms=$(printf '%s\n' "$info" | cut -d ' ' -f 2)
+    links=$(printf '%s\n' "$info" | cut -d ' ' -f 3)
     [ "$owner" = "$SECURE_OWNER" ] && [ "$links" = 1 ] || return 1
     [ $((0$perms & 077)) -eq 0 ]
 }
@@ -78,7 +78,7 @@ bc_pid() {
     [ -r "/proc/$pid/cmdline" ] || return 1
     current_start=$(proc_start_time "$pid") || return 1
     [ "$current_start" = "$start_time" ] || return 1
-    tr '\\0' ' ' < "/proc/$pid/cmdline" | grep -q 'blockcheck2\\.sh' || return 1
+    tr '\0' ' ' < "/proc/$pid/cmdline" | grep -q 'blockcheck2\.sh' || return 1
     echo "$pid"
 }
 
@@ -460,8 +460,9 @@ blockcheck)
         secure_runtime_file "$PIDFILE" || die "runtime PID file is unsafe"
         rm -f "$PIDFILE"
     fi
-    start_time=$(proc_start_time "$") || die "cannot determine helper process start time"
-    printf '%s %s\\n' "$" "$start_time" > "$PIDFILE"
+    self_pid=$
+    start_time=$(proc_start_time "$self_pid") || die "cannot determine helper process start time"
+    printf '%s %s\n' "$self_pid" "$start_time" > "$PIDFILE"
     chmod 600 "$PIDFILE"
     secure_runtime_file "$PIDFILE" || die "cannot secure runtime PID file"
     # exec preserves the PID and lock descriptor for the lifetime of blockcheck2.sh.
