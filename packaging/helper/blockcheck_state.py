@@ -68,7 +68,13 @@ class StateStore:
         return current_fd
 
     @contextlib.contextmanager
-    def locked(self, create: bool = False) -> Iterator["StateStore"]:
+    def locked(self, create: bool = False, blocking: bool = True) -> Iterator["StateStore"]:
+        """Acquire the lifecycle lock.
+
+        Set blocking=False for admission paths (for example, a new submit request)
+        that must reject an active worker instead of waiting for it to finish.
+        Recovery paths should keep the default blocking behavior.
+        """
         if getattr(self._thread_state, "dir_fd", None) is not None:
             raise StateError("nested lifecycle locks are not supported")
         dir_fd = self._open_directory(create=create)
@@ -83,7 +89,11 @@ class StateStore:
             if (not stat.S_ISREG(info.st_mode) or info.st_uid != self.owner
                     or stat.S_IMODE(info.st_mode) != 0o600 or info.st_nlink != 1):
                 raise StateError("lifecycle lock has unsafe type, owner, mode, or link count")
-            fcntl.flock(lock_fd, fcntl.LOCK_EX)
+            lock_flags = fcntl.LOCK_EX if blocking else fcntl.LOCK_EX | fcntl.LOCK_NB
+            try:
+                fcntl.flock(lock_fd, lock_flags)
+            except BlockingIOError as exc:
+                raise StateError("another Blockcheck lifecycle operation is active") from exc
             self._thread_state.dir_fd = dir_fd
             yield self
         finally:
