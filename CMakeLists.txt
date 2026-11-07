@@ -118,6 +118,8 @@ qt_add_executable(zapret2applet-qml-preview
     src/qml/autostartcontroller.h
     src/qml/traycontroller.cpp
     src/qml/traycontroller.h
+    src/qml/dbusmenu.cpp
+    src/qml/dbusmenu.h
     src/qml/configcontroller.cpp
     src/qml/configcontroller.h
     src/qml/profilecontroller.cpp
