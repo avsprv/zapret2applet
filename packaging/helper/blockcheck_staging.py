@@ -185,6 +185,22 @@ class StagedOptionsStore:
         # Read the next queued request without requiring a unit argument.
         return self._read_document_locked()
 
+    def discard_locked(self, expected_operation_id: str) -> None:
+        """Discard a failed submission only when no durable recovery marker exists."""
+        self._require_lock()
+        expected_operation_id = self._operation_id(expected_operation_id)
+        if self.state_store._read_marker() is not None:
+            raise StagingError("cannot discard options while recovery is pending")
+        self.read_locked(expected_operation_id)
+        directory_fd = self._open_directory()
+        try:
+            os.unlink(OPTIONS_FILE, dir_fd=directory_fd)
+            os.fsync(directory_fd)
+        except OSError as exc:
+            raise StagingError(f"cannot discard staged options: {exc}") from exc
+        finally:
+            os.close(directory_fd)
+
     def consume_locked(self, expected_operation_id: str) -> None:
         """Consume only after prepare_locked(operation_id) persisted recovery state."""
         self._require_lock()
