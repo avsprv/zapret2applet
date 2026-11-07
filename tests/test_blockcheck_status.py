@@ -36,7 +36,7 @@ states = {
 try:
     with open(os.environ["QZAPRET_STATUS_FIXTURE"], encoding="ascii") as f:
         for line in f:
-            unit, values = line.rstrip("\\n").split("=", 1)
+            unit, values = line.rstrip("\n").split("=", 1)
             states[unit] = tuple(values.split(","))
 except (KeyError, OSError):
     pass
@@ -66,7 +66,7 @@ for key, value in zip(keys, states[unit]):
         lines = []
         for unit, values in self.states.items():
             lines.append(unit + "=" + ",".join(values))
-        self.fixture.write_text("\\n".join(lines) + "\\n", encoding="ascii")
+        self.fixture.write_text("\n".join(lines) + "\n", encoding="ascii")
 
     def _status(self):
         return get_job_status(self.state, self.staged, self.operation_id)
