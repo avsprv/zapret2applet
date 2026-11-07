@@ -169,7 +169,11 @@ void BlockcheckJobController::handleProcessFinished(QProcess *process,int exitCo
     const QString error=QString::fromUtf8(m_stderr).trimmed();
     if(exitStatus!=QProcess::NormalExit||exitCode!=0){
         appendLog(error.isEmpty()?tr("Helper завершился с кодом %1.").arg(exitCode):error);
-        if(task==ProcessTask::Submit){
+        if(task==ProcessTask::Recovery){
+            setBusy(false);
+            setStatus(tr("Не удалось повторить восстановление службы. Маркер сохранён."),StatusType::Error);
+        }
+        else if(task==ProcessTask::Submit){
             if(error.contains(QStringLiteral("recovery is still pending"),Qt::CaseInsensitive)
                 || error.contains(QStringLiteral("recovery marker"),Qt::CaseInsensitive))
                 setRecoveryRequired(true);
@@ -179,6 +183,13 @@ void BlockcheckJobController::handleProcessFinished(QProcess *process,int exitCo
         else if(task==ProcessTask::Status)setStatus(tr("Не удалось получить состояние задания; повторная проверка будет выполнена."),StatusType::Warning);
         else if(task==ProcessTask::Logs&&m_terminalPhase.isEmpty())setStatus(tr("Не удалось обновить журнал Blockcheck."),StatusType::Warning);
         if(task==ProcessTask::Logs&&!m_terminalPhase.isEmpty())finish(m_terminalPhase==QLatin1String("completed"),m_cancelRequested&&m_terminalPhase!=QLatin1String("completed"));
+        return;
+    }
+    if(task==ProcessTask::Recovery){
+        m_terminalPhase.clear();
+        m_pollTicks=0;
+        m_pollTimer->start();
+        setStatus(tr("Команда восстановления выполнена; проверяется состояние службы…"),StatusType::Information);
         return;
     }
     if(task==ProcessTask::Submit){
@@ -255,7 +266,7 @@ void BlockcheckJobController::processLogs(const QByteArray &output)
 
 void BlockcheckJobController::finish(bool success,bool canceled)
 {
-    m_pollTimer->stop();m_terminalPhase.clear();m_operationId.clear();m_task=ProcessTask::None;
+    m_pollTimer->stop();m_terminalPhase.clear();if(!m_recoveryRequired)m_operationId.clear();m_task=ProcessTask::None;
     setBusy(false);
     if(canceled)setStatus(tr("Подбор отменён."),StatusType::Warning);
     else if(success)setStatus(tr("Диагностика завершена; восстановление службы подтверждено."),StatusType::Success);
@@ -279,6 +290,14 @@ void BlockcheckJobController::cancel()
         if(m_task==ProcessTask::None)
             launch(ProcessTask::Cancel,{QStringLiteral("blockcheck-job-cancel")});
     }
+}
+
+void BlockcheckJobController::retryRecovery()
+{
+    if(!m_recoveryRequired||m_busy||m_operationId.isEmpty())return;
+    setBusy(true);
+    setStatus(tr("Повторная попытка восстановления службы zapret2…"),StatusType::Warning);
+    launch(ProcessTask::Recovery,{QStringLiteral("blockcheck-recover")});
 }
 
 void BlockcheckJobController::copyStrategy(int index)
