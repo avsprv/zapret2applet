@@ -249,10 +249,17 @@ void BlockcheckJobController::processStatus(const QByteArray &output)
     if(phase==QLatin1String("running")){setStatus(tr("Выполняется диагностика Blockcheck…"));return;}
     if(phase==QLatin1String("recovering")){setStatus(tr("Восстановление службы zapret2…"),StatusType::Warning);return;}
     if(phase==QLatin1String("recovery_pending")){setStatus(tr("Восстановление службы ещё не подтверждено; задание остаётся активным."),StatusType::Warning);return;}
-    if(phase==QLatin1String("recovery_failed")){m_terminalPhase=phase;setStatus(tr("Ошибка восстановления службы. Маркер восстановления сохранён."),StatusType::Error);m_pollTimer->stop();launch(ProcessTask::Logs,{QStringLiteral("blockcheck-job-logs"),QStringLiteral("500")});return;}
-    if(phase==QLatin1String("completed")||phase==QLatin1String("failed")||phase==QLatin1String("stale")){
+    if(phase==QLatin1String("recovery_failed")){m_terminalPhase=phase;setStatus(tr("Ошибка восстановления службы. Маркер восстановления сохранён."),StatusType::Error);m_pollTimer->stop();launch(ProcessTask::Logs,{QStringLiteral("blockcheck-job-logs"),QStringLiteral("500"),QString::number(m_startedAtSecs)});return;}
+    if(phase==QLatin1String("stale")){
+        m_terminalPhase=phase;
+        m_pollTimer->stop();
+        setStatus(tr("Идентификатор задания устарел; журнал другой операции не будет прочитан."),StatusType::Error);
+        finish(false);
+        return;
+    }
+    if(phase==QLatin1String("completed")||phase==QLatin1String("failed")){
         m_terminalPhase=phase;m_pollTimer->stop();setStatus(phase==QLatin1String("completed")?tr("Диагностика завершена; восстановление службы подтверждено."):tr("Диагностика завершилась с ошибкой или состояние задания устарело."),phase==QLatin1String("completed")?StatusType::Success:StatusType::Error);
-        launch(ProcessTask::Logs,{QStringLiteral("blockcheck-job-logs"),QStringLiteral("500")});return;
+        launch(ProcessTask::Logs,{QStringLiteral("blockcheck-job-logs"),QStringLiteral("500"),QString::number(m_startedAtSecs)});return;
     }
     setStatus(tr("Получено неизвестное состояние задания; ожидание продолжается."),StatusType::Warning);
 }
