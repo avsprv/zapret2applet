@@ -44,6 +44,7 @@ installed separately.
 %systemd_post zapret2applet-blockcheck-recovery.service
 
 %preun
+%systemd_preun zapret2applet-blockcheck.service
 %systemd_preun zapret2applet-blockcheck-recovery.service
 
 %postun
