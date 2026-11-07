@@ -25,12 +25,46 @@ private slots:
         QVERIFY(file.open(QIODevice::ReadOnly));
         const QByteArray content = file.readAll();
         QVERIFY(content.contains("X-Zapret2Applet-Managed=true"));
-        QVERIFY(content.contains("Exec=\"/usr/bin/zapret2applet\""));
+        QVERIFY(content.contains("Exec=\\"/usr/bin/zapret2applet\\""));
 
         controller.setEnabled(false);
         QVERIFY2(controller.errorMessage().isEmpty(), qPrintable(controller.errorMessage()));
         QVERIFY(!controller.enabled());
         QVERIFY(!file.exists());
+    }
+
+    void handlesDesktopExecSpecialCharacters()
+    {
+        QTemporaryDir directory;
+        QVERIFY(directory.isValid());
+        const QString executable = QStringLiteral("/opt/My App/$bin/100%/tool\`name\\part\\"quoted\\"");
+        AutostartController controller(nullptr, directory.path(), executable);
+
+        controller.setEnabled(true);
+        QVERIFY2(controller.errorMessage().isEmpty(), qPrintable(controller.errorMessage()));
+        QVERIFY(controller.enabled());
+
+        controller.setEnabled(false);
+        QVERIFY2(controller.errorMessage().isEmpty(), qPrintable(controller.errorMessage()));
+        QVERIFY(!controller.enabled());
+    }
+
+    void refusesDuplicateManagedKeys()
+    {
+        QTemporaryDir directory;
+        QVERIFY(directory.isValid());
+        QFile file(directory.filePath(QStringLiteral("zapret2applet.desktop")));
+        QVERIFY(file.open(QIODevice::WriteOnly));
+        file.write("[Desktop Entry]\\nType=Application\\nType=Application\\n"
+                   "Exec=\\"/usr/bin/zapret2applet\\"\\n"
+                   "X-Zapret2Applet-Managed=true\\n");
+        file.close();
+
+        AutostartController controller(nullptr, directory.path(), QStringLiteral("/usr/bin/zapret2applet"));
+        QVERIFY(!controller.enabled());
+        controller.setEnabled(false);
+        QVERIFY(!controller.errorMessage().isEmpty());
+        QVERIFY(file.exists());
     }
 
     void refusesToOverwriteUnmanagedEntry()
@@ -40,7 +74,7 @@ private slots:
         const QString path = directory.filePath(QStringLiteral("zapret2applet.desktop"));
         QFile file(path);
         QVERIFY(file.open(QIODevice::WriteOnly));
-        const QByteArray original("[Desktop Entry]\nType=Application\nName=User entry\nExec=user-command\n");
+        const QByteArray original("[Desktop Entry]\\nType=Application\\nName=User entry\\nExec=user-command\\n");
         QCOMPARE(file.write(original), qint64(original.size()));
         file.close();
 
@@ -59,7 +93,7 @@ private slots:
         const QString path = directory.filePath(QStringLiteral("zapret2applet.desktop"));
         QFile file(path);
         QVERIFY(file.open(QIODevice::WriteOnly));
-        const QByteArray original("[Desktop Entry]\nType=Application\nName=User entry\nExec=user-command\n");
+        const QByteArray original("[Desktop Entry]\\nType=Application\\nName=User entry\\nExec=user-command\\n");
         QCOMPARE(file.write(original), qint64(original.size()));
         file.close();
 
@@ -76,7 +110,7 @@ private slots:
         const QString target = directory.filePath(QStringLiteral("user.desktop"));
         QFile targetFile(target);
         QVERIFY(targetFile.open(QIODevice::WriteOnly));
-        targetFile.write("[Desktop Entry]\nType=Application\n");
+        targetFile.write("[Desktop Entry]\\nType=Application\\n");
         targetFile.close();
 
         const QString link = directory.filePath(QStringLiteral("zapret2applet.desktop"));
