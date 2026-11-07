@@ -85,6 +85,19 @@ int main(int argc, char *argv[])
     QObject::connect(&blockcheckController, &BlockcheckJobController::scanFinished,
                      &controller, [&] { controller.refresh(); });
 
+    const auto updateTrayState = [&] {
+        trayController.setServiceState(controller.serviceState(),
+                                       controller.serviceActive(),
+                                       controller.operationsBusy());
+    };
+    updateTrayState();
+    QObject::connect(&controller, &ApplicationController::serviceStateChanged, &app, updateTrayState);
+    QObject::connect(&controller, &ApplicationController::operationsBusyChanged, &app, updateTrayState);
+    QObject::connect(&trayController, &TrayController::startRequested,
+                     &controller, &ApplicationController::startService);
+    QObject::connect(&trayController, &TrayController::stopRequested,
+                     &controller, &ApplicationController::stopService);
+
     const QLocale initialLocale = localeForLanguage(settingsManager.language());
     QLocale::setDefault(initialLocale);
     QList<QTranslator *> translators = I18n::install(app, initialLocale);
@@ -103,6 +116,15 @@ int main(int argc, char *argv[])
 
     if (engine.rootObjects().isEmpty())
         return EXIT_FAILURE;
+
+    QObject *rootWindow = engine.rootObjects().constFirst();
+    QObject::connect(&trayController, &TrayController::activateRequested, &app, [rootWindow] {
+        QMetaObject::invokeMethod(rootWindow, "showWindow");
+    });
+    QObject::connect(&trayController, &TrayController::settingsRequested, &app, [rootWindow] {
+        QMetaObject::invokeMethod(rootWindow, "openSettings");
+    });
+    QObject::connect(&trayController, &TrayController::quitRequested, &app, &QCoreApplication::quit);
 
     QObject::connect(&settingsManager, &SettingsManager::languageChanged, &app, [&]() {
         for (QTranslator *translator : translators)
