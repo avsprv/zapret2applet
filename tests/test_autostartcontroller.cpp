@@ -1,4 +1,5 @@
 #include <QFile>
+#include <QFileInfo>
 #include <QTemporaryDir>
 #include <QtTest>
 
