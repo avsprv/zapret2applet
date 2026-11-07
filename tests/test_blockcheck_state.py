@@ -92,7 +92,8 @@ class StateTests(unittest.TestCase):
             with self.assertRaises(StateError):
                 self.store.recover_locked()
         self.assertTrue((self.state / "state.json").exists())
-        self.assertFalse(self.active.exists())
+        # A malformed marker must not trigger service state changes.
+        self.assertTrue(self.active.exists())
 
     def test_symlink_and_hardlink_markers_rejected(self):
         self.prepare(True)
