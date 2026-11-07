@@ -424,6 +424,7 @@ blockcheck-job-logs)
     [ "$#" -eq 3 ] || die "usage: blockcheck-job-logs {50|100|200|500} START_EPOCH"
     case "$2" in 50|100|200|500) lines=$2 ;; *) die "bad Blockcheck journal line count" ;; esac
     case "$3" in ''|*[!0-9]*) die "bad Blockcheck journal start time" ;; esac
+    [ "${#3}" -le 10 ] || die "bad Blockcheck journal start time"
     now=$(date +%s)
     [ "$3" -le "$now" ] && [ "$3" -ge "$((now - 2592000))" ] || die "Blockcheck journal start time is outside the allowed window"
     command -v "$JOURNALCTL" >/dev/null 2>&1 || die "journalctl is not available"
