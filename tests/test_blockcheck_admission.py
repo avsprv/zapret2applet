@@ -53,9 +53,10 @@ sys.exit(0)
         self.temp.cleanup()
 
     def test_admission_allows_idle_operation_and_holds_lock(self):
+        contender = StateStore(self.state.directory, systemctl=str(self.systemctl))
         def operation():
             with self.assertRaisesRegex(Exception, "another Blockcheck lifecycle operation"):
-                with self.state.locked(create=False, blocking=False):
+                with contender.locked(create=False, blocking=False):
                     pass
             return 0
         self.assertEqual(run_guarded(self.state, self.staged, operation), 0)
