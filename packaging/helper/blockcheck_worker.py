@@ -69,7 +69,7 @@ class BlockcheckWorker:
         if self.state_store._service_is_active():
             raise WorkerError(f"{SERVICE} remained active after stop request")
 
-    def run(self, operation_id: str) -> int:
+    def run(self, operation_id: str | None = None) -> int:
         """Run one UUID-bound request while holding the persistent lifecycle lock.
 
         A durable recovery marker is created before stopping zapret2. It is not
@@ -78,7 +78,10 @@ class BlockcheckWorker:
         script_fd = self._open_upstream_script()
         try:
             with self.state_store.locked(create=True):
-                options: BlockcheckOptions = self.staged_store.read_locked(operation_id)
+                if operation_id is None:
+                    operation_id, options = self.staged_store.read_pending_locked()
+                else:
+                    options = self.staged_store.read_locked(operation_id)
                 marker = self.state_store.prepare_locked(operation_id)
                 self.staged_store.consume_locked(operation_id)
 
