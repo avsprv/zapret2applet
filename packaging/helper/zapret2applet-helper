@@ -422,9 +422,28 @@ blockcheck-job-cancel)
     ;;
 blockcheck-job-logs)
     [ "$#" -eq 2 ] || die "usage: blockcheck-job-logs {50|100|200|500}"
-    case "$2" in 50|100|200|500) ;; *) die "bad Blockcheck journal line count" ;; esac
-    exec "$JOURNALCTL" --no-pager --quiet --output=cat \
-        --unit=zapret2applet-blockcheck.service --lines="$2"
+    case "$2" in 50|100|200|500) lines=$2 ;; *) die "bad Blockcheck journal line count" ;; esac
+    command -v "$JOURNALCTL" >/dev/null 2>&1 || die "journalctl is not available"
+    umask 077
+    tmp=$(mktemp /tmp/zapret2applet-blockcheck-journal.XXXXXX) || die "cannot create temporary journal output"
+    err=$(mktemp /tmp/zapret2applet-blockcheck-journal-error.XXXXXX) || {
+        rm -f "$tmp"
+        die "cannot create temporary journal error output"
+    }
+    trap 'rm -f "$tmp" "$err"' EXIT HUP INT TERM
+    if ! "$JOURNALCTL" --unit=zapret2applet-blockcheck.service --lines="$lines" --no-pager --output=short-iso > "$tmp" 2> "$err"; then
+        message=$(cat "$err")
+        [ -n "$message" ] || message="journalctl exited unsuccessfully"
+        die "cannot read Blockcheck journal: $message"
+    fi
+    size=$(wc -c < "$tmp" | tr -d '[:space:]')
+    case "$size" in ''|*[!0-9]*) die "cannot determine Blockcheck journal output size" ;; esac
+    if [ "$size" -gt 1048576 ]; then
+        printf '[zapret2applet: output truncated to the most recent 1 MiB]\n'
+        tail -c 1048500 "$tmp"
+    else
+        cat "$tmp"
+    fi
     ;;
 blockcheck-job-status)
     [ "$#" -eq 2 ] || die "usage: blockcheck-job-status OPERATION_UUID"
