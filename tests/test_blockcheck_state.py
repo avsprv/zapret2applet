@@ -81,7 +81,7 @@ class StateTests(unittest.TestCase):
 
     def _failing_systemctl(self, env):
         wrapper = self.root / "systemctl-fail"
-        wrapper.write_text("#!/bin/sh\\n[ \"$1\" = start ] && exit 1\\nexec \"" + str(self.fake) + "\" \"$@\"\\n")
+        wrapper.write_text("#!/bin/sh\n[ \"$1\" = start ] && exit 1\nexec \"" + str(self.fake) + "\" \"$@\"\n")
         wrapper.chmod(0o700)
         return str(wrapper)
 
@@ -138,6 +138,7 @@ class StateTests(unittest.TestCase):
 
     def test_lock_serializes_threads(self):
         self.store.directory.mkdir(mode=0o700)
+        second_store = StateStore(self.state, str(self.fake))
         entered = threading.Event()
         release = threading.Event()
         def holder():
@@ -153,7 +154,7 @@ class StateTests(unittest.TestCase):
             release.set()
         unlocker = threading.Thread(target=unlock)
         unlocker.start()
-        with self.store.locked():
+        with second_store.locked():
             elapsed = time.monotonic() - start
         thread.join()
         unlocker.join()
