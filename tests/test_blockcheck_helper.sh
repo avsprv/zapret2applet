@@ -5,7 +5,7 @@ H="${1:?usage: test_blockcheck_helper.sh /path/to/zapret2applet-helper}"
 W=$(mktemp -d)
 trap 'rm -rf "$W"' EXIT HUP INT TERM
 mkdir "$W/base"
-printf '#!/bin/sh\\nexit 0\\n' > "$W/base/blockcheck2.sh"
+printf '#!/bin/sh\nexit 0\n' > "$W/base/blockcheck2.sh"
 chmod 755 "$W/base/blockcheck2.sh"
 mkdir "$W/target"
 ln -s "$W/target" "$W/runtime-link"
