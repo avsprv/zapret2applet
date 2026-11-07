@@ -1658,6 +1658,10 @@
 <context>
     <name>BlockcheckPage</name>
     <message>
+        <source>Повторить восстановление</source>
+        <translation>Retry recovery</translation>
+    </message>
+    <message>
         <source>Восстановление zapret2 не подтверждено. Управление службой и обновление заблокированы. Проверьте журнал; после устранения причины можно повторить восстановление.</source>
         <translation>zapret2 recovery has not been confirmed. Service controls and updates are disabled. Inspect the journal; after resolving the cause, you can retry recovery.</translation>
     </message>
