@@ -411,6 +411,19 @@ unit)
         *) die "bad unit action" ;;
     esac
     ;;
+blockcheck-submit)
+    shift
+    module_dir=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd) || die "cannot locate helper modules"
+    exec /usr/bin/python3 "$module_dir/blockcheck_submit.py" "$@"
+    ;;
+blockcheck-job-cancel)
+    [ "$#" -eq 1 ] || die "usage: blockcheck-job-cancel"
+    exec systemctl stop --no-block zapret2applet-blockcheck.service
+    ;;
+blockcheck-job-status)
+    [ "$#" -eq 1 ] || die "usage: blockcheck-job-status"
+    exec systemctl show --property=ActiveState --value zapret2applet-blockcheck.service
+    ;;
 blockcheck-worker)
     [ "$#" -eq 1 ] || die "usage: blockcheck-worker"
     module_dir=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd) || die "cannot locate helper modules"
