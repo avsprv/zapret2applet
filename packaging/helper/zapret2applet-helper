@@ -553,6 +553,12 @@ blockcheck-cancel)
     ;;
 install)
     [ "$#" -eq 2 ] || die "usage: install vX.Y.Z"
+    module_dir=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd) || die "cannot locate helper modules"
+    exec /usr/bin/python3 "$module_dir/blockcheck_admission.py" install "$2"
+    ;;
+install-locked)
+    [ "${QZAPRET_BLOCKCHECK_GUARD:-}" = "held-v1" ] || die "install requires the Blockcheck lifecycle admission guard"
+    [ "$#" -eq 2 ] || die "usage: install vX.Y.Z"
     tag=$2
     case "$tag" in v[0-9]*) ;; *) die "bad tag" ;; esac
     case "$tag" in *[!0-9.v]*|*..*|*.|v*v*) die "bad tag" ;; esac
