@@ -19,11 +19,13 @@ class SubmitTests(unittest.TestCase):
         self.units = self.root / "units.json"
         self.units.write_text(json.dumps({WORKER_UNIT: "inactive", RECOVERY_UNIT: "inactive"}))
         self.commands = self.root / "commands"
+        self.fail_start = self.root / "fail-start"
         self.systemctl = self.root / "systemctl"
         script = """#!/usr/bin/env python3
 import json, pathlib, sys
 units_file = pathlib.Path(%r)
 commands_file = pathlib.Path(%r)
+fail_start = pathlib.Path(%r)
 args = sys.argv[1:]
 with commands_file.open("a") as out:
     out.write(" ".join(args) + "\\n")
@@ -33,9 +35,9 @@ if args[0] == "show":
     print(units.get(unit, ""))
     sys.exit(0 if unit in units else 4)
 if args[0] == "start" and "--no-block" in args:
-    sys.exit(0)
+    sys.exit(9 if fail_start.exists() else 0)
 sys.exit(1)
-""" % (str(self.units), str(self.commands))
+""" % (str(self.units), str(self.commands), str(self.fail_start))
         self.systemctl.write_text(script)
         self.systemctl.chmod(0o700)
         self.state = StateStore(self.root / "state", systemctl=str(self.systemctl))
@@ -65,16 +67,16 @@ sys.exit(1)
 
     def test_pending_marker_rejected(self):
         with self.state.locked(create=True):
-            self.state.prepare_locked()
+            self.state._write_marker({
+                "version": 1,
+                "operation_id": "12345678-1234-4234-8234-123456789abc",
+                "service_was_active": False,
+            })
         with self.assertRaisesRegex(SubmitError, "recovery is still pending"):
             self.submitter.submit(BlockcheckOptions())
 
     def test_failed_queue_discards_staged_request(self):
-        script = self.systemctl.read_text().replace(
-            'if args[0] == "start" and "--no-block" in args:\\n    sys.exit(0)',
-            'if args[0] == "start" and "--no-block" in args:\\n    sys.exit(9)')
-        self.systemctl.write_text(script)
-        self.systemctl.chmod(0o700)
+        self.fail_start.touch()
         with self.assertRaises(SubmitError):
             self.submitter.submit(BlockcheckOptions())
         self.assertFalse((self.root / "run" / "options.json").exists())
