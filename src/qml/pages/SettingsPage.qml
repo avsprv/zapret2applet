@@ -81,23 +81,6 @@ Kirigami.ScrollablePage {
             onToggled: settingsManager.autoCheckUpdates = checked
         }
 
-        Kirigami.Separator {
-            Layout.fillWidth: true
-        }
-
-        Kirigami.Heading {
-            Layout.fillWidth: true
-            level: 2
-            text: qsTr("Поведение")
-        }
-
-        Controls.CheckBox {
-            Layout.fillWidth: true
-            text: qsTr("Сворачивать приложение в системный трей при закрытии окна")
-            checked: settingsManager.closeToTray
-            onToggled: settingsManager.closeToTray = checked
-        }
-
         Kirigami.InlineMessage {
             Layout.fillWidth: true
             type: Kirigami.MessageType.Information
