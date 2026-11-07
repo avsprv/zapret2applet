@@ -15,6 +15,7 @@ private slots:
     void declineDoesNotSubmit();
     void submitsAndWaitsForVerifiedCompletion();
     void failedRecoveryKeepsServiceOperationsLocked();
+    void pendingRecoveryCanBeRetriedAfterSubmitRejection();
 
 private:
     QTemporaryDir m_temp;
@@ -30,7 +31,11 @@ void BlockcheckJobControllerTest::initTestCase()
     const QByteArray script=R"(#!/bin/sh
 case "$1" in
   blockcheck-submit)
-    printf '%s\n' '123e4567-e89b-42d3-a456-426614174000'
+    if [ "${QZAPRET_TEST_PENDING_RECOVERY:-0}" = 1 ]; then
+      echo 'a previous Blockcheck recovery is still pending (operation_id=123e4567-e89b-42d3-a456-426614174000)' >&2
+      exit 2
+    fi
+    printf '%s\\n' '123e4567-e89b-42d3-a456-426614174000'
     ;;
   blockcheck-job-status)
     if [ "${QZAPRET_TEST_RECOVERY_FAILED:-0}" = 1 ]; then
@@ -104,6 +109,21 @@ void BlockcheckJobControllerTest::submitsAndWaitsForVerifiedCompletion()
     QVERIFY(controller.logText().contains(QStringLiteral("working strategy found")));
     QCOMPARE(controller.statusSeverity(),QStringLiteral("Success"));
     QVERIFY(results.count()>0);
+}
+
+void BlockcheckJobControllerTest::pendingRecoveryCanBeRetriedAfterSubmitRejection()
+{
+    qputenv("QZAPRET_TEST_PENDING_RECOVERY","1");
+    BlockcheckJobController controller;
+    controller.start();
+    controller.confirmStop(true);
+    QTRY_VERIFY_WITH_TIMEOUT(!controller.busy(),5000);
+    QVERIFY(controller.recoveryRequired());
+    qunsetenv("QZAPRET_TEST_PENDING_RECOVERY");
+    controller.retryRecovery();
+    QVERIFY(controller.busy());
+    QTRY_VERIFY_WITH_TIMEOUT(!controller.busy(),5000);
+    QVERIFY(!controller.recoveryRequired());
 }
 
 void BlockcheckJobControllerTest::failedRecoveryKeepsServiceOperationsLocked()
