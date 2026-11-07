@@ -1,0 +1,160 @@
+#!/usr/bin/env python3
+"""Isolated tests for crash-safe Blockcheck recovery state."""
+import json
+import os
+import pathlib
+import stat
+import subprocess
+import sys
+import tempfile
+import threading
+import time
+import unittest
+import uuid
+
+sys.path.insert(0, str(pathlib.Path(__file__).resolve().parents[1] / "packaging" / "helper"))
+from blockcheck_state import StateError, StateStore
+
+class StateTests(unittest.TestCase):
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory()
+        self.root = pathlib.Path(self.tmp.name)
+        self.state = self.root / "state"
+        self.fake = self.root / "systemctl"
+        self.log = self.root / "calls"
+        self.active = self.root / "active"
+        self.fake.write_text("""#!/bin/sh
+set -eu
+printf '%s\\n' "$*" >> "$CALL_LOG"
+case "$1" in
+  is-active)
+    [ -e "$ACTIVE_FILE" ] && exit 0 || exit 3 ;;
+  start)
+    [ "${FAIL_START:-0}" = 1 ] && exit 1
+    : > "$ACTIVE_FILE" ;;
+  *) exit 64 ;;
+esac
+""")
+        self.fake.chmod(0o700)
+        self.env = dict(os.environ, CALL_LOG=str(self.log), ACTIVE_FILE=str(self.active))
+        self.store = StateStore(self.state, str(self.fake))
+
+    def tearDown(self):
+        self.tmp.cleanup()
+
+    def prepare(self, active=True):
+        if active:
+            self.active.touch()
+        with self.store.locked(create=True):
+            return self.store.prepare_locked()
+
+    def test_prepare_active_and_inactive(self):
+        active = self.prepare(True)
+        self.assertTrue(active["service_was_active"])
+        self.assertEqual(stat.S_IMODE((self.state / "state.json").stat().st_mode), 0o600)
+        self.assertFalse((self.state / "state.json").is_symlink())
+        (self.state / "state.json").unlink()
+        self.active.unlink()
+        inactive = self.prepare(False)
+        self.assertFalse(inactive["service_was_active"])
+
+    def test_recovery_restores_active_and_removes_marker(self):
+        self.prepare(True)
+        with self.store.locked():
+            self.store.recover_locked()
+        self.assertTrue(self.active.exists())
+        self.assertFalse((self.state / "state.json").exists())
+
+    def test_inactive_recovery_never_starts_service(self):
+        self.prepare(False)
+        with self.store.locked():
+            self.store.recover_locked()
+        self.assertFalse(self.active.exists())
+        self.assertNotIn("start zapret2.service", self.log.read_text())
+
+    def test_recovery_failure_keeps_marker(self):
+        self.prepare(True)
+        env = dict(self.env, FAIL_START="1")
+        # Override the fake executable's inherited environment for this invocation.
+        store = StateStore(self.state, self._failing_systemctl(env))
+        with store.locked():
+            with self.assertRaises(StateError):
+                store.recover_locked()
+        self.assertTrue((self.state / "state.json").exists())
+
+    def _failing_systemctl(self, env):
+        wrapper = self.root / "systemctl-fail"
+        wrapper.write_text("#!/bin/sh\\n[ \"$1\" = start ] && exit 1\\nexec \"" + str(self.fake) + "\" \"$@\"\\n")
+        wrapper.chmod(0o700)
+        return str(wrapper)
+
+    def test_malformed_marker_fails_closed(self):
+        self.prepare(True)
+        (self.state / "state.json").write_text("{broken")
+        with self.store.locked():
+            with self.assertRaises(StateError):
+                self.store.recover_locked()
+        self.assertTrue((self.state / "state.json").exists())
+        self.assertFalse(self.active.exists())
+
+    def test_symlink_and_hardlink_markers_rejected(self):
+        self.prepare(True)
+        marker = self.state / "state.json"
+        marker.unlink()
+        target = self.root / "target"
+        target.write_text("{}")
+        marker.symlink_to(target)
+        with self.store.locked():
+            with self.assertRaises(StateError):
+                self.store.recover_locked()
+        marker.unlink()
+        marker.write_text("{}")
+        os.link(marker, self.root / "linked")
+        with self.store.locked():
+            with self.assertRaises(StateError):
+                self.store.recover_locked()
+
+    def test_wrong_mode_and_wrong_owner_directory_rejected(self):
+        self.prepare(True)
+        os.chmod(self.state / "state.json", 0o640)
+        with self.store.locked():
+            with self.assertRaises(StateError):
+                self.store.recover_locked()
+        os.chmod(self.state / "state.json", 0o600)
+        os.chmod(self.state, 0o750)
+        with self.assertRaises(StateError):
+            with self.store.locked():
+                pass
+
+    def test_recovery_is_idempotent(self):
+        self.prepare(False)
+        with self.store.locked():
+            self.assertTrue(self.store.recover_locked())
+        with self.store.locked():
+            self.assertFalse(self.store.recover_locked())
+
+    def test_lock_serializes_threads(self):
+        self.store.directory.mkdir(mode=0o700)
+        entered = threading.Event()
+        release = threading.Event()
+        def holder():
+            with self.store.locked():
+                entered.set()
+                release.wait(3)
+        thread = threading.Thread(target=holder)
+        thread.start()
+        self.assertTrue(entered.wait(2))
+        start = time.monotonic()
+        def unlock():
+            time.sleep(0.25)
+            release.set()
+        unlocker = threading.Thread(target=unlock)
+        unlocker.start()
+        with self.store.locked():
+            elapsed = time.monotonic() - start
+        thread.join()
+        unlocker.join()
+        self.assertGreaterEqual(elapsed, 0.20)
+
+if __name__ == "__main__":
+    unittest.main(verbosity=2)
