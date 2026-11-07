@@ -44,4 +44,6 @@ private:
     bool m_watcherAvailable = false;
     bool m_registered = false;
     bool m_exported = false;
+    bool m_registrationPending = false;
+    QString m_watcherOwner;
 };
