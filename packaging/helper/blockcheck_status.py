@@ -75,7 +75,25 @@ def get_job_status(state: StateStore, staged: StagedOptionsStore, operation_id: 
             recovery = _unit_properties(state.systemctl, RECOVERY_UNIT)
     except StateError as exc:
         if "another Blockcheck lifecycle operation is active" in str(exc):
-            return {"version": 1, "operation_id": operation_id, "phase": "busy"}
+            # The worker holds the lifecycle lock for the complete upstream scan.
+            # Unit properties remain safe to query without that lock and provide
+            # useful live state without exposing the protected marker.
+            worker = _unit_properties(state.systemctl, WORKER_UNIT)
+            recovery = _unit_properties(state.systemctl, RECOVERY_UNIT)
+            if (worker["ActiveState"] == "deactivating"
+                    or recovery["ActiveState"] in {"active", "activating", "deactivating"}):
+                phase = "recovering"
+            elif worker["ActiveState"] in {"active", "activating"}:
+                phase = "running"
+            else:
+                phase = "busy"
+            return {
+                "version": 1,
+                "operation_id": operation_id,
+                "phase": phase,
+                "worker": worker,
+                "recovery": recovery,
+            }
         raise JobStatusError(str(exc)) from exc
 
     marker_id = marker["operation_id"] if marker else None
