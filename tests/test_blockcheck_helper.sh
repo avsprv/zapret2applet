@@ -50,7 +50,7 @@ ln -s "$W/target/pid" "$W/runtime-pid-link/blockcheck.pid"
 expect_reject 'runtime PID file' QZAPRET_TEST_RUNDIR="$W/runtime-pid-link"
 
 mkdir "$W/runtime-pid-hardlink"
-printf '99999999 1\\n' > "$W/runtime-pid-hardlink/pid-target"
+printf '99999999 1\n' > "$W/runtime-pid-hardlink/pid-target"
 chmod 600 "$W/runtime-pid-hardlink/pid-target"
 ln "$W/runtime-pid-hardlink/pid-target" "$W/runtime-pid-hardlink/blockcheck.pid"
 expect_reject 'runtime PID file' QZAPRET_TEST_RUNDIR="$W/runtime-pid-hardlink"
