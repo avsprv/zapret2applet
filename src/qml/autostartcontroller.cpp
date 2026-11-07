@@ -4,19 +4,57 @@
 #include <QDir>
 #include <QFile>
 #include <QFileInfo>
+#include <QHash>
 #include <QSaveFile>
-#include <QSettings>
 #include <QStandardPaths>
 
 namespace {
 QString escapeDesktopExecArgument(QString value)
 {
     value.replace(QLatin1Char('%'), QStringLiteral("%%"));
-    value.replace(QLatin1Char('\\'), QStringLiteral("\\\\"));
-    value.replace(QLatin1Char('"'), QStringLiteral("\\\""));
-    value.replace(QLatin1Char('`'), QStringLiteral("\\`"));
-    value.replace(QLatin1Char('$'), QStringLiteral("\\$"));
+    value.replace(QLatin1Char('\\\\'), QStringLiteral("\\\\\\\\"));
+    value.replace(QLatin1Char('"'), QStringLiteral("\\\\\""));
+    value.replace(QLatin1Char('`'), QStringLiteral("\\\\`"));
+    value.replace(QLatin1Char('$'), QStringLiteral("\\\\$"));
     return QLatin1Char('"') + value + QLatin1Char('"');
+}
+
+bool readDesktopEntryValue(const QString &path, const QString &key, QString *value)
+{
+    QFile file(path);
+    if (!file.open(QIODevice::ReadOnly | QIODevice::Text))
+        return false;
+
+    const QString contents = QString::fromUtf8(file.readAll());
+    if (file.error() != QFile::NoError)
+        return false;
+
+    bool inDesktopEntry = false;
+    bool found = false;
+    const QStringList lines = contents.split(QLatin1Char('\\n'));
+    for (QString line : lines) {
+        if (line.endsWith(QLatin1Char('\\r')))
+            line.chop(1);
+        if (line.isEmpty() || line.startsWith(QLatin1Char('#')))
+            continue;
+        if (line.startsWith(QLatin1Char('[')) && line.endsWith(QLatin1Char(']'))) {
+            if (inDesktopEntry)
+                break;
+            inDesktopEntry = (line == QLatin1String("[Desktop Entry]"));
+            continue;
+        }
+        if (!inDesktopEntry)
+            continue;
+
+        const qsizetype separator = line.indexOf(QLatin1Char('='));
+        if (separator < 0 || line.first(separator) != key)
+            continue;
+        if (found)
+            return false;
+        found = true;
+        *value = line.mid(separator + 1);
+    }
+    return found;
 }
 } // namespace
 
@@ -59,12 +97,15 @@ bool AutostartController::isManagedEntry() const
     if (!info.exists() || info.isSymLink() || !info.isFile())
         return false;
 
-    QSettings entry(entryPath(), QSettings::IniFormat);
-    entry.beginGroup(QStringLiteral("Desktop Entry"));
-    return entry.status() == QSettings::NoError
-        && entry.value(QStringLiteral("Type")).toString() == QLatin1String("Application")
-        && entry.value(QStringLiteral("X-Zapret2Applet-Managed")).toString() == QLatin1String("true")
-        && entry.value(QStringLiteral("Exec")).toString() == expectedExec();
+    QString type;
+    QString marker;
+    QString exec;
+    return readDesktopEntryValue(entryPath(), QStringLiteral("Type"), &type)
+        && readDesktopEntryValue(entryPath(), QStringLiteral("X-Zapret2Applet-Managed"), &marker)
+        && readDesktopEntryValue(entryPath(), QStringLiteral("Exec"), &exec)
+        && type == QLatin1String("Application")
+        && marker == QLatin1String("true")
+        && exec == expectedExec();
 }
 
 void AutostartController::setError(const QString &message)
@@ -102,15 +143,15 @@ void AutostartController::setEnabled(bool enabled)
             return;
         }
         const QByteArray data = QStringLiteral(
-            "[Desktop Entry]\n"
-            "Type=Application\n"
-            "Name=zapret2applet\n"
-            "Comment=Unofficial Qt6 GUI for zapret2\n"
-            "Exec=%1\n"
-            "Icon=zapret2applet\n"
-            "Terminal=false\n"
-            "X-GNOME-Autostart-enabled=true\n"
-            "X-Zapret2Applet-Managed=true\n").arg(expectedExec()).toUtf8();
+            "[Desktop Entry]\\n"
+            "Type=Application\\n"
+            "Name=zapret2applet\\n"
+            "Comment=Unofficial Qt6 GUI for zapret2\\n"
+            "Exec=%1\\n"
+            "Icon=zapret2applet\\n"
+            "Terminal=false\\n"
+            "X-GNOME-Autostart-enabled=true\\n"
+            "X-Zapret2Applet-Managed=true\\n").arg(expectedExec()).toUtf8();
         if (file.write(data) != data.size() || !file.commit()) {
             setError(tr("Не удалось сохранить файл автозапуска: %1").arg(file.errorString()));
             return;
