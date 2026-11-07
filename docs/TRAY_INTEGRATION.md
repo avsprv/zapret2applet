@@ -51,9 +51,10 @@ Menu item IDs are stable for the lifetime of the process. The menu is generated 
 
 Use freedesktop theme icon names and the project's Breeze-inspired monochrome assets. Do not send a pre-colored raster icon as the only representation.
 
-- Running/active service: normal monochrome application icon.
-- Inactive service: normal monochrome icon; do not encode status solely by hue.
-- Failed service or recovery required: attention state and a clear menu/status tooltip; the application must remain usable.
+- Running/active service and unknown state: monochrome application icon without a status tint.
+- Inactive service: retain the monochrome base icon and add a yellow status overlay/dot.
+- Failed service or recovery required: retain the monochrome base icon, add a red status overlay/dot, and use the SNI attention state with a clear menu/status tooltip.
+- Do not recolor the complete application glyph; status colors must be confined to the small overlay so the icon remains visually minimal.
 - Light/dark icon rendering is delegated to theme-compatible symbolic assets where possible. Any bundled fallback must be monochrome and scalable.
 
 ## Settings and autostart
