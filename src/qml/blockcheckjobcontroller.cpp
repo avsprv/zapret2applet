@@ -241,8 +241,9 @@ void BlockcheckJobController::processStatus(const QByteArray &output)
     }
     const QString phase=object.value(QStringLiteral("phase")).toString();
     const bool recoveryMarker=object.value(QStringLiteral("recovery_marker")).toBool();
-    if (phase==QLatin1String("recovery_failed")) setRecoveryRequired(true);
-    else if ((phase==QLatin1String("completed")||phase==QLatin1String("failed")||phase==QLatin1String("stale")) && !recoveryMarker)
+    if (phase==QLatin1String("recovery_failed") || phase==QLatin1String("stale"))
+        setRecoveryRequired(true);
+    else if ((phase==QLatin1String("completed")||phase==QLatin1String("failed")) && !recoveryMarker)
         setRecoveryRequired(false);
     if(phase==QLatin1String("busy")){setStatus(tr("Ожидание блокировки состояния Blockcheck…"));return;}
     if(phase==QLatin1String("queued")){setStatus(tr("Задание ожидает запуска systemd…"));return;}
