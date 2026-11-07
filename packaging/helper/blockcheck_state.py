@@ -141,9 +141,17 @@ class StateStore:
                 raise StateError("recovery marker exceeds size limit")
         finally:
             os.close(fd)
+        def reject_duplicate_keys(pairs):
+            value = {}
+            for key, item in pairs:
+                if key in value:
+                    raise ValueError(f"duplicate JSON key: {key}")
+                value[key] = item
+            return value
+
         try:
-            value = json.loads(raw.decode("ascii"))
-        except (UnicodeDecodeError, json.JSONDecodeError) as exc:
+            value = json.loads(raw.decode("ascii"), object_pairs_hook=reject_duplicate_keys)
+        except (UnicodeDecodeError, json.JSONDecodeError, ValueError) as exc:
             raise StateError(f"recovery marker is malformed: {exc}") from exc
         if (not isinstance(value, dict)
                 or set(value) != {"version", "operation_id", "service_was_active"}
