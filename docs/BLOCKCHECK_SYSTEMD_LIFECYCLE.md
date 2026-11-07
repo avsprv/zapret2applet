@@ -2,11 +2,12 @@
 
 ## Status
 
-Architecture decision for the QML/Kirigami migration branch. The durable state store,
-strict options schema, runtime staging protocol, and isolated worker orchestration are
-implemented and covered by CI. Systemd units, helper command integration, boot recovery,
-and GUI job-client integration are not implemented yet; crash recovery is not available
-in the product until those pieces are installed and activated.
+Architecture decision for the QML/Kirigami migration branch. The durable state store, strict options schema, runtime staging protocol, worker,
+submission admission control, recovery entry point, helper commands, and systemd unit
+templates are implemented. The unit templates are installed by CMake and included in
+Debian/Fedora packaging metadata. The GUI job client and end-to-end runtime validation
+on a systemd host are still pending; the production GUI continues to use its legacy
+Blockcheck path.
 
 ## Problem
 
