@@ -27,11 +27,23 @@ struct DBusMenuItemProperties
 QDBusArgument &operator<<(QDBusArgument &argument, const DBusMenuItemProperties &item);
 const QDBusArgument &operator>>(const QDBusArgument &argument, DBusMenuItemProperties &item);
 
+struct DBusMenuItemPropertyNames
+{
+    int id = 0;
+    QStringList properties;
+};
+
+QDBusArgument &operator<<(QDBusArgument &argument, const DBusMenuItemPropertyNames &item);
+const QDBusArgument &operator>>(const QDBusArgument &argument, DBusMenuItemPropertyNames &item);
+
 using DBusMenuItemPropertiesList = QList<DBusMenuItemProperties>;
+using DBusMenuItemPropertyNamesList = QList<DBusMenuItemPropertyNames>;
 
 Q_DECLARE_METATYPE(DBusMenuLayoutItem)
 Q_DECLARE_METATYPE(DBusMenuItemProperties)
 Q_DECLARE_METATYPE(DBusMenuItemPropertiesList)
+Q_DECLARE_METATYPE(DBusMenuItemPropertyNames)
+Q_DECLARE_METATYPE(DBusMenuItemPropertyNamesList)
 
 class DBusMenu final : public QObject, protected QDBusContext
 {
@@ -66,7 +78,7 @@ public slots:
 signals:
     void LayoutUpdated(uint revision, int parent);
     void ItemsPropertiesUpdated(const DBusMenuItemPropertiesList &updatedProperties,
-                                const QList<QPair<int, QStringList>> &removedProperties);
+                                const DBusMenuItemPropertyNamesList &removedProperties);
     void activateRequested();
     void startRequested();
     void stopRequested();
