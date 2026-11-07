@@ -18,7 +18,6 @@ BuildRequires:  cmake(Qt6LinguistTools) >= 6.8
 BuildRequires:  cmake(Qt6Test) >= 6.8
 BuildRequires:  desktop-file-utils
 BuildRequires:  appstream
-BuildRequires:  appstream
 BuildRequires:  systemd-rpm-macros
 # test dependencies for the privileged helper
 BuildRequires:  curl
