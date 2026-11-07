@@ -105,7 +105,7 @@ public:
         qDBusRegisterMetaType<TrayToolTip>();
     }
 
-    QString category() const { return QStringLiteral("SystemServices"); }
+    QString category() const { return QStringLiteral("ApplicationStatus"); }
     QString id() const { return QStringLiteral("zapret2applet"); }
     QString title() const { return QCoreApplication::applicationName(); }
     uint windowId() const { return 0; }
