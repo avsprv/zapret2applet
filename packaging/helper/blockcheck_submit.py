@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """Validate, stage, and queue a single systemd-owned Blockcheck operation."""
 from __future__ import annotations
 import argparse
