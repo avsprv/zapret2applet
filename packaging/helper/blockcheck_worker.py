@@ -101,3 +101,17 @@ class BlockcheckWorker:
                 return result.returncode
         finally:
             os.close(script_fd)
+
+def main() -> int:
+    import sys
+    state = StateStore("/var/lib/zapret2applet/blockcheck")
+    staged = StagedOptionsStore(state, "/run/zapret2applet/blockcheck")
+    try:
+        return BlockcheckWorker(state, staged).run()
+    except StateError as exc:
+        print(f"zapret2applet blockcheck worker: {exc}", file=sys.stderr)
+        return 1
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
