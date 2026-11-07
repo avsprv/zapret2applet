@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """Strict Blockcheck option schema and upstream process environment.
 
 This module intentionally does not manage systemd or service recovery yet.
