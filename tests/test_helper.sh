@@ -46,6 +46,7 @@ expect_reject update 'v1.0.7;id'
 expect_reject update 'v1.$(id)'
 expect_reject update v1..7
 expect_reject update ../v1.0.7
+expect_reject update-locked v1.0.7
 
 # blockcheck-cancel без запущенного blockcheck — не ошибка
 "$H" blockcheck-cancel >/dev/null 2>&1 || { echo "FAIL: cancel should exit 0"; fail=1; }

@@ -6,6 +6,20 @@ fail=0
 W=$(mktemp -d "${TMPDIR:-/tmp}/qz-upd.XXXXXX") || exit 1
 trap 'rm -rf "$W"' EXIT
 
+# The admission guard queries both installed systemd units before updating.
+SYSTEMCTL=$W/systemctl
+cat > "$SYSTEMCTL" <<'EOS'
+#!/bin/sh
+[ "$1" = show ] || exit 1
+for unit do :; done
+case "$unit" in
+    zapret2applet-blockcheck.service|zapret2applet-blockcheck-recovery.service) ;;
+    *) exit 4 ;;
+esac
+printf 'LoadState=loaded\\nActiveState=inactive\\nSubState=dead\\nResult=success\\nExecMainStatus=0\\n'
+EOS
+chmod 700 "$SYSTEMCTL"
+
 ok()  { echo "ok: $*"; }
 bad() { echo "FAIL: $*"; fail=1; }
 
@@ -64,7 +78,7 @@ make_base() {
 
 run_update() {
     QZAPRET_TEST_BASE=$W/opt/zapret2 QZAPRET_TEST_RUNDIR=$W/run QZAPRET_TEST_NO_SERVICE=1 \
-    QZAPRET_TEST_URLBASE="file://$W/rel" "$H" update "$1" 2>&1
+    QZAPRET_TEST_SYSTEMCTL=$SYSTEMCTL QZAPRET_TEST_URLBASE="file://$W/rel" "$H" update "$1" 2>&1
 }
 
 expect_untouched() {
