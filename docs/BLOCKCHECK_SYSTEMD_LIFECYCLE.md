@@ -13,7 +13,8 @@ or malformed state. The QML preview now uses an asynchronous job client for subm
 status polling, cancellation, bounded journal reads, strategy extraction, and recovery
 state handling. A shared privileged admission guard now serializes service start/stop/
 enable/disable and the complete upstream update transaction with Blockcheck submission
-and recovery. It rejects pending markers, staged jobs, active worker/recovery units, and
+and recovery. Clean installation and updates both hold the same guard for their complete
+transactions. It rejects pending markers, staged jobs, active worker/recovery units, and
 unverifiable systemd state; a failed worker unit is tolerated only when no durable
 recovery marker remains. End-to-end runtime validation on a systemd host is still
 pending; the installed production Widgets application continues to use its legacy
@@ -117,11 +118,12 @@ Required invariants:
    `multi-user.target` job. No ordering dependency with `zapret2.service` is introduced;
    the recovery command itself starts and verifies the service when the marker requires it.
 
-8. Service management and upstream updates enter the same persistent lifecycle lock
-   through `blockcheck_admission.py`. The lock is held across the complete
+8. Service management, clean installation, and upstream updates enter the same persistent
+   lifecycle lock through `blockcheck_admission.py`. The lock is held across the complete
    `systemctl start/stop/enable/disable zapret2.service` action and across the full
    update transaction, including stop, file replacement, rollback, and service restore.
-   Admission rejects a pending recovery marker, staged options, a busy lifecycle lock,
+   The clean-install transaction is also guarded from its initial validation through
+   archive verification, installation, and systemd reload. Admission rejects a pending recovery marker, staged options, a busy lifecycle lock,
    a non-idle recovery unit, or any untrusted systemd query. The worker unit may remain
    in systemd's `failed` state after a scan failure only when the durable recovery
    marker is absent; this allows normal service administration after verified recovery.
@@ -168,8 +170,9 @@ worker unit is static and must not be enabled at boot. The helper submit/cancel/
 commands are restricted to the fixed Blockcheck unit name; no caller-supplied unit name
 is accepted.
 
-The helper's zapret installation/update paths must preserve their current behavior and
-must not overwrite the application-owned Blockcheck units. The recovery unit must work
+The helper's zapret clean-install/update paths must preserve their current behavior,
+must hold the shared Blockcheck admission lock for the full transaction, and must not
+overwrite the application-owned Blockcheck units. The recovery unit must work
 even when the GUI package is upgraded while a marker exists.
 
 ## Required tests
@@ -188,7 +191,8 @@ host's real `zapret2.service`.
 - concurrent start/cancel/recovery/service-management/update operations serialize correctly;
 - a staged request or durable recovery marker blocks service-management and update admission;
 - failed worker state without a recovery marker does not permanently block service operations;
-- direct invocation of the internal update entry point without the admission guard is rejected;
+- direct invocation of the internal update or clean-install entry point without the admission guard is rejected;
+- a pending recovery marker or staged Blockcheck request blocks clean installation;
 - repeated recovery is idempotent;
 - package install/remove and systemd daemon-reload behavior are validated.
 
