@@ -76,8 +76,20 @@ def get_job_status(state: StateStore, staged: StagedOptionsStore, operation_id: 
     except StateError as exc:
         if "another Blockcheck lifecycle operation is active" in str(exc):
             # The worker holds the lifecycle lock for the complete upstream scan.
-            # Unit properties remain safe to query without that lock and provide
-            # useful live state without exposing the protected marker.
+            # The marker is atomically replaced and can be safely snapshotted to
+            # correlate this UUID without weakening lifecycle serialization.
+            marker = state.read_marker_snapshot()
+            if marker is None:
+                return {"version": 1, "operation_id": operation_id, "phase": "busy"}
+            marker_id = marker["operation_id"]
+            if marker_id != operation_id:
+                return {
+                    "version": 1,
+                    "operation_id": operation_id,
+                    "phase": "stale",
+                    "recovery_marker": True,
+                    "recovery_operation_id": marker_id,
+                }
             worker = _unit_properties(state.systemctl, WORKER_UNIT)
             recovery = _unit_properties(state.systemctl, RECOVERY_UNIT)
             if (worker["ActiveState"] == "deactivating"
@@ -85,23 +97,35 @@ def get_job_status(state: StateStore, staged: StagedOptionsStore, operation_id: 
                 phase = "recovering"
             elif worker["ActiveState"] in {"active", "activating"}:
                 phase = "running"
+            elif (worker["ActiveState"] == "failed"
+                  or (worker["Result"] and worker["Result"] not in {"success", "start-limit-hit"})
+                  or recovery["ActiveState"] == "failed"
+                  or (recovery["Result"] and recovery["Result"] not in {"success", "start-limit-hit"})):
+                phase = "recovery_failed"
             else:
-                phase = "busy"
+                phase = "recovery_pending"
             return {
                 "version": 1,
                 "operation_id": operation_id,
                 "phase": phase,
                 "worker": worker,
                 "recovery": recovery,
+                "recovery_marker": True,
             }
         raise JobStatusError(str(exc)) from exc
 
     marker_id = marker["operation_id"] if marker else None
     pending_id = pending[0] if pending else None
     if marker_id and marker_id != operation_id:
-        phase = "stale"
+        return {
+            "version": 1, "operation_id": operation_id, "phase": "stale",
+            "recovery_marker": True, "recovery_operation_id": marker_id,
+        }
     elif pending_id and pending_id != operation_id:
-        phase = "stale"
+        return {
+            "version": 1, "operation_id": operation_id, "phase": "stale",
+            "recovery_marker": False, "staged_options": True, "staged_operation_id": pending_id,
+        }
     elif marker_id:
         if worker["ActiveState"] == "deactivating" or recovery["ActiveState"] in {"active", "activating", "deactivating"}:
             # ExecStopPost runs inside the worker unit; the separate boot
