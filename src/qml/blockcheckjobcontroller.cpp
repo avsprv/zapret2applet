@@ -51,6 +51,7 @@ QString BlockcheckJobController::statusSeverity() const {
     return QStringLiteral("Information");
 }
 bool BlockcheckJobController::busy() const { return m_busy; }
+bool BlockcheckJobController::recoveryRequired() const { return m_recoveryRequired; }
 bool BlockcheckJobController::updateBusy() const { return m_updateBusy; }
 void BlockcheckJobController::setUpdateBusy(bool v) { if (m_updateBusy != v) { m_updateBusy=v; emit updateBusyChanged(); } }
 void BlockcheckJobController::setServiceBusy(bool v) { m_serviceBusy=v; }
@@ -64,6 +65,11 @@ void BlockcheckJobController::setBusy(bool v)
 {
     if (m_busy == v) return;
     m_busy=v; emit busyChanged();
+}
+void BlockcheckJobController::setRecoveryRequired(bool v)
+{
+    if (m_recoveryRequired == v) return;
+    m_recoveryRequired=v; emit recoveryRequiredChanged();
 }
 void BlockcheckJobController::appendLog(const QString &line)
 {
@@ -205,6 +211,10 @@ void BlockcheckJobController::processStatus(const QByteArray &output)
         setStatus(tr("Получено состояние другого задания; операция не считается завершённой."),StatusType::Error);return;
     }
     const QString phase=object.value(QStringLiteral("phase")).toString();
+    const bool recoveryMarker=object.value(QStringLiteral("recovery_marker")).toBool();
+    if (phase==QLatin1String("recovery_failed")) setRecoveryRequired(true);
+    else if ((phase==QLatin1String("completed")||phase==QLatin1String("failed")||phase==QLatin1String("stale")) && !recoveryMarker)
+        setRecoveryRequired(false);
     if(phase==QLatin1String("busy")){setStatus(tr("Ожидание блокировки состояния Blockcheck…"));return;}
     if(phase==QLatin1String("queued")){setStatus(tr("Задание ожидает запуска systemd…"));return;}
     if(phase==QLatin1String("running")){setStatus(tr("Выполняется диагностика Blockcheck…"));return;}
