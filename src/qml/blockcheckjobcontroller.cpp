@@ -53,6 +53,7 @@ QString BlockcheckJobController::statusSeverity() const {
 }
 bool BlockcheckJobController::busy() const { return m_busy; }
 bool BlockcheckJobController::recoveryRequired() const { return m_recoveryRequired; }
+bool BlockcheckJobController::recoveryRetryAvailable() const { return m_recoveryRequired && !m_busy && !m_operationId.isEmpty(); }
 bool BlockcheckJobController::updateBusy() const { return m_updateBusy; }
 void BlockcheckJobController::setUpdateBusy(bool v) { if (m_updateBusy != v) { m_updateBusy=v; emit updateBusyChanged(); } }
 void BlockcheckJobController::setServiceBusy(bool v) { m_serviceBusy=v; }
@@ -184,11 +185,11 @@ void BlockcheckJobController::handleProcessFinished(QProcess *process,int exitCo
         else if(task==ProcessTask::Submit){
             if(error.contains(QStringLiteral("recovery is still pending"),Qt::CaseInsensitive)
                 || error.contains(QStringLiteral("recovery marker"),Qt::CaseInsensitive)){
-                setRecoveryRequired(true);
                 static const QRegularExpression pendingIdRe(
                     QStringLiteral("operation_id=([0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12})"));
                 const auto match=pendingIdRe.match(error);
                 if(match.hasMatch())m_operationId=match.captured(1);
+                setRecoveryRequired(true);
             }
             finish(false);
         }
@@ -258,6 +259,7 @@ void BlockcheckJobController::processStatus(const QByteArray &output)
         if(uuidRe.match(recoveryOperationId).hasMatch()){
             m_operationId=recoveryOperationId;
             m_startedAtSecs=QDateTime::currentSecsSinceEpoch();
+            emit recoveryRequiredChanged();
         }
         m_terminalPhase=phase;
         m_pollTimer->stop();
@@ -322,7 +324,7 @@ void BlockcheckJobController::cancel()
 
 void BlockcheckJobController::retryRecovery()
 {
-    if(!m_recoveryRequired||m_busy||m_operationId.isEmpty())return;
+    if(!recoveryRetryAvailable())return;
     setBusy(true);
     setStatus(tr("Повторная попытка восстановления службы zapret2…"),StatusType::Warning);
     launch(ProcessTask::Recovery,{QStringLiteral("blockcheck-recover")});
