@@ -155,6 +155,7 @@ TrayController::TrayController(QObject *parent)
 {
     connect(m_watcher, &QDBusServiceWatcher::serviceOwnerChanged,
             this, [this](const QString &, const QString &, const QString &newOwner) {
+        m_watcherOwner = newOwner;
         const bool available = !newOwner.isEmpty();
         if (m_watcherAvailable != available) {
             m_watcherAvailable = available;
@@ -212,7 +213,8 @@ void TrayController::refreshWatcherAvailability()
 
     const QDBusReply<QString> owner =
         m_bus.interface()->serviceOwner(QString::fromLatin1(watcherService));
-    const bool available = owner.isValid() && !owner.value().isEmpty();
+    m_watcherOwner = owner.isValid() ? owner.value() : QString{};
+    const bool available = !m_watcherOwner.isEmpty();
     if (m_watcherAvailable != available) {
         m_watcherAvailable = available;
         emit watcherAvailableChanged();
@@ -225,7 +227,8 @@ void TrayController::refreshWatcherAvailability()
 
 void TrayController::registerWithWatcher()
 {
-    if (!m_watcherAvailable || !m_bus.isConnected())
+    if (!m_watcherAvailable || m_watcherOwner.isEmpty() || !m_bus.isConnected()
+        || m_registered || m_registrationPending)
         return;
 
     if (!m_exported) {
@@ -252,6 +255,9 @@ void TrayController::registerWithWatcher()
         m_exported = true;
     }
 
+    const QString expectedOwner = m_watcherOwner;
+    m_registrationPending = true;
+
     QDBusMessage message = QDBusMessage::createMethodCall(
         QString::fromLatin1(watcherService),
         QString::fromLatin1(watcherPath),
@@ -261,14 +267,23 @@ void TrayController::registerWithWatcher()
 
     auto *call = new QDBusPendingCallWatcher(m_bus.asyncCall(message), this);
     connect(call, &QDBusPendingCallWatcher::finished, this,
-            [this](QDBusPendingCallWatcher *watcher) {
+            [this, expectedOwner](QDBusPendingCallWatcher *watcher) {
+        m_registrationPending = false;
         QDBusPendingReply<> reply = *watcher;
         if (reply.isError()) {
             setRegistered(false);
             qWarning() << "StatusNotifierItem registration failed:"
                        << reply.error().message();
         } else {
-            setRegistered(true);
+            const QDBusReply<QString> currentOwner =
+                m_bus.interface()->serviceOwner(QString::fromLatin1(watcherService));
+            if (m_watcherAvailable && currentOwner.isValid()
+                && currentOwner.value() == expectedOwner) {
+                setRegistered(true);
+            } else {
+                setRegistered(false);
+                refreshWatcherAvailability();
+            }
         }
         watcher->deleteLater();
     });
