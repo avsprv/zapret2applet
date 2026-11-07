@@ -58,9 +58,10 @@ Use freedesktop theme icon names and the project's Breeze-inspired monochrome as
 
 ## Settings and autostart
 
+- GUI autostart is implemented in the QML preview through `AutostartController` and an XDG Autostart desktop entry. It does not enable or start `zapret2.service`.
+- The controller writes atomically, uses the current user's config directory, marks its own entry, refuses to overwrite an unmanaged entry or follow a symlink, and removes only an entry whose ownership marker and executable match.
+- The setting is exposed on the QML Settings page. It launches the application normally until tray support is implemented; it does not pass `--minimized` yet.
 - Re-enable `tray/closeToTray` in QML settings only after the tray registration lifecycle and no-watcher fallback are tested.
-- Add GUI autostart as a separate setting and implement it with an XDG Autostart desktop entry. It must not enable or start `zapret2.service`.
-- Do not duplicate autostart entries. Write atomically, use the current user's config directory, and remove only the entry owned by this application.
 - A missing tray watcher must not make GUI autostart unusable.
 
 ## Build and dependency boundary
@@ -81,6 +82,7 @@ Use freedesktop theme icon names and the project's Breeze-inspired monochrome as
 - Close-to-tray hides only when registration is available; otherwise the application exits.
 - Explicit Quit always exits.
 - QML target links QtDBus and does not link Qt Widgets.
+- XDG autostart creates and removes only a managed entry, refuses unmanaged files and symlinks, and preserves user-owned entries.
 - No tests call the host session bus or control the host's real zapret2 service; use a private D-Bus test bus and fake service backend.
 
 ## Upstream specifications
