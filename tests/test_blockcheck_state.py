@@ -95,6 +95,18 @@ class StateTests(unittest.TestCase):
         # A malformed marker must not trigger service state changes.
         self.assertTrue(self.active.exists())
 
+    def test_duplicate_marker_keys_fail_closed(self):
+        self.prepare(True)
+        (self.state / "state.json").write_text(
+            '{"version":1,"operation_id":"00000000-0000-4000-8000-000000000001",'
+            '"service_was_active":true,"service_was_active":false}'
+        )
+        with self.store.locked():
+            with self.assertRaises(StateError):
+                self.store.recover_locked()
+        self.assertTrue(self.active.exists())
+        self.assertTrue((self.state / "state.json").exists())
+
     def test_symlink_and_hardlink_markers_rejected(self):
         self.prepare(True)
         marker = self.state / "state.json"
@@ -150,6 +162,18 @@ class StateTests(unittest.TestCase):
         (self.state / "lock").write_text("")
         os.chmod(self.state / "lock", 0o600)
         os.link(self.state / "lock", self.root / "linked-lock")
+        with self.assertRaises(StateError):
+            with self.store.locked():
+                pass
+
+    def test_lock_wrong_owner_rejected(self):
+        if os.geteuid() != 0:
+            self.skipTest("requires root to change lock ownership")
+        self.state.mkdir(mode=0o700)
+        lock = self.state / "lock"
+        lock.write_text("")
+        os.chmod(lock, 0o600)
+        os.chown(lock, 65534, 65534)
         with self.assertRaises(StateError):
             with self.store.locked():
                 pass
