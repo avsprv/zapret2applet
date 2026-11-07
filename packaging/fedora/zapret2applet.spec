@@ -48,7 +48,7 @@ installed separately.
 %systemd_preun zapret2applet-blockcheck-recovery.service
 
 %postun
-%systemd_postun
+%systemd_postun zapret2applet-blockcheck.service zapret2applet-blockcheck-recovery.service
 
 %build
 %cmake -G Ninja -DCMAKE_SKIP_RPATH=ON
