@@ -43,8 +43,12 @@ class BlockcheckSubmitter:
         operation_id = str(uuid.uuid4())
         try:
             with self.state.locked(create=True, blocking=False):
-                if self.state._read_marker() is not None:
-                    raise SubmitError("a previous Blockcheck recovery is still pending")
+                marker = self.state._read_marker()
+                if marker is not None:
+                    raise SubmitError(
+                        "a previous Blockcheck recovery is still pending "
+                        f"(operation_id={marker['operation_id']})"
+                    )
                 for unit in (WORKER_UNIT, RECOVERY_UNIT):
                     unit_state = self._unit_state(unit)
                     if unit_state != "inactive":
