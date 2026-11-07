@@ -42,7 +42,7 @@ case "$1" in
   blockcheck-job-logs)
     printf '%s\n' '!!!!! curl_test_https_tls12: working strategy found for ipv4 example.org : nfqws2 --dpi-desync=fake !!!!!'
     ;;
-  blockcheck-job-cancel)
+  blockcheck-job-cancel|blockcheck-recover)
     exit 0
     ;;
   *)
@@ -119,6 +119,11 @@ void BlockcheckJobControllerTest::failedRecoveryKeepsServiceOperationsLocked()
     controller.start();
     QVERIFY(controller.status().contains(QStringLiteral("другой операции")));
     qunsetenv("QZAPRET_TEST_RECOVERY_FAILED");
+    controller.retryRecovery();
+    QVERIFY(controller.busy());
+    QTRY_VERIFY_WITH_TIMEOUT(!controller.busy(),5000);
+    QVERIFY(!controller.recoveryRequired());
+    QCOMPARE(controller.statusSeverity(),QStringLiteral("Success"));
 }
 
 QTEST_GUILESS_MAIN(BlockcheckJobControllerTest)
