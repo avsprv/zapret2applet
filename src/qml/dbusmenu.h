@@ -1,6 +1,7 @@
 #pragma once
 
 #include <QDBusArgument>
+#include <QDBusContext>
 #include <QDBusVariant>
 #include <QList>
 #include <QObject>
@@ -32,7 +33,7 @@ Q_DECLARE_METATYPE(DBusMenuLayoutItem)
 Q_DECLARE_METATYPE(DBusMenuItemProperties)
 Q_DECLARE_METATYPE(DBusMenuItemPropertiesList)
 
-class DBusMenu final : public QObject
+class DBusMenu final : public QObject, protected QDBusContext
 {
     Q_OBJECT
     Q_CLASSINFO("D-Bus Interface", "com.canonical.dbusmenu")
