@@ -92,8 +92,8 @@ def _run_command(command: list[str], env: dict[str, str] | None = None) -> int:
 
 def main(argv: list[str] | None = None) -> int:
     args = list(sys.argv[1:] if argv is None else argv)
-    if len(args) != 2 or args[0] not in {"unit", "update"}:
-        print("usage: blockcheck_admission.py {unit ACTION|update TAG}", file=sys.stderr)
+    if len(args) != 2 or args[0] not in {"unit", "update", "install"}:
+        print("usage: blockcheck_admission.py {unit ACTION|update TAG|install TAG}", file=sys.stderr)
         return 2
 
     action, value = args
@@ -111,7 +111,7 @@ def main(argv: list[str] | None = None) -> int:
         if (len(value) > 24 or not value.startswith("v")
                 or any(ch not in "0123456789.v" for ch in value)
                 or ".." in value or value.endswith(".") or "vv" in value):
-            print("zapret2applet admission: invalid update tag", file=sys.stderr)
+            print(f"zapret2applet admission: invalid {action} tag", file=sys.stderr)
             return 2
         helper = Path(__file__).with_name("zapret2applet-helper")
         if not helper.is_file():
@@ -119,7 +119,8 @@ def main(argv: list[str] | None = None) -> int:
             return 1
         env = os.environ.copy()
         env[GUARD_ENV] = GUARD_VALUE
-        operation = lambda: _run_command([str(helper), "update-locked", value], env=env)
+        locked_action = "install-locked" if action == "install" else "update-locked"
+        operation = lambda: _run_command([str(helper), locked_action, value], env=env)
 
     try:
         return run_guarded(state, staged, operation)
