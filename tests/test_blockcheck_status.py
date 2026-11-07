@@ -89,6 +89,8 @@ for key, value in zip(keys, states[unit]):
         self.assertEqual(self._status()["phase"], "running")
 
     def test_worker_lock_contention_still_reports_running_unit(self):
+        with self.state.locked():
+            self.state.prepare_locked(self.operation_id)
         self.states["zapret2applet-blockcheck.service"] = ("loaded", "active", "running", "success", "0")
         self._write_fixture()
         acquired = threading.Event()
