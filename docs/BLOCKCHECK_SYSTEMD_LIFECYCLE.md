@@ -2,8 +2,11 @@
 
 ## Status
 
-Architecture decision for the QML/Kirigami migration branch. This document describes the
-target lifecycle; it does not claim that crash recovery is implemented.
+Architecture decision for the QML/Kirigami migration branch. The durable state store,
+strict options schema, runtime staging protocol, and isolated worker orchestration are
+implemented and covered by CI. Systemd units, helper command integration, boot recovery,
+and GUI job-client integration are not implemented yet; crash recovery is not available
+in the product until those pieces are installed and activated.
 
 ## Problem
 
@@ -81,13 +84,16 @@ Required invariants:
    a bounded options record atomically into a root-owned `/run/zapret2applet/`
    directory, then queues `systemctl start --no-block zapret2applet-blockcheck.service`.
    It must reject a second submission while the unit or a recovery operation is active.
-2. The static worker unit invokes a dedicated helper worker command. The worker acquires
-   the persistent lifecycle lock, validates and consumes the staged options record,
-   queries the actual active state of `zapret2.service`, and writes the durable recovery
-   marker. It must not accept arbitrary shell fragments or source the options record.
+2. The static worker unit invokes a dedicated helper worker command. The worker securely
+   opens and validates the staged options record while holding the persistent lifecycle
+   lock, queries the actual active state of `zapret2.service`, and writes the durable
+   recovery marker with the same operation ID. Only after the marker is durable does it
+   consume the staged options record. It must not accept arbitrary shell fragments or
+   source the options record.
 3. If the service was active, the worker stops it and verifies that it is inactive.
    If it was inactive, it leaves it untouched.
-4. The worker executes the pinned upstream `blockcheck2.sh` with a clean environment.
+4. The worker securely opens the installed upstream `blockcheck2.sh`, checks its type,
+   owner, and write permissions, then executes it with a clean allowlisted environment.
 5. On normal completion or cancellation, upstream cleanup runs and the unit exits.
    systemd invokes `ExecStopPost=` to run recovery. The unit uses a bounded
    `TimeoutStopSec=` and normal SIGTERM delivery; SIGKILL is only systemd's final
