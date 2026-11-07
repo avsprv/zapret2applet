@@ -4,10 +4,13 @@
 
 Architecture decision for the QML/Kirigami migration branch. The durable state store, strict options schema, runtime staging protocol, worker,
 submission admission control, recovery entry point, helper commands, and systemd unit
-templates are implemented. The unit templates are installed by CMake and included in
-Debian/Fedora packaging metadata. The GUI job client and end-to-end runtime validation
-on a systemd host are still pending; the production GUI continues to use its legacy
-Blockcheck path.
+templates are implemented. The unit templates and UUID-bound status helper are installed by CMake and
+included in Debian/Fedora packaging metadata. The status helper reports queued,
+running, ExecStopPost recovery, pending/failed recovery, completion, and stale job
+identifiers while serializing reads against the lifecycle lock. It treats a removed
+systemd RuntimeDirectory as an absent staging file, but fails closed on unsafe paths
+or malformed state. The QML job client and end-to-end runtime validation on a systemd
+host are still pending; the production GUI continues to use its legacy Blockcheck path.
 
 ## Problem
 
