@@ -182,7 +182,7 @@ class StagedOptionsStore:
         return self._read_document_locked(expected_operation_id)[1]
 
     def read_pending_locked(self) -> tuple[str, BlockcheckOptions]:
-        \"\"\"Read the next queued request without requiring a unit argument.\"\"\"
+        # Read the next queued request without requiring a unit argument.
         return self._read_document_locked()
 
     def consume_locked(self, expected_operation_id: str) -> None:
