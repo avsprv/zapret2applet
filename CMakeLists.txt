@@ -293,6 +293,9 @@ if(BUILD_TESTING)
     add_test(NAME blockcheck_staging
              COMMAND ${Python3_EXECUTABLE} ${CMAKE_SOURCE_DIR}/tests/test_blockcheck_staging.py)
 
+    add_test(NAME blockcheck_worker
+             COMMAND ${Python3_EXECUTABLE} ${CMAKE_SOURCE_DIR}/tests/test_blockcheck_worker.py)
+
     add_test(NAME config_helper
              COMMAND sh ${CMAKE_SOURCE_DIR}/tests/test_config_helper.sh
                      ${CMAKE_SOURCE_DIR}/packaging/helper/zapret2applet-helper)
