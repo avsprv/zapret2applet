@@ -162,9 +162,20 @@ class StateTests(unittest.TestCase):
             with self.store.locked(create=True):
                 pass
 
+    def test_ancestor_directory_symlink_rejected(self):
+        real_parent = self.root / "real-parent"
+        real_parent.mkdir(mode=0o700)
+        parent_link = self.root / "parent-link"
+        parent_link.symlink_to(real_parent, target_is_directory=True)
+        store = StateStore(parent_link / "state", str(self.fake))
+        with self.assertRaises(StateError):
+            with store.locked(create=True):
+                pass
+        self.assertFalse((real_parent / "state").exists())
+
     def test_lock_serializes_threads(self):
         self.store.directory.mkdir(mode=0o700)
-        second_store = StateStore(self.state, str(self.fake))
+        # Reuse one StateStore instance to verify per-thread descriptor ownership.
         entered = threading.Event()
         release = threading.Event()
         def holder():
@@ -180,7 +191,7 @@ class StateTests(unittest.TestCase):
             release.set()
         unlocker = threading.Thread(target=unlock)
         unlocker.start()
-        with second_store.locked():
+        with self.store.locked():
             elapsed = time.monotonic() - start
         thread.join()
         unlocker.join()
