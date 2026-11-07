@@ -1496,4 +1496,158 @@
         <translation>Could not confirm service restoration after the timeout. Check systemd.</translation>
     </message>
 </context>
+<context>
+    <name>BlockcheckJobController</name>
+    <message>
+        <source>Подбор недоступен во время другой операции.</source>
+        <translation>A scan is unavailable while another operation is running.</translation>
+    </message>
+    <message>
+        <source>Проверьте домены и параметры диагностики.</source>
+        <translation>Check the domains and diagnostic options.</translation>
+    </message>
+    <message>
+        <source>Диагностика может временно остановить службу zapret2. После завершения systemd попытается восстановить её работу.</source>
+        <translation>Diagnostics may temporarily stop zapret2. systemd will attempt to restore it when the job finishes.</translation>
+    </message>
+    <message>
+        <source>Запуск диагностики Blockcheck</source>
+        <translation>Start Blockcheck diagnostics</translation>
+    </message>
+    <message>
+        <source>Для проверки может потребоваться временная остановка zapret2. Продолжить?</source>
+        <translation>The check may temporarily stop zapret2. Continue?</translation>
+    </message>
+    <message>
+        <source>Отправка задания в systemd…</source>
+        <translation>Submitting the job to systemd…</translation>
+    </message>
+    <message>
+        <source>Вывод helper превысил лимит 1 MiB.</source>
+        <translation>Helper output exceeded the 1 MiB limit.</translation>
+    </message>
+    <message>
+        <source>Не удалось запустить helper: %1</source>
+        <translation>Could not start the helper: %1</translation>
+    </message>
+    <message>
+        <source>Связь с заданием потеряна; состояние будет проверено повторно.</source>
+        <translation>The job connection was lost; its state will be checked again.</translation>
+    </message>
+    <message>
+        <source>Helper завершился с кодом %1.</source>
+        <translation>The helper exited with code %1.</translation>
+    </message>
+    <message>
+        <source>Не удалось отправить запрос отмены; проверка состояния продолжается.</source>
+        <translation>Could not submit the cancellation request; state monitoring continues.</translation>
+    </message>
+    <message>
+        <source>Не удалось получить состояние задания; повторная проверка будет выполнена.</source>
+        <translation>Could not retrieve the job state; it will be checked again.</translation>
+    </message>
+    <message>
+        <source>Не удалось обновить журнал Blockcheck.</source>
+        <translation>Could not refresh the Blockcheck journal.</translation>
+    </message>
+    <message>
+        <source>Helper вернул некорректный идентификатор задания.</source>
+        <translation>The helper returned an invalid job identifier.</translation>
+    </message>
+    <message>
+        <source>Задание принято systemd; ожидание запуска worker…</source>
+        <translation>systemd accepted the job; waiting for the worker to start…</translation>
+    </message>
+    <message>
+        <source>Запрос отмены отправлен. Ожидается завершение worker и восстановление службы.</source>
+        <translation>Cancellation requested. Waiting for the worker to finish and the service to be restored.</translation>
+    </message>
+    <message>
+        <source>Helper вернул некорректное состояние задания.</source>
+        <translation>The helper returned an invalid job state.</translation>
+    </message>
+    <message>
+        <source>Получено состояние другого задания; операция не считается завершённой.</source>
+        <translation>A different job's state was received; the operation is not considered complete.</translation>
+    </message>
+    <message>
+        <source>Ожидание блокировки состояния Blockcheck…</source>
+        <translation>Waiting for the Blockcheck lifecycle lock…</translation>
+    </message>
+    <message>
+        <source>Задание ожидает запуска systemd…</source>
+        <translation>The job is waiting for systemd to start it…</translation>
+    </message>
+    <message>
+        <source>Выполняется диагностика Blockcheck…</source>
+        <translation>Blockcheck diagnostics are running…</translation>
+    </message>
+    <message>
+        <source>Восстановление службы zapret2…</source>
+        <translation>Restoring the zapret2 service…</translation>
+    </message>
+    <message>
+        <source>Восстановление службы ещё не подтверждено; задание остаётся активным.</source>
+        <translation>Service restoration is not yet confirmed; the job remains active.</translation>
+    </message>
+    <message>
+        <source>Ошибка восстановления службы. Маркер восстановления сохранён.</source>
+        <translation>Service recovery failed. The recovery marker has been retained.</translation>
+    </message>
+    <message>
+        <source>Диагностика завершена; восстановление службы подтверждено.</source>
+        <translation>Diagnostics completed; service restoration was confirmed.</translation>
+    </message>
+    <message>
+        <source>Диагностика завершилась с ошибкой или состояние задания устарело.</source>
+        <translation>Diagnostics failed or the job state is stale.</translation>
+    </message>
+    <message>
+        <source>Получено неизвестное состояние задания; ожидание продолжается.</source>
+        <translation>An unknown job state was received; monitoring continues.</translation>
+    </message>
+    <message>
+        <source>Журнал Blockcheck превышает лимит 1 MiB.</source>
+        <translation>The Blockcheck journal exceeds the 1 MiB limit.</translation>
+    </message>
+    <message>
+        <source>Журнал Blockcheck содержит некорректный UTF-8.</source>
+        <translation>The Blockcheck journal contains invalid UTF-8.</translation>
+    </message>
+    <message>
+        <source>Подбор отменён.</source>
+        <translation>The scan was canceled.</translation>
+    </message>
+    <message>
+        <source>Не удалось выполнить диагностику или подтвердить восстановление службы.</source>
+        <translation>Diagnostics failed or service restoration could not be confirmed.</translation>
+    </message>
+    <message>
+        <source>Отмена будет отправлена после получения идентификатора задания.</source>
+        <translation>Cancellation will be sent after the job identifier is received.</translation>
+    </message>
+    <message>
+        <source>Выберите локальный файл для сохранения журнала.</source>
+        <translation>Choose a local file to save the log.</translation>
+    </message>
+    <message>
+        <source>Не удалось открыть файл журнала: %1</source>
+        <translation>Could not open the log file: %1</translation>
+    </message>
+    <message>
+        <source>Не удалось сохранить журнал: %1</source>
+        <translation>Could not save the log: %1</translation>
+    </message>
+    <message>
+        <source>Журнал сохранён: %1</source>
+        <translation>Log saved: %1</translation>
+    </message>
+</context>
+<context>
+    <name>BlockcheckPage</name>
+    <message>
+        <source>Восстановление zapret2 не подтверждено. Управление службой и обновление заблокированы; проверьте журнал и повторите восстановление после устранения причины.</source>
+        <translation>zapret2 recovery has not been confirmed. Service controls and updates are disabled; inspect the journal and retry recovery after resolving the cause.</translation>
+    </message>
+</context>
 </TS>
