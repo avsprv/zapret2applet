@@ -112,6 +112,8 @@ qt_add_executable(zapret2applet-qml-preview
     src/qml/applicationcontroller.h
     src/qml/settingsmanager.cpp
     src/qml/settingsmanager.h
+    src/qml/autostartcontroller.cpp
+    src/qml/autostartcontroller.h
     src/qml/configcontroller.cpp
     src/qml/configcontroller.h
     src/qml/profilecontroller.cpp
@@ -227,6 +229,12 @@ if(BUILD_TESTING)
     target_include_directories(test_appsettings PRIVATE src)
     target_link_libraries(test_appsettings PRIVATE Qt6::Test Qt6::Core Qt6::Widgets)
     add_test(NAME appsettings COMMAND test_appsettings)
+
+    qt_add_executable(test_autostartcontroller tests/test_autostartcontroller.cpp
+        src/qml/autostartcontroller.cpp src/qml/autostartcontroller.h)
+    target_include_directories(test_autostartcontroller PRIVATE src src/qml)
+    target_link_libraries(test_autostartcontroller PRIVATE Qt6::Test Qt6::Core)
+    add_test(NAME autostart_controller COMMAND test_autostartcontroller)
 
     qt_add_executable(test_settingsmanager tests/test_settingsmanager.cpp
         src/qml/settingsmanager.cpp src/qml/settingsmanager.h)
