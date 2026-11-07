@@ -17,6 +17,7 @@ BuildRequires:  cmake(Qt6Network) >= 6.8
 BuildRequires:  cmake(Qt6LinguistTools) >= 6.8
 BuildRequires:  cmake(Qt6Test) >= 6.8
 BuildRequires:  desktop-file-utils
+BuildRequires:  appstream
 BuildRequires:  systemd-rpm-macros
 # test dependencies for the privileged helper
 BuildRequires:  curl
@@ -61,7 +62,7 @@ installed separately.
 export QT_QPA_PLATFORM=offscreen
 %ctest
 desktop-file-validate %{buildroot}%{_datadir}/applications/zapret2applet.desktop
-%{_datadir}/metainfo/org.avsprv.zapret2applet.metainfo.xml
+appstream-util validate-relax --nonet %{buildroot}%{_datadir}/metainfo/org.avsprv.zapret2applet.metainfo.xml
 
 %files
 %license LICENSE NOTICE.md
@@ -73,6 +74,7 @@ desktop-file-validate %{buildroot}%{_datadir}/applications/zapret2applet.desktop
 %{_unitdir}/zapret2applet-blockcheck-recovery.service
 %{_datadir}/polkit-1/actions/org.zapret2applet.policy
 %{_datadir}/applications/zapret2applet.desktop
+%{_datadir}/metainfo/org.avsprv.zapret2applet.metainfo.xml
 %{_datadir}/icons/hicolor/scalable/apps/zapret2applet.svg
 
 %changelog
