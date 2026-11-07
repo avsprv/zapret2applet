@@ -166,6 +166,13 @@ configure_file(data/org.zapret2applet.policy.in ${CMAKE_BINARY_DIR}/org.zapret2a
 install(TARGETS zapret2applet RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
 install(PROGRAMS packaging/helper/zapret2applet-helper
         DESTINATION ${CMAKE_INSTALL_LIBEXECDIR}/zapret2applet)
+install(FILES
+        packaging/helper/blockcheck_manager.py
+        packaging/helper/blockcheck_state.py
+        packaging/helper/blockcheck_staging.py
+        packaging/helper/blockcheck_worker.py
+        packaging/helper/blockcheck_recovery.py
+        DESTINATION ${CMAKE_INSTALL_LIBEXECDIR}/zapret2applet)
 install(FILES ${CMAKE_BINARY_DIR}/org.zapret2applet.policy
         DESTINATION ${CMAKE_INSTALL_DATADIR}/polkit-1/actions)
 install(FILES data/zapret2applet.desktop DESTINATION ${CMAKE_INSTALL_DATADIR}/applications)
