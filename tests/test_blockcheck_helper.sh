@@ -1,11 +1,25 @@
 #!/bin/sh
-# Runtime directory hardening tests for the privileged Blockcheck helper.
+# Runtime directory, PID identity, and lock lifecycle tests for the privileged helper.
 set -eu
 H="${1:?usage: test_blockcheck_helper.sh /path/to/zapret2applet-helper}"
 W=$(mktemp -d)
-trap 'rm -rf "$W"' EXIT HUP INT TERM
+runner_pid=
+cleanup() {
+    if [ -n "$runner_pid" ]; then
+        env QZAPRET_TEST_BASE="$W/base" QZAPRET_TEST_RUNDIR="$W/runtime-private" \
+            "$H" blockcheck-cancel >/dev/null 2>&1 || true
+        wait "$runner_pid" 2>/dev/null || true
+    fi
+    rm -rf "$W"
+}
+trap cleanup EXIT HUP INT TERM
+
 mkdir "$W/base"
-printf '#!/bin/sh\nexit 0\n' > "$W/base/blockcheck2.sh"
+cat > "$W/base/blockcheck2.sh" <<'SH'
+#!/bin/sh
+trap 'exit 0' INT TERM
+while :; do sleep 1; done
+SH
 chmod 755 "$W/base/blockcheck2.sh"
 mkdir "$W/target"
 ln -s "$W/target" "$W/runtime-link"
@@ -30,19 +44,55 @@ mkdir "$W/runtime-insecure"
 chmod 755 "$W/runtime-insecure"
 expect_reject 'runtime directory' QZAPRET_TEST_RUNDIR="$W/runtime-insecure"
 
-# A private directory is accepted far enough to create the lock and PID state.
-# The fake upstream exits immediately; no system service or network rule is touched.
 mkdir "$W/runtime-private"
-set +e
+# A stale PID must not prevent a new scan; PID identity includes kernel start time.
+printf '99999999 1\\n' > "$W/runtime-private/blockcheck.pid"
+chmod 600 "$W/runtime-private/blockcheck.pid"
+
 env QZAPRET_TEST_BASE="$W/base" QZAPRET_TEST_RUNDIR="$W/runtime-private" \
-    "$H" blockcheck --domains example.org > "$W/output" 2>&1
-rc=$?
-set -e
-if [ "$rc" -ne 0 ]; then
-    echo "FAIL: private runtime directory was rejected (rc=$rc)"
+    "$H" blockcheck --domains example.org > "$W/output" 2>&1 &
+runner_pid=$!
+
+attempt=0
+while [ ! -s "$W/runtime-private/blockcheck.pid" ] && [ "$attempt" -lt 5 ]; do
+    sleep 1
+    attempt=$((attempt + 1))
+done
+[ -s "$W/runtime-private/blockcheck.pid" ] || {
+    echo "FAIL: Blockcheck did not create its PID file"
     cat "$W/output"
     exit 1
-fi
-[ -f "$W/runtime-private/blockcheck.lock" ] || { echo "FAIL: lock file was not created"; exit 1; }
-[ ! -L "$W/runtime-private/blockcheck.pid" ] || { echo "FAIL: PID file is a symlink"; exit 1; }
-echo "ok: private runtime directory accepted and lock created"
+}
+[ "$(wc -w < "$W/runtime-private/blockcheck.pid" | tr -d ' ')" -eq 2 ] || {
+    echo "FAIL: PID file must contain PID and process start time"
+    exit 1
+}
+[ "$(stat -c '%a' "$W/runtime-private/blockcheck.pid")" = 600 ] || {
+    echo "FAIL: PID file permissions are not 0600"
+    exit 1
+}
+[ "$(stat -c '%a' "$W/runtime-private/blockcheck.lock")" = 600 ] || {
+    echo "FAIL: lock file permissions are not 0600"
+    exit 1
+}
+
+set +e
+out=$(env QZAPRET_TEST_BASE="$W/base" QZAPRET_TEST_RUNDIR="$W/runtime-private" \
+    "$H" blockcheck --domains example.org 2>&1)
+rc=$?
+set -e
+[ "$rc" -eq 2 ] && printf '%s' "$out" | grep -q 'blockcheck already running' || {
+    echo "FAIL: concurrent Blockcheck was not rejected (rc=$rc): $out"
+    exit 1
+}
+echo "ok: concurrent Blockcheck rejected by the runtime lock"
+
+env QZAPRET_TEST_BASE="$W/base" QZAPRET_TEST_RUNDIR="$W/runtime-private" \
+    "$H" blockcheck-cancel
+wait "$runner_pid"
+runner_pid=
+flock -n "$W/runtime-private/blockcheck.lock" -c true || {
+    echo "FAIL: runtime lock remained held after Blockcheck exit"
+    exit 1
+}
+echo "ok: cancellation releases the runtime lock"
