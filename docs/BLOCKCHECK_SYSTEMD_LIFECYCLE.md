@@ -132,11 +132,13 @@ Replace direct service stop/start orchestration with a systemd job client:
   `zapret2applet-blockcheck.service`;
 - keep the busy state until systemd confirms the job is finished and recovery has been
   verified;
-- surface a distinct recovery-pending/error state when the marker remains.
+- surface a distinct recovery-pending/error state when the marker remains, and offer a retry
+  through the fixed recovery helper using the same operation ID.
 - read the fixed Blockcheck unit journal through
-  `blockcheck-job-logs {50|100|200|500}`; helper output is capped at 1 MiB and the
+  `blockcheck-job-logs {50|100|200|500} START_EPOCH`; helper output is capped at 1 MiB and the
   GUI parses strategy records from the journal rather than relying on the worker's
-  process stream;
+  process stream. Journal reads are filtered from the submitted operation start time
+  to avoid mixing results from earlier invocations of the static systemd unit;
 - keep service and update operations disabled while a recovery marker remains after
   a recovery failure.
 
