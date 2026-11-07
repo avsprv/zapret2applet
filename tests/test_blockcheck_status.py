@@ -177,6 +177,16 @@ for key, value in zip(keys, states[unit]):
         self._write_fixture()
         self.assertEqual(self._status()["phase"], "stale")
 
+    def test_different_durable_marker_reports_recovery_operation_id(self):
+        other_id = str(uuid.uuid4())
+        with self.state.locked():
+            self.state.prepare_locked(other_id)
+        self._write_fixture()
+        status = self._status()
+        self.assertEqual(status["phase"], "stale")
+        self.assertTrue(status["recovery_marker"])
+        self.assertEqual(status["recovery_operation_id"], other_id)
+
 
 if __name__ == "__main__":
     unittest.main()
