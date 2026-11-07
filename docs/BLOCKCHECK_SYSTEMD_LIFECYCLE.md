@@ -76,21 +76,29 @@ Required invariants:
 
 ## Lifecycle
 
-1. GUI validates the options and asks systemd to start the Blockcheck unit with a unique
-   operation identifier.
-2. The privileged worker validates options again, acquires the lifecycle lock, queries
-   the actual active state of `zapret2.service`, and writes the durable recovery marker.
+1. GUI validates the options and invokes a narrow privileged submit command through
+   the existing Polkit boundary. The submit command validates all options again, writes
+   a bounded options record atomically into a root-owned `/run/zapret2applet/`
+   directory, then queues `systemctl start --no-block zapret2applet-blockcheck.service`.
+   It must reject a second submission while the unit or a recovery operation is active.
+2. The static worker unit invokes a dedicated helper worker command. The worker acquires
+   the persistent lifecycle lock, validates and consumes the staged options record,
+   queries the actual active state of `zapret2.service`, and writes the durable recovery
+   marker. It must not accept arbitrary shell fragments or source the options record.
 3. If the service was active, the worker stops it and verifies that it is inactive.
    If it was inactive, it leaves it untouched.
 4. The worker executes the pinned upstream `blockcheck2.sh` with a clean environment.
 5. On normal completion or cancellation, upstream cleanup runs and the unit exits.
-   systemd invokes `ExecStopPost=` to run recovery.
+   systemd invokes `ExecStopPost=` to run recovery. The unit uses a bounded
+   `TimeoutStopSec=` and normal SIGTERM delivery; SIGKILL is only systemd's final
+   timeout behavior, not the GUI's cancellation mechanism.
 6. Recovery validates the marker and current unit state. It starts `zapret2.service`
    only when the marker says it was active, verifies the resulting state, then removes
    the marker. If start or verification fails, it leaves the marker in place and exits
    unsuccessfully.
-7. At boot, the recovery unit performs the same operation before `zapret2.service`
-   enters the normal boot transaction.
+7. At boot, the recovery unit performs the same operation as an independent
+   `multi-user.target` job. No ordering dependency with `zapret2.service` is introduced;
+   the recovery command itself starts and verifies the service when the marker requires it.
 
 Cancellation should request a normal unit stop, allowing upstream signal handlers to
 remove temporary packet-filter rules. Do not use SIGKILL as the normal cancellation
@@ -102,9 +110,13 @@ persistent marker protects service restoration if the worker is killed.
 Keep the existing Blockcheck options, log parsing, strategy extraction, and result model.
 Replace direct service stop/start orchestration with a systemd job client:
 
-- start the dedicated unit and wait asynchronously for its job result;
-- observe unit state and journal output without blocking the GUI thread;
-- request cancellation by stopping the dedicated unit;
+- submit the validated options and queue the dedicated unit with
+  `systemctl start --no-block`; do not wait for the complete scan in the submit
+  process;
+- observe unit state with asynchronous polling and read the unit journal through a
+  narrowly allowlisted helper operation; do not block the GUI thread;
+- request cancellation by asking the helper to stop only
+  `zapret2applet-blockcheck.service`;
 - keep the busy state until systemd confirms the job is finished and recovery has been
   verified;
 - surface a distinct recovery-pending/error state when the marker remains.
@@ -115,7 +127,10 @@ The GUI must not infer successful recovery from the worker exit code alone.
 
 Install both unit files into the distribution's systemd unit directory. Reload systemd
 after installation/removal. Enable the boot recovery unit on package installation and
-disable it on package removal, without enabling or starting `zapret2.service`.
+disable it on package removal, without enabling or starting `zapret2.service`. The
+worker unit is static and must not be enabled at boot. The helper submit/cancel/status
+commands are restricted to the fixed Blockcheck unit name; no caller-supplied unit name
+is accepted.
 
 The helper's zapret installation/update paths must preserve their current behavior and
 must not overwrite the application-owned Blockcheck units. The recovery unit must work
