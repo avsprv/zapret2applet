@@ -9,7 +9,7 @@
 
 #include "applicationcontroller.h"
 #include "configcontroller.h"
-#include "blockcheckcontroller.h"
+#include "blockcheckjobcontroller.h"
 #include "i18n.h"
 #include "profilecontroller.h"
 #include "logscontroller.h"
@@ -52,7 +52,7 @@ int main(int argc, char *argv[])
     ProfileController profileController;
     LogsController logsController;
     ListsController listsController;
-    BlockcheckController blockcheckController;
+    BlockcheckJobController blockcheckController;
     UpdateController updateController(&settingsManager);
 
     updateController.setBlockcheckBusy(blockcheckController.busy());
