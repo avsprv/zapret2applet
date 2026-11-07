@@ -24,8 +24,7 @@ Depends: ${shlibs:Depends}, ${misc:Depends},
          pkexec | policykit-1,
          curl,
          python3,
-         systemd,
-         tar
+         systemd
 Recommends: qt6-translations-l10n
 Description: unofficial Qt6 GUI for zapret2
  Graphical front-end for zapret2 (bol-van): service and configuration management,
