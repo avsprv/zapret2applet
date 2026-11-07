@@ -80,6 +80,7 @@ qt_add_translations(zapret2applet_i18n
         src/qml/logscontroller.cpp
         src/qml/listscontroller.cpp
         src/qml/blockcheckcontroller.cpp
+        src/qml/blockcheckjobcontroller.cpp
         src/qml/updatecontroller.cpp
         src/qml/Main.qml
         src/qml/pages/SettingsPage.qml
@@ -119,8 +120,8 @@ qt_add_executable(zapret2applet-qml-preview
     src/qml/logscontroller.h
     src/qml/listscontroller.cpp
     src/qml/listscontroller.h
-    src/qml/blockcheckcontroller.cpp
-    src/qml/blockcheckcontroller.h
+    src/qml/blockcheckjobcontroller.cpp
+    src/qml/blockcheckjobcontroller.h
     src/qml/updatecontroller.cpp
     src/qml/updatecontroller.h
     src/backend/updatechecker.cpp
@@ -267,6 +268,14 @@ if(BUILD_TESTING)
     target_link_libraries(test_blockcheckcontroller PRIVATE Qt6::Test Qt6::Core Qt6::Gui)
     target_compile_definitions(test_blockcheckcontroller PRIVATE QZAPRET_HELPER_PATH="/nonexistent")
     add_test(NAME blockcheck_controller COMMAND test_blockcheckcontroller)
+
+    qt_add_executable(test_blockcheckjobcontroller tests/test_blockcheckjobcontroller.cpp
+        src/qml/blockcheckjobcontroller.cpp src/qml/blockcheckjobcontroller.h
+        src/backend/blockcheckrunner.cpp src/backend/blockcheckrunner.h)
+    target_include_directories(test_blockcheckjobcontroller PRIVATE src src/qml)
+    target_link_libraries(test_blockcheckjobcontroller PRIVATE Qt6::Test Qt6::Core Qt6::Gui)
+    target_compile_definitions(test_blockcheckjobcontroller PRIVATE QZAPRET_HELPER_PATH="/nonexistent")
+    add_test(NAME blockcheck_job_controller COMMAND test_blockcheckjobcontroller)
 
     qt_add_executable(test_aboutpage tests/test_aboutpage.cpp
         src/aboutpage.cpp src/aboutpage.h)
