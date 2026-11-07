@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """Report the lifecycle state of one UUID-bound systemd Blockcheck job."""
 from __future__ import annotations
 
