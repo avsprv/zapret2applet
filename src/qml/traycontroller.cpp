@@ -234,12 +234,18 @@ void TrayController::registerWithWatcher()
                        << m_bus.lastError().message();
             return;
         }
-        if (!m_bus.registerObject(QString::fromLatin1(itemPath), m_item,
-                                  QDBusConnection::ExportAllSlots
-                                      | QDBusConnection::ExportAllSignals
-                                      | QDBusConnection::ExportAllProperties)) {
+        const auto exportFlags = QDBusConnection::ExportAllSlots
+                                 | QDBusConnection::ExportAllSignals
+                                 | QDBusConnection::ExportAllProperties;
+        if (!m_bus.registerObject(QString::fromLatin1(menuPath), m_menu, exportFlags)) {
+            qWarning() << "Unable to export DBusMenu:" << m_bus.lastError().message();
+            m_bus.unregisterService(m_serviceName);
+            return;
+        }
+        if (!m_bus.registerObject(QString::fromLatin1(itemPath), m_item, exportFlags)) {
             qWarning() << "Unable to export StatusNotifierItem:"
                        << m_bus.lastError().message();
+            m_bus.unregisterObject(QString::fromLatin1(menuPath));
             m_bus.unregisterService(m_serviceName);
             return;
         }
