@@ -65,6 +65,14 @@ if "$H" blockcheck-job-logs 100 "$start_epoch" extra >/dev/null 2>&1; then
 fi
 echo "ok: rejects unsupported Blockcheck journal arguments"
 
+if "$H" blockcheck-job-logs 50 not-a-timestamp >/dev/null 2>&1; then
+    echo "FAIL: malformed Blockcheck journal timestamp was accepted"; exit 1
+fi
+if "$H" blockcheck-job-logs 50 1 >/dev/null 2>&1; then
+    echo "FAIL: out-of-window Blockcheck journal timestamp was accepted"; exit 1
+fi
+echo "ok: rejects malformed and out-of-window Blockcheck timestamps"
+
 if QZAPRET_TEST_JOURNAL_MODE=fail "$H" blockcheck-job-logs 50 "$start_epoch" >/dev/null 2>"$tmp/blockcheck-error.out"; then
     echo "FAIL: Blockcheck journalctl failure was reported as success"; exit 1
 fi
