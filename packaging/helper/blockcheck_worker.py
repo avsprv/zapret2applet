@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """systemd-owned Blockcheck worker; recovery is deliberately delegated to ExecStopPost."""
 from __future__ import annotations
 
