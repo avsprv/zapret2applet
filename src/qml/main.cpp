@@ -61,7 +61,7 @@ int main(int argc, char *argv[])
     blockcheckController.setServiceBusy(controller.operationsBusy());
     QObject::connect(&controller, &ApplicationController::operationsBusyChanged, &app,
                      [&] { blockcheckController.setServiceBusy(controller.operationsBusy()); });
-    QObject::connect(&blockcheckController, &BlockcheckController::busyChanged, &app,
+    QObject::connect(&blockcheckController, &BlockcheckJobController::busyChanged, &app,
                      [&] {
         updateController.setBlockcheckBusy(blockcheckController.busy());
         controller.setOperationsBusy(blockcheckController.busy() || updateController.busy());
@@ -73,7 +73,7 @@ int main(int argc, char *argv[])
     });
     QObject::connect(&updateController, &UpdateController::operationFinished,
                      &controller, &ApplicationController::refresh);
-    QObject::connect(&blockcheckController, &BlockcheckController::scanFinished,
+    QObject::connect(&blockcheckController, &BlockcheckJobController::scanFinished,
                      &controller, [&] { controller.refresh(); });
 
     const QLocale initialLocale = localeForLanguage(settingsManager.language());
