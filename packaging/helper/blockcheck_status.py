@@ -85,9 +85,14 @@ def get_job_status(state: StateStore, staged: StagedOptionsStore, operation_id: 
     elif pending_id and pending_id != operation_id:
         phase = "stale"
     elif marker_id:
-        if recovery["ActiveState"] in {"active", "activating", "deactivating"}:
+        if worker["ActiveState"] == "deactivating" or recovery["ActiveState"] in {"active", "activating", "deactivating"}:
+            # ExecStopPost runs inside the worker unit; the separate boot
+            # recovery unit is normally inactive during this phase.
             phase = "recovering"
-        elif recovery["ActiveState"] == "failed" or recovery["Result"] != "success":
+        elif worker["ActiveState"] in {"active", "activating"}:
+            phase = "running"
+        elif (worker["ActiveState"] == "failed" or worker["Result"] != "success"
+              or recovery["ActiveState"] == "failed" or recovery["Result"] != "success"):
             phase = "recovery_failed"
         else:
             phase = "recovery_pending"
