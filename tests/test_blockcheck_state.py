@@ -55,6 +55,13 @@ class StateTests(unittest.TestCase):
         inactive = self.prepare(False)
         self.assertFalse(inactive["service_was_active"])
 
+    def test_marker_snapshot_is_validated_without_lifecycle_lock(self):
+        marker = self.prepare(True)
+        self.assertEqual(self.store.read_marker_snapshot(), marker)
+        (self.state / "state.json").write_text("{malformed")
+        with self.assertRaises(StateError):
+            self.store.read_marker_snapshot()
+
     def test_recovery_restores_active_and_removes_marker(self):
         self.prepare(True)
         with self.store.locked():
