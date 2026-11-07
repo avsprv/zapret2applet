@@ -183,8 +183,13 @@ void BlockcheckJobController::handleProcessFinished(QProcess *process,int exitCo
         }
         else if(task==ProcessTask::Submit){
             if(error.contains(QStringLiteral("recovery is still pending"),Qt::CaseInsensitive)
-                || error.contains(QStringLiteral("recovery marker"),Qt::CaseInsensitive))
+                || error.contains(QStringLiteral("recovery marker"),Qt::CaseInsensitive)){
                 setRecoveryRequired(true);
+                static const QRegularExpression pendingIdRe(
+                    QStringLiteral("operation_id=([0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12})"));
+                const auto match=pendingIdRe.match(error);
+                if(match.hasMatch())m_operationId=match.captured(1);
+            }
             finish(false);
         }
         else if(task==ProcessTask::Cancel)setStatus(tr("Не удалось отправить запрос отмены; проверка состояния продолжается."),StatusType::Warning);
