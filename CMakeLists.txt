@@ -163,6 +163,11 @@ target_compile_options(zapret2applet-qml-preview PRIVATE -Wall -Wextra)
 
 configure_file(data/org.zapret2applet.policy.in ${CMAKE_BINARY_DIR}/org.zapret2applet.policy @ONLY)
 
+configure_file(data/systemd/zapret2applet-blockcheck.service.in
+    ${CMAKE_BINARY_DIR}/zapret2applet-blockcheck.service @ONLY)
+configure_file(data/systemd/zapret2applet-blockcheck-recovery.service.in
+    ${CMAKE_BINARY_DIR}/zapret2applet-blockcheck-recovery.service @ONLY)
+
 install(TARGETS zapret2applet RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
 install(PROGRAMS packaging/helper/zapret2applet-helper
         DESTINATION ${CMAKE_INSTALL_LIBEXECDIR}/zapret2applet)
@@ -176,6 +181,10 @@ install(FILES
         DESTINATION ${CMAKE_INSTALL_LIBEXECDIR}/zapret2applet)
 install(FILES ${CMAKE_BINARY_DIR}/org.zapret2applet.policy
         DESTINATION ${CMAKE_INSTALL_DATADIR}/polkit-1/actions)
+install(FILES
+        ${CMAKE_BINARY_DIR}/zapret2applet-blockcheck.service
+        ${CMAKE_BINARY_DIR}/zapret2applet-blockcheck-recovery.service
+        DESTINATION lib/systemd/system)
 install(FILES data/zapret2applet.desktop DESTINATION ${CMAKE_INSTALL_DATADIR}/applications)
 install(FILES data/org.avsprv.zapret2applet.metainfo.xml
         DESTINATION ${CMAKE_INSTALL_DATADIR}/metainfo)
