@@ -38,8 +38,8 @@ states = {
 }
 try:
     with open(os.environ["QZAPRET_STATUS_FIXTURE"], encoding="ascii") as f:
-        for line in f:
-            unit, values = line.rstrip("\\n").split("=", 1)
+        for line in f.read().splitlines():
+            unit, values = line.split("=", 1)
             states[unit] = tuple(values.split(","))
 except (KeyError, OSError):
     pass
