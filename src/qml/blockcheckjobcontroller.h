@@ -25,6 +25,7 @@ class BlockcheckJobController final : public QObject
     Q_PROPERTY(QString status READ status NOTIFY statusChanged)
     Q_PROPERTY(QString statusSeverity READ statusSeverity NOTIFY statusChanged)
     Q_PROPERTY(bool busy READ busy NOTIFY busyChanged)
+    Q_PROPERTY(bool recoveryRequired READ recoveryRequired NOTIFY recoveryRequiredChanged)
     Q_PROPERTY(bool updateBusy READ updateBusy WRITE setUpdateBusy NOTIFY updateBusyChanged)
 
 public:
@@ -45,6 +46,7 @@ public:
     QString status() const;
     QString statusSeverity() const;
     bool busy() const;
+    bool recoveryRequired() const;
     bool updateBusy() const;
     void setUpdateBusy(bool value);
     void setServiceBusy(bool value);
@@ -61,6 +63,7 @@ signals:
     void resultsChanged();
     void statusChanged();
     void busyChanged();
+    void recoveryRequiredChanged();
     void updateBusyChanged();
     void confirmationRequired(const QString &title, const QString &message);
     void scanFinished(int found, bool canceled);
@@ -69,6 +72,7 @@ private:
     enum class ProcessTask { None, Submit, Status, Logs, Cancel };
     void setStatus(const QString &value, StatusType type = StatusType::Information);
     void setBusy(bool value);
+    void setRecoveryRequired(bool value);
     void appendLog(const QString &line);
     void launch(ProcessTask task, const QStringList &arguments);
     void handleProcessFinished(QProcess *process, int exitCode, QProcess::ExitStatus exitStatus);
@@ -86,7 +90,7 @@ private:
     QString m_logText, m_status, m_operationId, m_terminalPhase;
     QVariantList m_results;
     StatusType m_statusType = StatusType::Information;
-    bool m_busy = false, m_updateBusy = false, m_serviceBusy = false;
+    bool m_busy = false, m_updateBusy = false, m_serviceBusy = false, m_recoveryRequired = false;
     bool m_cancelRequested = false, m_finalLogsPending = false;
     int m_found = 0, m_pollTicks = 0;
     ProcessTask m_task = ProcessTask::None;
