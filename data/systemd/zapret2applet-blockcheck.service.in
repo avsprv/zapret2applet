@@ -1,0 +1,22 @@
+[Unit]
+Description=zapret2applet Blockcheck diagnostic worker
+Documentation=https://github.com/avsprv/zapret2applet
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+Type=oneshot
+User=root
+Group=root
+UMask=0077
+RuntimeDirectory=zapret2applet
+RuntimeDirectoryMode=0700
+RuntimeDirectoryPreserve=no
+ExecStart=@CMAKE_INSTALL_FULL_LIBEXECDIR@/zapret2applet/zapret2applet-helper blockcheck-worker
+ExecStopPost=@CMAKE_INSTALL_FULL_LIBEXECDIR@/zapret2applet/zapret2applet-helper blockcheck-recover
+TimeoutStartSec=0
+TimeoutStopSec=120
+KillMode=control-group
+SendSIGKILL=yes
+StandardOutput=journal
+StandardError=journal
