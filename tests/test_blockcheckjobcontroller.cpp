@@ -35,7 +35,7 @@ case "$1" in
       echo 'a previous Blockcheck recovery is still pending (operation_id=123e4567-e89b-42d3-a456-426614174000)' >&2
       exit 2
     fi
-    printf '%s\\n' '123e4567-e89b-42d3-a456-426614174000'
+    printf '%s\n' '123e4567-e89b-42d3-a456-426614174000'
     ;;
   blockcheck-job-status)
     if [ "${QZAPRET_TEST_RECOVERY_FAILED:-0}" = 1 ]; then
