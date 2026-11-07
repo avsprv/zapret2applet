@@ -19,19 +19,26 @@ Move the privileged Blockcheck lifecycle into a dedicated systemd service. The G
 becomes a client that starts, observes, and stops that unit; it no longer owns service
 restoration.
 
-Use two systemd units:
+Use two systemd units and one drop-in:
 
 - `zapret2applet-blockcheck.service`: one-shot diagnostic job. Its main process runs
   the validated Blockcheck worker. Its `ExecStopPost=` invokes an idempotent recovery
   command after normal exit, failure, timeout, or forced termination while systemd is
   operational.
-- `zapret2applet-blockcheck-recovery.service`: boot-time recovery job. It is enabled
-  for `multi-user.target` and ordered `Before=zapret2.service`, so a pending recovery
-  marker is processed before the zapret service is started in the normal boot
-  transaction.
+- `zapret2applet-blockcheck-recovery.service`: one-shot recovery job. It is enabled
+  for `multi-user.target` and ordered `Before=zapret2.service`.
+- `zapret2.service.d/10-zapret2applet-recovery.conf`: adds
+  `Requires=zapret2applet-blockcheck-recovery.service` and
+  `After=zapret2applet-blockcheck-recovery.service`. This makes recovery part of every
+  zapret service start transaction, not merely an independently enabled boot job.
+  The recovery unit must not use `RemainAfterExit=yes`: a later service-start request
+  must be able to execute recovery again if an earlier attempt failed and left the
+  marker behind.
 
-The recovery unit must be installed and enabled by the application package. It must
-not start Blockcheck or alter zapret service state when no recovery marker exists.
+The recovery unit is enabled for `multi-user.target` as a boot fallback and is also
+pulled in by the zapret service drop-in. If recovery fails, the `Requires=` dependency
+prevents zapret2 from starting with unresolved recovery state. The unit must not start
+Blockcheck or alter zapret service state when no recovery marker exists.
 
 ## State and invariants
 
@@ -105,9 +112,12 @@ The GUI must not infer successful recovery from the worker exit code alone.
 
 ## Packaging and upgrade behavior
 
-Install both unit files into the distribution's systemd unit directory. Reload systemd
-after installation/removal. Enable the boot recovery unit on package installation and
-disable it on package removal, without enabling or starting `zapret2.service`.
+Install both unit files and the `zapret2.service.d` drop-in into the distribution's
+systemd unit directory. Reload systemd after installation/removal. Enable the boot
+recovery unit on package installation and disable it on package removal, without
+enabling or starting `zapret2.service`. Keep the drop-in installed even if the
+zapret2 unit does not exist yet; the upstream install helper creates the base unit
+later, and systemd will then apply the drop-in.
 
 The helper's zapret installation/update paths must preserve their current behavior and
 must not overwrite the application-owned Blockcheck units. The recovery unit must work
