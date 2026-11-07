@@ -14,6 +14,7 @@ import os
 import secrets
 import stat
 import subprocess
+import threading
 from pathlib import Path
 from typing import Iterator
 import uuid
@@ -33,29 +34,44 @@ class StateStore:
         self.directory = Path(directory)
         self.systemctl = systemctl
         self.owner = os.geteuid()
-        self._dir_fd: int | None = None
+        self._thread_state = threading.local()
 
     def _open_directory(self, create: bool = False) -> int:
-        path = self.directory
-        if create:
-            try:
-                path.mkdir(mode=0o700, parents=True, exist_ok=True)
-            except OSError as exc:
-                raise StateError(f"cannot create state directory: {exc}") from exc
+        # Walk from / one component at a time. O_NOFOLLOW on the final path
+        # alone would still permit a symlink in any ancestor component.
+        path = Path(os.path.abspath(os.fspath(self.directory)))
+        flags = os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW | os.O_CLOEXEC
         try:
-            fd = os.open(path, os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW)
+            current_fd = os.open(os.sep, flags)
+            for component in path.parts[1:]:
+                try:
+                    next_fd = os.open(component, flags, dir_fd=current_fd)
+                except FileNotFoundError:
+                    if not create:
+                        raise
+                    try:
+                        os.mkdir(component, 0o700, dir_fd=current_fd)
+                    except FileExistsError:
+                        # Another creator won the race; still open without following links.
+                        pass
+                    next_fd = os.open(component, flags, dir_fd=current_fd)
+                os.close(current_fd)
+                current_fd = next_fd
         except OSError as exc:
+            if 'current_fd' in locals():
+                os.close(current_fd)
             raise StateError(f"unsafe or missing state directory: {exc}") from exc
-        info = os.fstat(fd)
+        info = os.fstat(current_fd)
         if not stat.S_ISDIR(info.st_mode) or info.st_uid != self.owner or stat.S_IMODE(info.st_mode) != 0o700:
-            os.close(fd)
+            os.close(current_fd)
             raise StateError("state directory must be owned by the effective user and have mode 0700")
-        return fd
+        return current_fd
 
     @contextlib.contextmanager
     def locked(self, create: bool = False) -> Iterator["StateStore"]:
+        if getattr(self._thread_state, "dir_fd", None) is not None:
+            raise StateError("nested lifecycle locks are not supported")
         dir_fd = self._open_directory(create=create)
-        self._dir_fd = dir_fd
         lock_fd = -1
         try:
             try:
@@ -68,17 +84,19 @@ class StateStore:
                     or stat.S_IMODE(info.st_mode) != 0o600 or info.st_nlink != 1):
                 raise StateError("lifecycle lock has unsafe type, owner, mode, or link count")
             fcntl.flock(lock_fd, fcntl.LOCK_EX)
+            self._thread_state.dir_fd = dir_fd
             yield self
         finally:
             if lock_fd >= 0:
                 os.close(lock_fd)
-            self._dir_fd = None
+            self._thread_state.dir_fd = None
             os.close(dir_fd)
 
     def _require_lock(self) -> int:
-        if self._dir_fd is None:
+        dir_fd = getattr(self._thread_state, "dir_fd", None)
+        if dir_fd is None:
             raise StateError("state operation requires the lifecycle lock")
-        return self._dir_fd
+        return dir_fd
 
     def _service_is_active(self) -> bool:
         try:
