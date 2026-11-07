@@ -36,14 +36,24 @@ const QDBusArgument &operator>>(const QDBusArgument &argument, DBusMenuItemPrope
     return argument;
 }
 
+QDBusArgument &operator<<(QDBusArgument &argument, const DBusMenuItemPropertyNames &item)
+{
+    argument.beginStructure();
+    argument << item.id << item.properties;
+    argument.endStructure();
+    return argument;
+}
+
+const QDBusArgument &operator>>(const QDBusArgument &argument, DBusMenuItemPropertyNames &item)
+{
+    argument.beginStructure();
+    argument >> item.id >> item.properties;
+    argument.endStructure();
+    return argument;
+}
+
 namespace {
 const QList<int> itemIds{1, 2, 3, 4, 5, 6, 7};
-
-QStringList allPropertyNames()
-{
-    return {QStringLiteral("type"), QStringLiteral("label"),
-            QStringLiteral("enabled"), QStringLiteral("visible")};
-}
 } // namespace
 
 DBusMenu::DBusMenu(QObject *parent)
@@ -52,9 +62,13 @@ DBusMenu::DBusMenu(QObject *parent)
     qRegisterMetaType<DBusMenuLayoutItem>();
     qRegisterMetaType<DBusMenuItemProperties>();
     qRegisterMetaType<DBusMenuItemPropertiesList>();
+    qRegisterMetaType<DBusMenuItemPropertyNames>();
+    qRegisterMetaType<DBusMenuItemPropertyNamesList>();
     qDBusRegisterMetaType<DBusMenuLayoutItem>();
     qDBusRegisterMetaType<DBusMenuItemProperties>();
     qDBusRegisterMetaType<DBusMenuItemPropertiesList>();
+    qDBusRegisterMetaType<DBusMenuItemPropertyNames>();
+    qDBusRegisterMetaType<DBusMenuItemPropertyNamesList>();
 }
 
 uint DBusMenu::version() const
