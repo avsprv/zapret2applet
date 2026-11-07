@@ -1642,12 +1642,24 @@
         <source>Журнал сохранён: %1</source>
         <translation>Log saved: %1</translation>
     </message>
+    <message>
+        <source>Не удалось повторить восстановление службы. Маркер сохранён.</source>
+        <translation>Could not retry service recovery. The recovery marker has been retained.</translation>
+    </message>
+    <message>
+        <source>Команда восстановления выполнена; проверяется состояние службы…</source>
+        <translation>The recovery command completed; verifying the service state…</translation>
+    </message>
+    <message>
+        <source>Повторная попытка восстановления службы zapret2…</source>
+        <translation>Retrying zapret2 service recovery…</translation>
+    </message>
 </context>
 <context>
     <name>BlockcheckPage</name>
     <message>
-        <source>Восстановление zapret2 не подтверждено. Управление службой и обновление заблокированы; проверьте журнал и повторите восстановление после устранения причины.</source>
-        <translation>zapret2 recovery has not been confirmed. Service controls and updates are disabled; inspect the journal and retry recovery after resolving the cause.</translation>
+        <source>Восстановление zapret2 не подтверждено. Управление службой и обновление заблокированы. Проверьте журнал; после устранения причины можно повторить восстановление.</source>
+        <translation>zapret2 recovery has not been confirmed. Service controls and updates are disabled. Inspect the journal; after resolving the cause, you can retry recovery.</translation>
     </message>
 </context>
 </TS>
