@@ -67,12 +67,12 @@ class StateStore:
         return current_fd
 
     @contextlib.contextmanager
-    def locked(self, create: bool = False, blocking: bool = True) -> Iterator["StateStore"]:
+    def locked(self, create: bool = False, blocking: bool = True, create_lock: bool = True) -> Iterator["StateStore"]:
         """Acquire the lifecycle lock.
 
         Set blocking=False for admission paths (for example, a new submit request)
         that must reject an active worker instead of waiting for it to finish.
-        Recovery paths should keep the default blocking behavior.
+        Set create_lock=False for read-only probes that must not create state.
         """
         if getattr(self._thread_state, "dir_fd", None) is not None:
             raise StateError("nested lifecycle locks are not supported")
@@ -80,8 +80,10 @@ class StateStore:
         lock_fd = -1
         try:
             try:
-                lock_fd = os.open("lock", os.O_RDWR | os.O_CREAT | os.O_NOFOLLOW,
-                                  0o600, dir_fd=dir_fd)
+                lock_flags = os.O_RDWR | os.O_NOFOLLOW
+                if create_lock:
+                    lock_flags |= os.O_CREAT
+                lock_fd = os.open("lock", lock_flags, 0o600, dir_fd=dir_fd)
             except OSError as exc:
                 raise StateError(f"cannot open lifecycle lock: {exc}") from exc
             info = os.fstat(lock_fd)

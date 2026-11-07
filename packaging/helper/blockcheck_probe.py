@@ -82,7 +82,7 @@ def recovery_probe(state: StateStore, staged: StagedOptionsStore) -> dict[str, o
         else:
             os.close(state_dir_fd)
             try:
-                with state.locked(create=False, blocking=False):
+                with state.locked(create=False, blocking=False, create_lock=False):
                     marker = state._read_marker()
                     pending = staged.read_pending_locked(missing_ok=True) is not None
                     worker = _unit_properties(state.systemctl, WORKER_UNIT)

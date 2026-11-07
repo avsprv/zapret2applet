@@ -30,6 +30,7 @@ class BlockcheckProbeTests(unittest.TestCase):
         self.states = {
             "zapret2applet-blockcheck.service": ("loaded", "inactive", "dead", "success", "0"),
             "zapret2applet-blockcheck-recovery.service": ("loaded", "inactive", "dead", "success", "0"),
+            "zapret2.service": ("loaded", "inactive", "dead", "success", "0"),
         }
         self.systemctl = root / "systemctl"
         self.systemctl.write_text("""#!/usr/bin/env python3
@@ -37,6 +38,7 @@ import os, sys
 states = {
     "zapret2applet-blockcheck.service": ("loaded", "inactive", "dead", "success", "0"),
     "zapret2applet-blockcheck-recovery.service": ("loaded", "inactive", "dead", "success", "0"),
+    "zapret2.service": ("loaded", "inactive", "dead", "success", "0"),
 }
 try:
     with open(os.environ["QZAPRET_PROBE_FIXTURE"], encoding="ascii") as f:
@@ -46,6 +48,9 @@ try:
 except (KeyError, OSError):
     pass
 args = sys.argv[1:]
+if args and args[0] == "is-active":
+    unit = args[-1]
+    sys.exit(0 if states.get(unit, ("", "inactive"))[1] == "active" else 3)
 unit = args[-1]
 if unit not in states:
     sys.exit(1)
@@ -59,6 +64,8 @@ for key, value in zip(keys, states[unit]):
         os.environ["QZAPRET_PROBE_FIXTURE"] = str(self.fixture)
         self.state = StateStore(self.state_dir, str(self.systemctl))
         self.staged = StagedOptionsStore(self.state, self.runtime_dir)
+        with self.state.locked():
+            pass
 
     def tearDown(self):
         os.environ.pop("QZAPRET_PROBE_FIXTURE", None)
@@ -76,9 +83,15 @@ for key, value in zip(keys, states[unit]):
         self.assertEqual(self._probe()["state"], "safe")
 
     def test_missing_state_and_runtime_directories_are_safe_when_units_idle(self):
+        (self.state_dir / "lock").unlink()
         self.state_dir.rmdir()
         self.runtime_dir.rmdir()
         self.assertEqual(self._probe()["state"], "safe")
+
+    def test_probe_does_not_create_missing_lock_file(self):
+        (self.state_dir / "lock").unlink()
+        self.assertEqual(self._probe()["state"], "unknown")
+        self.assertFalse((self.state_dir / "lock").exists())
 
     def test_durable_marker_requires_recovery(self):
         operation_id = str(uuid.uuid4())
