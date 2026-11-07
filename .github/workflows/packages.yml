@@ -50,6 +50,8 @@ jobs:
           policy="$(dpkg-query -L zapret2applet | grep '/org.zapret2applet.policy$')"
           test -n "$helper" && test -x "$helper"
           test -n "$policy" && test -f "$policy"
+          test -f /usr/lib/systemd/system/zapret2applet-blockcheck.service
+          test -f /usr/lib/systemd/system/zapret2applet-blockcheck-recovery.service
           DEBIAN_FRONTEND=noninteractive apt-get purge -y zapret2applet
           ! dpkg-query -W zapret2applet >/dev/null 2>&1
           test ! -e /usr/bin/zapret2applet
@@ -71,7 +73,7 @@ jobs:
         run: |
           dnf install -y ca-certificates cmake curl desktop-file-utils gcc-c++ git \
             extra-cmake-modules kf6-kirigami-devel qt6-qtbase-devel \
-            qt6-qtdeclarative-devel qt6-qttools-devel rpm-build rpmlint tar
+            qt6-qtdeclarative-devel qt6-qttools-devel rpm-build rpmlint systemd-rpm-macros tar
       - uses: actions/checkout@v4
         with:
           submodules: recursive
@@ -120,6 +122,8 @@ jobs:
           policy="$(rpm -ql zapret2applet | grep '/org.zapret2applet.policy$')"
           test -n "$helper" && test -x "$helper"
           test -n "$policy" && test -f "$policy"
+          test -f /usr/lib/systemd/system/zapret2applet-blockcheck.service
+          test -f /usr/lib/systemd/system/zapret2applet-blockcheck-recovery.service
           dnf remove -y zapret2applet
           ! rpm -q zapret2applet >/dev/null 2>&1
           test ! -e /usr/bin/zapret2applet
