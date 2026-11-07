@@ -1563,6 +1563,10 @@
         <translation>Cancellation requested. Waiting for the worker to finish and the service to be restored.</translation>
     </message>
     <message>
+        <source>Идентификатор задания устарел; журнал другой операции не будет прочитан.</source>
+        <translation>The job identifier is stale; the journal for another operation will not be read.</translation>
+    </message>
+    <message>
         <source>Helper вернул некорректное состояние задания.</source>
         <translation>The helper returned an invalid job state.</translation>
     </message>
