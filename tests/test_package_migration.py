@@ -44,7 +44,7 @@ def main() -> None:
         for command in ("deb-systemd-invoke", "deb-systemd-helper", "systemctl"):
             executable = bin_dir / command
             executable.write_text(
-                "#!/bin/sh\nprintf '%s %s\\n' \"$0\" \"$*\" >> \"$CALL_LOG\"\n",
+                "#!/bin/sh\nprintf '%s %s\n' \"$0\" \"$*\" >> \"$CALL_LOG\"\n",
                 encoding="utf-8",
             )
             executable.chmod(0o755)
@@ -65,7 +65,7 @@ def main() -> None:
         # script copy differs only in the two absolute systemd unit paths.
         unit_dir = temp_path / "systemd" / "system"
         unit_dir.mkdir(parents=True)
-        (unit_dir / LEGACY_UNITS[0]).write_text("[Unit]\\n", encoding="utf-8")
+        (unit_dir / LEGACY_UNITS[0]).write_text("[Unit]\n", encoding="utf-8")
         test_preinst = temp_path / "preinst"
         test_script = preinst.replace(
             '"/usr/lib/systemd/system/$1"',
@@ -92,7 +92,7 @@ def main() -> None:
             executable = failing_bin / command
             executable.write_text(
                 "#!/bin/sh\n"
-                "printf '%s %s\\n' \"$0\" \"$*\" >> \"$CALL_LOG\"\n"
+                "printf '%s %s\n' \"$0\" \"$*\" >> \"$CALL_LOG\"\n"
                 + ("exit 1\n" if command == "deb-systemd-invoke" else "exit 0\n"),
                 encoding="utf-8",
             )
@@ -110,10 +110,10 @@ def main() -> None:
         # Execute the RPM %pretrans scriptlet with isolated systemd paths and
         # a stub systemctl. This exercises the actual scriptlet body without
         # touching the host system.
-        rpm_pretrans = spec.split("%pretrans\\n", 1)[1].split("\\n%posttrans", 1)[0]
+        rpm_pretrans = spec.split("%pretrans\n", 1)[1].split("\n%posttrans", 1)[0]
         rpm_unit_dir = temp_path / "rpm-systemd" / "system"
         rpm_unit_dir.mkdir(parents=True)
-        (rpm_unit_dir / LEGACY_UNITS[0]).write_text("[Unit]\\n", encoding="utf-8")
+        (rpm_unit_dir / LEGACY_UNITS[0]).write_text("[Unit]\n", encoding="utf-8")
         rpm_runtime_dir = temp_path / "rpm-run" / "systemd" / "system"
         rpm_runtime_dir.mkdir(parents=True)
         rpm_script = rpm_pretrans.replace(
@@ -128,10 +128,10 @@ def main() -> None:
         )
         systemctl = bin_dir / "systemctl"
         systemctl.write_text(
-            "#!/bin/sh\\n"
-            "printf '%s\\n' \"$*\" >> \"$CALL_LOG\"\\n"
-            "if [ \"$FAIL_STOP\" = 1 ] && [ \"$1\" = stop ]; then exit 1; fi\\n"
-            "exit 0\\n",
+            "#!/bin/sh\n"
+            "printf '%s\n' \"$*\" >> \"$CALL_LOG\"\n"
+            "if [ \"$FAIL_STOP\" = 1 ] && [ \"$1\" = stop ]; then exit 1; fi\n"
+            "exit 0\n",
             encoding="utf-8",
         )
         systemctl.chmod(0o755)
@@ -155,7 +155,7 @@ def main() -> None:
         assert rpm_failed_calls == ["stop " + LEGACY_UNITS[0]], rpm_failed_calls
 
         # Execute the RPM %posttrans body and verify daemon-reload.
-        rpm_posttrans = spec.split("%posttrans\\n", 1)[1].split("\\n%build", 1)[0]
+        rpm_posttrans = spec.split("%posttrans\n", 1)[1].split("\n%build", 1)[0]
         log_path.unlink()
         subprocess.run(["/bin/sh", "-c", rpm_posttrans], check=True, env=rpm_env)
         assert log_path.read_text(encoding="utf-8").splitlines() == ["daemon-reload"]
