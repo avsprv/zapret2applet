@@ -13,11 +13,11 @@ case "$1" in
         do
             # Run the old ExecStopPost recovery helper before unpack replaces it.
             if legacy_unit_installed "$unit"; then
-                if command -v deb-systemd-invoke >/dev/null 2>&1; then
-                    deb-systemd-invoke stop "$unit"
-                elif command -v systemctl >/dev/null 2>&1 && [ -d /run/systemd/system ]; then
-                    systemctl stop "$unit"
+                if ! command -v deb-systemd-invoke >/dev/null 2>&1; then
+                    echo "zapret2control: deb-systemd-invoke is required to stop $unit" >&2
+                    exit 1
                 fi
+                deb-systemd-invoke stop "$unit"
 
                 # Disable while the legacy unit file is still available to systemd.
                 if command -v deb-systemd-helper >/dev/null 2>&1; then
