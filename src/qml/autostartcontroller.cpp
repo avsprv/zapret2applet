@@ -67,7 +67,7 @@ bool AutostartController::enabled() const { return isManagedEntry(); }
 QString AutostartController::errorMessage() const { return m_errorMessage; }
 QString AutostartController::entryPath() const
 {
-    return QDir(m_autostartDirectory).filePath(QStringLiteral("zapret2applet.desktop"));
+    return QDir(m_autostartDirectory).filePath(QStringLiteral("zapret2control.desktop"));
 }
 QString AutostartController::expectedExec() const { return escapeDesktopExecArgument(m_executablePath); }
 
@@ -78,7 +78,7 @@ bool AutostartController::isManagedEntry() const
         return false;
     QString type, marker, exec;
     return readDesktopEntryValue(entryPath(), QStringLiteral("Type"), &type)
-        && readDesktopEntryValue(entryPath(), QStringLiteral("X-Zapret2Applet-Managed"), &marker)
+        && readDesktopEntryValue(entryPath(), QStringLiteral("X-Zapret2Control-Managed"), &marker)
         && readDesktopEntryValue(entryPath(), QStringLiteral("Exec"), &exec)
         && type == QLatin1String("Application")
         && marker == QLatin1String("true")
@@ -121,13 +121,13 @@ void AutostartController::setEnabled(bool enabled)
         const QByteArray data = QStringLiteral(
             "[Desktop Entry]\n"
             "Type=Application\n"
-            "Name=zapret2applet\n"
+            "Name=zapret2control\n"
             "Comment=Unofficial Qt6 GUI for zapret2\n"
             "Exec=%1\n"
-            "Icon=zapret2applet\n"
+            "Icon=zapret2control\n"
             "Terminal=false\n"
             "X-GNOME-Autostart-enabled=true\n"
-            "X-Zapret2Applet-Managed=true\n").arg(expectedExec()).toUtf8();
+            "X-Zapret2Control-Managed=true\n").arg(expectedExec()).toUtf8();
         if (file.write(data) != data.size() || !file.commit()) {
             setError(tr("Не удалось сохранить файл автозапуска: %1").arg(file.errorString()));
             return;

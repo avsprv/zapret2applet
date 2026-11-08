@@ -1,5 +1,5 @@
 #!/bin/sh
-# zapret2applet-helper — единственная привилегированная часть zapret2applet.
+# zapret2control-helper — единственная привилегированная часть zapret2control.
 # Запускается от root через pkexec/polkit. Принимает ТОЛЬКО перечисленные ниже
 # команды и строго валидирует аргументы; окружение вызывающего не используется.
 set -eu
@@ -34,7 +34,7 @@ case "$0" in
 esac
 PIDFILE=$RUNDIR/blockcheck.pid
 
-die() { echo "zapret2applet-helper: $*" >&2; exit 2; }
+die() { echo "zapret2control-helper: $*" >&2; exit 2; }
 
 # Runtime state is private to root (or to the isolated test owner).
 LOCKFILE=$RUNDIR/blockcheck.lock
@@ -242,7 +242,7 @@ lists-write)
         secure_root_file "$list" || die "list file must be regular, safely owned, and not group- or world-writable"
     fi
 
-    tmp=$(mktemp "$ipset_dir/.list.zapret2applet.XXXXXX") || die "cannot create temporary list"
+    tmp=$(mktemp "$ipset_dir/.list.zapret2control.XXXXXX") || die "cannot create temporary list"
     trap 'rm -f "$tmp"' EXIT HUP INT TERM
     head -c 1048577 > "$tmp"
     size=$(wc -c < "$tmp" | tr -d '[:space:]')
@@ -283,8 +283,8 @@ logs-read)
     case "$2" in 50|100|200|500) lines=$2 ;; *) die "log line count is not allowlisted" ;; esac
     command -v "$JOURNALCTL" >/dev/null 2>&1 || die "journalctl is not available"
     umask 077
-    tmp=$(mktemp /tmp/zapret2applet-journal.XXXXXX) || die "cannot create temporary journal output"
-    err=$(mktemp /tmp/zapret2applet-journal-error.XXXXXX) || {
+    tmp=$(mktemp /tmp/zapret2control-journal.XXXXXX) || die "cannot create temporary journal output"
+    err=$(mktemp /tmp/zapret2control-journal-error.XXXXXX) || {
         rm -f "$tmp"
         die "cannot create temporary journal error output"
     }
@@ -297,7 +297,7 @@ logs-read)
     size=$(wc -c < "$tmp" | tr -d '[:space:]')
     case "$size" in ''|*[!0-9]*) die "cannot determine journal output size" ;; esac
     if [ "$size" -gt 1048576 ]; then
-        printf '[zapret2applet: output truncated to the most recent 1 MiB]\n'
+        printf '[zapret2control: output truncated to the most recent 1 MiB]\n'
         tail -c 1048500 "$tmp"
     else
         cat "$tmp"
@@ -314,7 +314,7 @@ lists-read)
     [ -d "$ipset_dir" ] && [ ! -L "$ipset_dir" ] || die "ipset directory is missing or unsafe"
     secure_list_dirs || die "list directories must be root-owned and not writable by group or other users"
     list="$ipset_dir/$2"
-    [ -e "$list" ] || { echo "zapret2applet-helper: list file does not exist" >&2; exit 3; }
+    [ -e "$list" ] || { echo "zapret2control-helper: list file does not exist" >&2; exit 3; }
     secure_root_file "$list" || die "list file must be regular, safely owned, and not group- or world-writable"
     size=$(wc -c < "$list" | tr -d '[:space:]')
     case "$size" in ''|*[!0-9]*) die "cannot determine list size" ;; esac
@@ -347,7 +347,7 @@ config-write)
         current_hash=$(sha256sum "$config" | awk '{print $1}')
         [ "$current_hash" = "$expected_hash" ] || die "config changed since it was read; reload before saving"
     fi
-    tmp=$(mktemp "$BASE/.config.zapret2applet.XXXXXX") || die "cannot create temporary config"
+    tmp=$(mktemp "$BASE/.config.zapret2control.XXXXXX") || die "cannot create temporary config"
     trap 'rm -f "$tmp"' EXIT HUP INT TERM
     head -c 1048577 > "$tmp"
     size=$(wc -c < "$tmp" | tr -d '[:space:]')
@@ -389,7 +389,7 @@ config-rollback)
     [ -n "$restore" ] && [ -d "$restore" ] && [ ! -L "$restore" ] || die "no config backups found"
     secure_private_root_dir "$restore" || die "latest config backup directory is unsafe"
     secure_root_file "$restore/config" || die "latest config backup file is unsafe"
-    tmp=$(mktemp "$BASE/.config.zapret2applet.XXXXXX") || die "cannot create temporary config"
+    tmp=$(mktemp "$BASE/.config.zapret2control.XXXXXX") || die "cannot create temporary config"
     trap 'rm -f "$tmp"' EXIT HUP INT TERM
     cp "$restore/config" "$tmp" || die "cannot stage backup"
     sh -n "$tmp" || die "backup failed shell syntax validation"
@@ -420,7 +420,7 @@ blockcheck-submit)
     ;;
 blockcheck-job-cancel)
     [ "$#" -eq 1 ] || die "usage: blockcheck-job-cancel"
-    exec systemctl stop --no-block zapret2applet-blockcheck.service
+    exec systemctl stop --no-block zapret2control-blockcheck.service
     ;;
 blockcheck-job-logs)
     [ "$#" -eq 3 ] || die "usage: blockcheck-job-logs {50|100|200|500} START_EPOCH"
@@ -431,13 +431,13 @@ blockcheck-job-logs)
     [ "$3" -le "$now" ] && [ "$3" -ge "$((now - 2592000))" ] || die "Blockcheck journal start time is outside the allowed window"
     command -v "$JOURNALCTL" >/dev/null 2>&1 || die "journalctl is not available"
     umask 077
-    tmp=$(mktemp /tmp/zapret2applet-blockcheck-journal.XXXXXX) || die "cannot create temporary journal output"
-    err=$(mktemp /tmp/zapret2applet-blockcheck-journal-error.XXXXXX) || {
+    tmp=$(mktemp /tmp/zapret2control-blockcheck-journal.XXXXXX) || die "cannot create temporary journal output"
+    err=$(mktemp /tmp/zapret2control-blockcheck-journal-error.XXXXXX) || {
         rm -f "$tmp"
         die "cannot create temporary journal error output"
     }
     trap 'rm -f "$tmp" "$err"' EXIT HUP INT TERM
-    if ! "$JOURNALCTL" --unit=zapret2applet-blockcheck.service --since="@$3" --lines="$lines" --no-pager --output=cat > "$tmp" 2> "$err"; then
+    if ! "$JOURNALCTL" --unit=zapret2control-blockcheck.service --since="@$3" --lines="$lines" --no-pager --output=cat > "$tmp" 2> "$err"; then
         message=$(cat "$err")
         [ -n "$message" ] || message="journalctl exited unsuccessfully"
         die "cannot read Blockcheck journal: $message"
@@ -445,7 +445,7 @@ blockcheck-job-logs)
     size=$(wc -c < "$tmp" | tr -d '[:space:]')
     case "$size" in ''|*[!0-9]*) die "cannot determine Blockcheck journal output size" ;; esac
     if [ "$size" -gt 1048576 ]; then
-        printf '[zapret2applet: output truncated to the most recent 1 MiB]\n'
+        printf '[zapret2control: output truncated to the most recent 1 MiB]\n'
         tail -c 1048500 "$tmp"
     else
         cat "$tmp"
@@ -537,10 +537,10 @@ blockcheck)
 blockcheck-cancel)
     [ "$#" -eq 1 ] || die "usage: blockcheck-cancel"
     prepare_runtime_dir || die "runtime directory is unsafe"
-    [ -e "$LOCKFILE" ] && secure_runtime_file "$LOCKFILE" || { echo "zapret2applet-helper: blockcheck is not running" >&2; exit 0; }
+    [ -e "$LOCKFILE" ] && secure_runtime_file "$LOCKFILE" || { echo "zapret2control-helper: blockcheck is not running" >&2; exit 0; }
     exec 9>"$LOCKFILE"
-    flock -n 9 && { echo "zapret2applet-helper: blockcheck is not running" >&2; exit 0; }
-    pid=$(bc_pid) || { echo "zapret2applet-helper: blockcheck is not running" >&2; exit 0; }
+    flock -n 9 && { echo "zapret2control-helper: blockcheck is not running" >&2; exit 0; }
+    pid=$(bc_pid) || { echo "zapret2control-helper: blockcheck is not running" >&2; exit 0; }
     # SIGINT: обработчик blockcheck2.sh печатает "terminating..." и чистит правила/процессы.
     # Если процесс стартовал с игнорируемым SIGINT, через ~3 с шлём SIGTERM (обработчик
     # sigsilent делает ту же очистку). SIGKILL не используем: он оставил бы правила nft.
@@ -585,7 +585,7 @@ install-locked)
     umask 077
     mkdir -p "$RUNDIR"
     mkdir "$RUNDIR/install.lock" 2>/dev/null || die "another installation is in progress"
-    tmp=$(mktemp -d "$parent/.zapret2applet-install.XXXXXX") || { rmdir "$RUNDIR/install.lock"; die "cannot create temporary installation directory"; }
+    tmp=$(mktemp -d "$parent/.zapret2control-install.XXXXXX") || { rmdir "$RUNDIR/install.lock"; die "cannot create temporary installation directory"; }
     unit_tmp=""
     cleanup_install() {
         [ -z "$unit_tmp" ] || rm -f "$unit_tmp"
@@ -701,7 +701,7 @@ update-locked)
     mkdir -p "$RUNDIR"
     mkdir "$RUNDIR/update.lock" 2>/dev/null || die "another update is in progress"
     name="zapret2-$tag"
-    tmp=$(mktemp -d /var/tmp/zapret2applet-update.XXXXXX) || { rmdir "$RUNDIR/update.lock"; die "mktemp failed"; }
+    tmp=$(mktemp -d /var/tmp/zapret2control-update.XXXXXX) || { rmdir "$RUNDIR/update.lock"; die "mktemp failed"; }
     trap 'rm -rf "$tmp"; rmdir "$RUNDIR/update.lock" 2>/dev/null || true' EXIT
 
     fetch() {
@@ -760,7 +760,7 @@ update-locked)
 
     rollback() {
         echo "Rolling back to the previous version ..." >&2
-        rm -rf "$BASE" && mv "$bak" "$BASE" || echo "zapret2applet-helper: ROLLBACK FAILED, previous version is in $bak" >&2
+        rm -rf "$BASE" && mv "$bak" "$BASE" || echo "zapret2control-helper: ROLLBACK FAILED, previous version is in $bak" >&2
         [ "$was_active" = 1 ] && svc start || true
     }
 
@@ -771,10 +771,10 @@ update-locked)
         || { cat "$tmp/install_bin.log" >&2; rollback; die "install_bin.sh failed"; }
     "$BASE/nfq2/nfqws2" --version >/dev/null 2>&1 || { rollback; die "nfqws2 does not run on this system"; }
 
-    [ "$was_active" = 1 ] && { echo "Starting $UNIT ..."; svc start || echo "zapret2applet-helper: WARNING: cannot start $UNIT" >&2; }
+    [ "$was_active" = 1 ] && { echo "Starting $UNIT ..."; svc start || echo "zapret2control-helper: WARNING: cannot start $UNIT" >&2; }
     echo "OK: zapret2 updated to $tag (previous version kept in $bak)"
     ;;
 *)
-    die "usage: zapret2applet-helper logs-read {50|100|200|500} | lists-read NAME | lists-write NAME | config-read | config-write [EXPECTED_SHA256] | config-rollback | unit {start|stop|enable|disable} | blockcheck-submit [opts] | blockcheck-worker | blockcheck-recover | blockcheck-recovery-probe | blockcheck-recovery-probe | blockcheck-job-status OPERATION_UUID | blockcheck-job-logs {50|100|200|500} START_EPOCH | blockcheck-job-cancel | blockcheck [opts] | blockcheck-cancel | install vX.Y.Z | update vX.Y.Z"
+    die "usage: zapret2control-helper logs-read {50|100|200|500} | lists-read NAME | lists-write NAME | config-read | config-write [EXPECTED_SHA256] | config-rollback | unit {start|stop|enable|disable} | blockcheck-submit [opts] | blockcheck-worker | blockcheck-recover | blockcheck-recovery-probe | blockcheck-recovery-probe | blockcheck-job-status OPERATION_UUID | blockcheck-job-logs {50|100|200|500} START_EPOCH | blockcheck-job-cancel | blockcheck [opts] | blockcheck-cancel | install vX.Y.Z | update vX.Y.Z"
     ;;
 esac

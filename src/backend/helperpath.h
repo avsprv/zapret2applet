@@ -19,7 +19,7 @@ inline QString path()
     if (QFile::exists(installed))
         return installed;
     return QDir(QCoreApplication::applicationDirPath())
-        .absoluteFilePath(QStringLiteral("../packaging/helper/zapret2applet-helper"));
+        .absoluteFilePath(QStringLiteral("../packaging/helper/zapret2control-helper"));
 }
 
 // Запускает хелпер через pkexec. QZAPRET_NO_PKEXEC=1 — только для тестов:

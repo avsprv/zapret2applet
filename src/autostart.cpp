@@ -9,7 +9,7 @@
 static QString desktopPath()
 {
     return QStandardPaths::writableLocation(QStandardPaths::GenericConfigLocation)
-           + QStringLiteral("/autostart/zapret2applet.desktop");
+           + QStringLiteral("/autostart/zapret2control.desktop");
 }
 
 bool Autostart::isEnabled()
@@ -34,10 +34,10 @@ bool Autostart::setEnabled(bool enabled)
         return false;
     f.write(QStringLiteral("[Desktop Entry]\n"
                            "Type=Application\n"
-                           "Name=zapret2applet\n"
+                           "Name=zapret2control\n"
                            "Comment=Unofficial Qt6 GUI for zapret2\n"
                            "Exec=\"%1\" --minimized\n"
-                           "Icon=zapret2applet\n"
+                           "Icon=zapret2control\n"
                            "Terminal=false\n"
                            "X-GNOME-Autostart-enabled=true\n")
                 .arg(exe)
