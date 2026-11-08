@@ -170,7 +170,7 @@ jobs:
 
           dnf upgrade -y "$package"
           rpm -q zapret2control
-          ! rpm -q zapret2applet >/dev/null 2>&1
+          ! rpm -qa --qf '%{NAME}\n' | grep -Fx zapret2applet
           test -x /usr/bin/zapret2control
           test ! -e /usr/bin/zapret2applet
           test ! -e /usr/libexec/zapret2applet
