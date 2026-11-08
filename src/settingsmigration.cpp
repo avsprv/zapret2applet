@@ -19,13 +19,6 @@ bool SettingsMigration::migrateLegacyProfile()
     if (current.value(QLatin1String(kMigrationMarker)).toBool())
         return true;
 
-    const QStringList currentKeys = current.allKeys();
-    if (!currentKeys.isEmpty()) {
-        current.setValue(QLatin1String(kMigrationMarker), true);
-        current.sync();
-        return current.status() == QSettings::NoError;
-    }
-
     const QString currentApplicationName = QCoreApplication::applicationName();
     QCoreApplication::setApplicationName(QLatin1String(kLegacyApplicationName));
     QSettings legacy;
@@ -41,15 +34,16 @@ bool SettingsMigration::migrateLegacyProfile()
         return current.status() == QSettings::NoError;
     }
 
-    for (const QString &key : legacyKeys)
-        current.setValue(key, legacy.value(key));
+    // Merge missing keys so an interrupted/partial first run can be retried.
+    // Values already present in the new profile always take precedence.
+    for (const QString &key : legacyKeys) {
+        if (!current.contains(key))
+            current.setValue(key, legacy.value(key));
+    }
 
     current.sync();
-    if (current.status() != QSettings::NoError) {
-        current.clear();
-        current.sync();
+    if (current.status() != QSettings::NoError)
         return false;
-    }
 
     current.setValue(QLatin1String(kMigrationMarker), true);
     current.sync();
