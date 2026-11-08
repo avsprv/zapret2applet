@@ -1,6 +1,7 @@
 #include <QtTest>
 
 #include "dbusmenu.h"
+#include "traycontroller.h"
 
 #include <QDBusConnection>
 #include <QDBusInterface>
@@ -9,6 +10,22 @@
 #include <QDBusReply>
 #include <QDBusVariant>
 #include <QSignalSpy>
+
+
+class FakeStatusNotifierWatcher final : public QObject
+{
+    Q_OBJECT
+    Q_CLASSINFO("D-Bus Interface", "org.freedesktop.StatusNotifierWatcher")
+
+public:
+    QStringList registeredItems;
+
+public slots:
+    void RegisterStatusNotifierItem(const QString &service)
+    {
+        registeredItems.append(service);
+    }
+};
 
 class TestDBusMenuOverSessionBus final : public QObject
 {
@@ -145,6 +162,72 @@ private slots:
         QCOMPARE(sendClick().type(), QDBusMessage::ReplyMessage);
         QTest::qWait(50);
         QCOMPARE(startSpy.size(), 1);
+    }
+
+
+    void statusNotifierRegistersAndRecoversAfterWatcherRestart()
+    {
+        constexpr auto watcherService = "org.freedesktop.StatusNotifierWatcher";
+        constexpr auto watcherPath = "/StatusNotifierWatcher";
+
+        TrayController controller;
+        QVERIFY(!controller.watcherAvailable());
+        QVERIFY(!controller.registered());
+
+        FakeStatusNotifierWatcher watcher;
+        QVERIFY2(m_bus.registerObject(QString::fromLatin1(watcherPath), &watcher,
+                                      QDBusConnection::ExportAllSlots),
+                 qPrintable(m_bus.lastError().message()));
+        QVERIFY2(m_bus.registerService(QString::fromLatin1(watcherService)),
+                 qPrintable(m_bus.lastError().message()));
+
+        QTRY_VERIFY(controller.watcherAvailable());
+        QTRY_VERIFY(controller.registered());
+        QCOMPARE(watcher.registeredItems.size(), 1);
+        const QString itemService = watcher.registeredItems.constFirst();
+        QVERIFY(itemService.startsWith(QStringLiteral("org.freedesktop.StatusNotifierItem-")));
+
+        const auto introspect = [this, &itemService](const QString &path) {
+            const QDBusMessage request = QDBusMessage::createMethodCall(
+                itemService, path, QStringLiteral("org.freedesktop.DBus.Introspectable"),
+                QStringLiteral("Introspect"));
+            return m_bus.call(request);
+        };
+        const QDBusMessage itemReply = introspect(QStringLiteral("/StatusNotifierItem"));
+        QCOMPARE(itemReply.type(), QDBusMessage::ReplyMessage);
+        const QString itemXml = itemReply.arguments().constFirst().toString();
+        QVERIFY(itemXml.contains(QStringLiteral("org.freedesktop.StatusNotifierItem")));
+        QVERIFY(itemXml.contains(QStringLiteral("Activate")));
+        QVERIFY(itemXml.contains(QStringLiteral("SecondaryActivate")));
+        QVERIFY(itemXml.contains(QStringLiteral("ContextMenu")));
+        QVERIFY(itemXml.contains(QStringLiteral("Scroll")));
+        QVERIFY(itemXml.contains(QStringLiteral("IconPixmap")));
+        QVERIFY(itemXml.contains(QStringLiteral("ToolTip")));
+        QVERIFY(itemXml.contains(QStringLiteral("NewStatus")));
+
+        QDBusInterface item(itemService, QStringLiteral("/StatusNotifierItem"),
+                            QStringLiteral("org.freedesktop.StatusNotifierItem"), m_bus);
+        QVERIFY(item.isValid());
+        QCOMPARE(item.property("Category").toString(), QStringLiteral("ApplicationStatus"));
+        QCOMPARE(item.property("Id").toString(), QStringLiteral("zapret2applet"));
+
+        const QDBusMessage menuReply = introspect(QStringLiteral("/Menu"));
+        QCOMPARE(menuReply.type(), QDBusMessage::ReplyMessage);
+        QVERIFY(menuReply.arguments().constFirst().toString().contains(
+            QStringLiteral("com.canonical.dbusmenu")));
+
+        QVERIFY(m_bus.unregisterService(QString::fromLatin1(watcherService)));
+        QTRY_VERIFY(!controller.watcherAvailable());
+        QTRY_VERIFY(!controller.registered());
+
+        QVERIFY2(m_bus.registerService(QString::fromLatin1(watcherService)),
+                 qPrintable(m_bus.lastError().message()));
+        QTRY_COMPARE(watcher.registeredItems.size(), 2);
+        QCOMPARE(watcher.registeredItems.constLast(), itemService);
+        QTRY_VERIFY(controller.registered());
+
+        m_bus.unregisterService(QString::fromLatin1(watcherService));
+        m_bus.unregisterObject(QString::fromLatin1(watcherPath));
     }
 
     void invalidItemReturnsDBusError()
