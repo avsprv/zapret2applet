@@ -69,8 +69,10 @@ private slots:
                                  QStringLiteral("com.canonical.dbusmenu"), m_bus);
         QVERIFY(interface.isValid());
 
-        const QDBusMessage reply = interface.call(
-            QStringLiteral("GetLayout"), 0, -1, QStringList{});
+        const QDBusMessage reply = interface.callWithArgumentList(
+            QDBus::Block, QStringLiteral("GetLayout"),
+            QVariantList{QVariant::fromValue(0), QVariant::fromValue(-1),
+                         QVariant::fromValue(QStringList{})});
         QCOMPARE(reply.type(), QDBusMessage::ReplyMessage);
         QCOMPARE(reply.arguments().size(), 2);
 
@@ -96,8 +98,10 @@ private slots:
                                  QStringLiteral("com.canonical.dbusmenu"), m_bus);
         QVERIFY(interface.isValid());
 
-        const QDBusMessage groupReply = interface.call(
-            QStringLiteral("GetGroupProperties"), QList<int>{3, 4}, QStringList{});
+        const QDBusMessage groupReply = interface.callWithArgumentList(
+            QDBus::Block, QStringLiteral("GetGroupProperties"),
+            QVariantList{QVariant::fromValue(QList<int>{3, 4}),
+                         QVariant::fromValue(QStringList{})});
         QCOMPARE(groupReply.type(), QDBusMessage::ReplyMessage);
         QCOMPARE(groupReply.arguments().size(), 1);
         const DBusMenuItemPropertiesList properties =
@@ -106,8 +110,9 @@ private slots:
         QCOMPARE(properties.at(0).id, 3);
         QCOMPARE(properties.at(1).id, 4);
 
-        const QDBusMessage propertyReply = interface.call(
-            QStringLiteral("GetProperty"), 2, QStringLiteral("enabled"));
+        const QDBusMessage propertyReply = interface.callWithArgumentList(
+            QDBus::Block, QStringLiteral("GetProperty"),
+            QVariantList{QVariant::fromValue(2), QVariant::fromValue(QStringLiteral("enabled"))});
         QCOMPARE(propertyReply.type(), QDBusMessage::ReplyMessage);
         QCOMPARE(propertyReply.arguments().size(), 1);
         const QDBusVariant enabled = propertyReply.arguments().constFirst().value<QDBusVariant>();
@@ -123,15 +128,18 @@ private slots:
                                  QStringLiteral("com.canonical.dbusmenu"), m_bus);
         QVERIFY(interface.isValid());
 
-        QCOMPARE(interface.call(QStringLiteral("Event"), 3, QStringLiteral("clicked"),
-                                QDBusVariant(QVariant(false)), uint{0}).type(),
-                 QDBusMessage::ReplyMessage);
+        const auto sendClick = [&interface]() {
+            return interface.callWithArgumentList(
+                QDBus::Block, QStringLiteral("Event"),
+                QVariantList{QVariant::fromValue(3), QVariant::fromValue(QStringLiteral("clicked")),
+                             QVariant::fromValue(QDBusVariant(QVariant(false))),
+                             QVariant::fromValue(uint{0})});
+        };
+        QCOMPARE(sendClick().type(), QDBusMessage::ReplyMessage);
         QTRY_COMPARE(startSpy.size(), 1);
 
         m_menu->setServiceState(QStringLiteral("Работает"), true, false);
-        QCOMPARE(interface.call(QStringLiteral("Event"), 3, QStringLiteral("clicked"),
-                                QDBusVariant(QVariant(false)), uint{0}).type(),
-                 QDBusMessage::ReplyMessage);
+        QCOMPARE(sendClick().type(), QDBusMessage::ReplyMessage);
         QTest::qWait(50);
         QCOMPARE(startSpy.size(), 1);
     }
@@ -142,8 +150,9 @@ private slots:
                                  QStringLiteral("com.canonical.dbusmenu"), m_bus);
         QVERIFY(interface.isValid());
 
-        const QDBusMessage reply = interface.call(
-            QStringLiteral("GetProperty"), 999, QStringLiteral("enabled"));
+        const QDBusMessage reply = interface.callWithArgumentList(
+            QDBus::Block, QStringLiteral("GetProperty"),
+            QVariantList{QVariant::fromValue(999), QVariant::fromValue(QStringLiteral("enabled"))});
         QCOMPARE(reply.type(), QDBusMessage::ErrorMessage);
         QCOMPARE(reply.errorName(), QStringLiteral("org.freedesktop.DBus.Error.InvalidArgs"));
     }
