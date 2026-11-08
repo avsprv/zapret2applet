@@ -4,7 +4,7 @@ zapret2control (0.5.0) unstable; urgency=medium
   * Migrate existing QSettings profiles and managed XDG autostart entries.
   * Preserve legacy Blockcheck recovery state during package transition.
   * Retain the previous package name as a transition alias.
-  * Stop and disable legacy Blockcheck systemd units during package upgrades.
+  * Stop legacy Blockcheck units before replacing package files.
 
  -- avsprv <avsprv@users.noreply.github.com>  Sun, 08 Nov 2026 09:00:00 +0300
 
