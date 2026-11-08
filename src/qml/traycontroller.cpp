@@ -12,6 +12,10 @@
 #include <QDBusMetaType>
 #include <QCoreApplication>
 #include <QDebug>
+#include <QColor>
+#include <QImage>
+#include <QPainter>
+#include <QPen>
 
 namespace {
 constexpr auto watcherService = "org.freedesktop.StatusNotifierWatcher";
@@ -76,6 +80,64 @@ Q_DECLARE_METATYPE(TrayImage)
 Q_DECLARE_METATYPE(TrayImageList)
 Q_DECLARE_METATYPE(TrayToolTip)
 
+namespace {
+TrayImageList renderTrayPixmap(int size, const QColor &indicator)
+{
+    QImage image(size, size, QImage::Format_ARGB32);
+    image.fill(Qt::transparent);
+
+    QPainter painter(&image);
+    painter.setRenderHint(QPainter::Antialiasing, true);
+    const qreal scale = size / 32.0;
+    const QColor foreground(QStringLiteral("#eff0f1"));
+    QPen pen(foreground, 2.5 * scale, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin);
+    painter.setPen(pen);
+    painter.setBrush(Qt::NoBrush);
+
+    const QRectF first(2.5 * scale, 4.0 * scale, 10.0 * scale, 8.0 * scale);
+    const QRectF second(11.0 * scale, 12.0 * scale, 10.0 * scale, 8.0 * scale);
+    const QRectF third(19.5 * scale, 20.0 * scale, 10.0 * scale, 8.0 * scale);
+    painter.drawLine(QPointF(first.right(), first.center().y()),
+                     QPointF(second.left(), second.center().y()));
+    painter.drawLine(QPointF(second.right(), second.center().y()),
+                     QPointF(third.left(), third.center().y()));
+    painter.drawRoundedRect(first, 2.0 * scale, 2.0 * scale);
+    painter.drawRoundedRect(second, 2.0 * scale, 2.0 * scale);
+    painter.drawRoundedRect(third, 2.0 * scale, 2.0 * scale);
+
+    if (indicator.isValid()) {
+        painter.setPen(Qt::NoPen);
+        painter.setBrush(indicator);
+        painter.drawEllipse(QPointF(25.5 * scale, 6.5 * scale), 4.0 * scale, 4.0 * scale);
+        painter.setPen(QPen(QColor(QStringLiteral("#232629")), 1.0 * scale));
+        painter.setBrush(Qt::NoBrush);
+        painter.drawEllipse(QPointF(25.5 * scale, 6.5 * scale), 4.0 * scale, 4.0 * scale);
+    }
+    painter.end();
+
+    QByteArray bytes;
+    bytes.reserve(size * size * 4);
+    for (int y = 0; y < size; ++y) {
+        for (int x = 0; x < size; ++x) {
+            const QRgb pixel = image.pixel(x, y);
+            bytes.append(static_cast<char>(qAlpha(pixel)));
+            bytes.append(static_cast<char>(qRed(pixel)));
+            bytes.append(static_cast<char>(qGreen(pixel)));
+            bytes.append(static_cast<char>(qBlue(pixel)));
+        }
+    }
+    return {{size, size, bytes}};
+}
+
+TrayImageList renderTrayPixmaps(const QColor &indicator)
+{
+    TrayImageList result;
+    for (const int size : {16, 22, 24, 32, 48})
+        result.append(renderTrayPixmap(size, indicator).constFirst());
+    return result;
+}
+} // namespace
+
 class StatusNotifierItem final : public QObject
 {
     Q_OBJECT
@@ -88,9 +150,9 @@ class StatusNotifierItem final : public QObject
     Q_PROPERTY(QString IconName READ iconName)
     Q_PROPERTY(TrayImageList IconPixmap READ iconPixmap)
     Q_PROPERTY(QString OverlayIconName READ overlayIconName)
-    Q_PROPERTY(TrayImageList OverlayIconPixmap READ emptyPixmap)
+    Q_PROPERTY(TrayImageList OverlayIconPixmap READ overlayIconPixmap)
     Q_PROPERTY(QString AttentionIconName READ attentionIconName)
-    Q_PROPERTY(TrayImageList AttentionIconPixmap READ emptyPixmap)
+    Q_PROPERTY(TrayImageList AttentionIconPixmap READ attentionIconPixmap)
     Q_PROPERTY(QString AttentionMovieName READ attentionMovieName)
     Q_PROPERTY(TrayToolTip ToolTip READ toolTip)
     Q_PROPERTY(bool ItemIsMenu READ itemIsMenu)
@@ -111,18 +173,41 @@ public:
     QString id() const { return QStringLiteral("zapret2applet"); }
     QString title() const { return QCoreApplication::applicationName(); }
     uint windowId() const { return 0; }
-    QString status() const { return QStringLiteral("Active"); }
-    QString iconName() const { return QStringLiteral("zapret2applet"); }
-    TrayImageList iconPixmap() const { return {}; }
-    TrayImageList emptyPixmap() const { return {}; }
+    QString status() const { return m_failed ? QStringLiteral("NeedsAttention") : QStringLiteral("Active"); }
+    QString iconName() const { return QStringLiteral("zapret2applet-tray-symbolic"); }
+    TrayImageList iconPixmap() const { return renderTrayPixmaps(QColor{}); }
+    TrayImageList overlayIconPixmap() const
+    {
+        return m_inactive ? renderTrayPixmaps(QColor(QStringLiteral("#fdbc4b"))) : TrayImageList{};
+    }
+    TrayImageList attentionIconPixmap() const
+    {
+        return m_failed ? renderTrayPixmaps(QColor(QStringLiteral("#da4453"))) : TrayImageList{};
+    }
     QString overlayIconName() const { return {}; }
-    QString attentionIconName() const { return QStringLiteral("dialog-warning"); }
+    QString attentionIconName() const { return {}; }
     QString attentionMovieName() const { return {}; }
     TrayToolTip toolTip() const
     {
         return {iconName(), {}, title(), QStringLiteral("Управление zapret2")};
     }
     bool itemIsMenu() const { return false; }
+
+    void setServiceState(const QString &stateCode)
+    {
+        const bool inactive = stateCode == QLatin1String("inactive");
+        const bool failed = stateCode == QLatin1String("failed");
+        const bool changed = m_inactive != inactive || m_failed != failed;
+        if (!changed)
+            return;
+        const bool statusChanged = m_failed != failed;
+        m_inactive = inactive;
+        m_failed = failed;
+        if (statusChanged)
+            emit NewStatus(status());
+        emit NewOverlayIcon();
+        emit NewAttentionIcon();
+    }
     QDBusObjectPath menu() const { return QDBusObjectPath(QStringLiteral("/Menu")); }
 
 public slots:
@@ -139,6 +224,10 @@ signals:
     void NewToolTip();
     void NewStatus(const QString &status);
     void activateRequested();
+
+private:
+    bool m_inactive = false;
+    bool m_failed = false;
 };
 
 TrayController::TrayController(QObject *parent)
@@ -179,9 +268,11 @@ TrayController::TrayController(QObject *parent)
     refreshWatcherAvailability();
 }
 
-void TrayController::setServiceState(const QString &state, bool active, bool busy)
+void TrayController::setServiceState(const QString &state, const QString &stateCode,
+                                     bool active, bool busy)
 {
     m_menu->setServiceState(state, active, busy);
+    m_item->setServiceState(stateCode);
 }
 
 bool TrayController::watcherAvailable() const
