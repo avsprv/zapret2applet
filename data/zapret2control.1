@@ -1,0 +1,52 @@
+.TH ZAPRET2CONTROL 1 "November 2026" "Zapret2 Control 0.5.0" "User Commands"
+.SH NAME
+zapret2control \- graphical interface for managing zapret2 on Linux
+.SH SYNOPSIS
+.B zapret2control
+.RI [ --minimized ]
+.br
+.B zapret2control
+.B --help
+.br
+.B zapret2control
+.B --version
+.SH DESCRIPTION
+.B zapret2control
+is a Qt-based desktop application for managing an existing zapret2 installation.
+It provides controls for the zapret2 systemd service, configuration and profiles,
+user hostlists, service journal monitoring, Blockcheck strategy tests, and updates.
+Privileged operations are performed by a separate helper through Polkit.
+.PP
+The application does not automatically apply strategies found by Blockcheck.
+Review test results and update the zapret2 configuration manually.
+.SH OPTIONS
+.TP
+.B --minimized
+Start hidden in the system tray. If a usable system tray is unavailable, the main
+window is shown instead.
+.TP
+.B -h, --help
+Display command-line help and exit.
+.TP
+.B -v, --version
+Display version information and exit.
+.SH FILES
+.TP
+.I /etc/xdg/autostart/zapret2control.desktop
+Optional per-system desktop autostart entry managed by the application.
+.TP
+.I /usr/share/applications/zapret2control.desktop
+Desktop entry used by the application launcher.
+.TP
+.I /usr/libexec/zapret2control/zapret2control-helper
+Privileged helper invoked through Polkit.
+.SH SEE ALSO
+.BR pkexec (1),
+.BR systemctl (1),
+.BR polkit (8)
+.SH AUTHOR
+Zapret2 Control contributors.
+.SH BUGS
+Report bugs at
+.UR https://github.com/avsprv/zapret2control/issues
+.UE .
