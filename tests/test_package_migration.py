@@ -21,6 +21,7 @@ def main() -> None:
     postinst = POSTINST.read_text(encoding="utf-8")
     spec = RPM_SPEC.read_text(encoding="utf-8")
     cmake = (ROOT / "CMakeLists.txt").read_text(encoding="utf-8")
+    package_workflow = (ROOT / ".github/workflows/packages.yml").read_text(encoding="utf-8")
     helper = (ROOT / "packaging/helper/zapret2control-helper").read_text(encoding="utf-8")
     manpage = ROOT / "data/zapret2control.1"
 
@@ -30,6 +31,8 @@ def main() -> None:
     assert "data/zapret2control.1" in cmake
     assert "%{_mandir}/man1/zapret2control.1*" in spec
     assert manpage.is_file()
+    assert package_workflow.count("zapret2control.1.gz") == 8
+    assert "test -f /usr/share/man/man1/zapret2control.1\n" not in package_workflow
 
     for unit in LEGACY_UNITS:
         assert unit in preinst, f"Debian preinst does not migrate {unit}"
