@@ -16,7 +16,9 @@ private slots:
     void initTestCase()
     {
         QVERIFY(m_configDir.isValid());
-        QCoreApplication::setOrganizationName(QString());
+        // A dedicated organization keeps the test profile inside QTemporaryDir.
+        // Production leaves organizationName empty; both identities use the same org here.
+        QCoreApplication::setOrganizationName(QStringLiteral("zapret2control-migration-tests"));
         QCoreApplication::setApplicationName(QStringLiteral("zapret2control"));
         QSettings::setDefaultFormat(QSettings::IniFormat);
         QSettings::setPath(QSettings::IniFormat, QSettings::UserScope, m_configDir.path());
