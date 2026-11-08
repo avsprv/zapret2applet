@@ -3,15 +3,17 @@
 #include <QLocale>
 
 #include "appsettings.h"
+#include "settingsmigration.h"
 #include "i18n.h"
 #include "mainwindow.h"
 
 int main(int argc, char *argv[])
 {
     QApplication app(argc, argv);
-    QApplication::setApplicationName(QStringLiteral("zapret2applet"));
+    QApplication::setApplicationName(QStringLiteral("zapret2control"));
     QApplication::setApplicationVersion(QStringLiteral(QZAPRET_VERSION));
-    QApplication::setDesktopFileName(QStringLiteral("zapret2applet"));
+    QApplication::setDesktopFileName(QStringLiteral("zapret2control"));
+    SettingsMigration::migrateLegacyProfile();
     // Окно прячется в трей, поэтому закрытие последнего окна не должно завершать приложение.
     QApplication::setQuitOnLastWindowClosed(false);
     QLocale locale;

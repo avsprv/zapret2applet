@@ -6,8 +6,7 @@ class QApplication;
 
 namespace AppSettings {
 
-// Стабильные значения хранятся в QSettings. Не менять organization/application name
-// без отдельной миграции существующих пользовательских настроек.
+// Настройки QSettings мигрируются из прежнего applicationName через SettingsMigration.
 enum class Theme {
     System,
     Light,

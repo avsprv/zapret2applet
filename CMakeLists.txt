@@ -31,6 +31,8 @@ set(QZAPRET_HELPER "${CMAKE_INSTALL_FULL_LIBEXECDIR}/zapret2applet/zapret2applet
 set(QZAPRET_SOURCES
     src/appsettings.cpp
     src/appsettings.h
+    src/settingsmigration.cpp
+    src/settingsmigration.h
     src/main.cpp
     src/settingsdialog.cpp
     src/settingsdialog.h
@@ -240,6 +242,12 @@ if(BUILD_TESTING)
     target_compile_definitions(test_blockcheck_lifecycle PRIVATE QZAPRET_HELPER_PATH="/nonexistent" QZAPRET_TEST_SKIP_COMPATIBILITY=1)
     add_test(NAME blockcheck_lifecycle COMMAND test_blockcheck_lifecycle)
     set_tests_properties(blockcheck_lifecycle PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen")
+
+    qt_add_executable(test_settingsmigration tests/test_settingsmigration.cpp
+        src/settingsmigration.cpp src/settingsmigration.h)
+    target_include_directories(test_settingsmigration PRIVATE src)
+    target_link_libraries(test_settingsmigration PRIVATE Qt6::Test Qt6::Core)
+    add_test(NAME settingsmigration COMMAND test_settingsmigration)
 
     qt_add_executable(test_appsettings tests/test_appsettings.cpp
         src/appsettings.cpp src/appsettings.h)

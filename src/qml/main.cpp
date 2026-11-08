@@ -16,6 +16,7 @@
 #include "listscontroller.h"
 #include "updatecontroller.h"
 #include "settingsmanager.h"
+#include "settingsmigration.h"
 #include "autostartcontroller.h"
 #include "traycontroller.h"
 
@@ -33,9 +34,10 @@ QLocale localeForLanguage(const QString &language)
 int main(int argc, char *argv[])
 {
     QGuiApplication app(argc, argv);
-    QCoreApplication::setApplicationName(QStringLiteral("zapret2applet"));
+    QCoreApplication::setApplicationName(QStringLiteral("zapret2control"));
     QCoreApplication::setApplicationVersion(QStringLiteral(QZAPRET_VERSION));
-    QGuiApplication::setDesktopFileName(QStringLiteral("zapret2applet"));
+    QGuiApplication::setDesktopFileName(QStringLiteral("zapret2control"));
+    SettingsMigration::migrateLegacyProfile();
 
     ApplicationController controller;
     SettingsManager settingsManager;
@@ -113,7 +115,7 @@ int main(int argc, char *argv[])
     engine.rootContext()->setContextProperty(QStringLiteral("listsController"), &listsController);
     engine.rootContext()->setContextProperty(QStringLiteral("blockcheckController"), &blockcheckController);
     engine.rootContext()->setContextProperty(QStringLiteral("updateController"), &updateController);
-    engine.loadFromModule(QStringLiteral("org.avsprv.zapret2applet"), QStringLiteral("Main"));
+    engine.loadFromModule(QStringLiteral("org.avsprv.zapret2control"), QStringLiteral("Main"));
 
     if (engine.rootObjects().isEmpty())
         return EXIT_FAILURE;
