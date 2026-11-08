@@ -17,7 +17,7 @@ class TrayController final : public QObject
 public:
     explicit TrayController(QObject *parent = nullptr);
 
-    void setServiceState(const QString &state, bool active, bool busy);
+    void setServiceState(const QString &state, const QString &stateCode, bool active, bool busy);
 
     bool watcherAvailable() const;
     bool registered() const;
