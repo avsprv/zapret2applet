@@ -150,7 +150,7 @@ class StatusNotifierItem final : public QObject
     Q_PROPERTY(QString Id READ id)
     Q_PROPERTY(QString Title READ title)
     Q_PROPERTY(uint WindowId READ windowId)
-    Q_PROPERTY(QString Status READ status)
+    Q_PROPERTY(QString Status READ status NOTIFY NewStatus)
     Q_PROPERTY(QString IconName READ iconName)
     Q_PROPERTY(TrayImageList IconPixmap READ iconPixmap)
     Q_PROPERTY(QString OverlayIconName READ overlayIconName)
