@@ -325,8 +325,12 @@ private slots:
             controller.setServiceState(QStringLiteral("Работает"), QStringLiteral("active"),
                                        true, false);
             QTRY_COMPARE(readStatus(), QStringLiteral("Active"));
+            QTRY_COMPARE(readAllStatus(), QStringLiteral("Active"));
             QTRY_COMPARE(statusSignals.statuses.size(), 2);
             QCOMPARE(statusSignals.statuses.constLast(), QStringLiteral("Active"));
+            QTRY_COMPARE(propertyChanges.changes.size(), 2);
+            QCOMPARE(propertyChanges.changes.constLast().value(QStringLiteral("Status")).toString(),
+                     QStringLiteral("Active"));
             m_bus.disconnect(itemService, QStringLiteral("/StatusNotifierItem"),
                              QStringLiteral("org.freedesktop.StatusNotifierItem"),
                              QStringLiteral("NewStatus"), &statusSignals,
