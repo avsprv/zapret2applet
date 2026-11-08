@@ -14,8 +14,9 @@ Kirigami.ScrollablePage {
             visible: true
             text: qsTr("Профили извлекаются статически из NFQWS2_OPT. Shell-код и Lua не исполняются. Запись выполняется через helper с проверкой SHA-256, shell-синтаксиса и резервным копированием. Служба автоматически не перезапускается.")
         }
-        RowLayout {
+        Flow {
             Layout.fillWidth: true
+            spacing: Kirigami.Units.smallSpacing
             Controls.Button { text: profileController.dirty ? qsTr("Отменить изменения") : qsTr("Обновить"); icon.name: profileController.dirty ? "edit-undo" : "view-refresh"; enabled: !profileController.busy; onClicked: { if (profileController.dirty) discardDialog.open(); else profileController.read() } }
             Controls.Button { text: qsTr("Создать"); icon.name: "list-add"; enabled: profileController.loaded && !profileController.busy && profileController.profiles.length < 128; onClicked: editor.openFor(-1, []) }
             Controls.Button { text: qsTr("Сохранить"); icon.name: "document-save"; enabled: profileController.dirty && !profileController.busy; onClicked: saveDialog.open() }
@@ -28,11 +29,19 @@ Kirigami.ScrollablePage {
                 highlighted: profileController.selectedIndex === modelData.index
                 text: modelData.name + " — " + modelData.arguments.length + qsTr(" параметров")
                 onClicked: profileController.selectedIndex = modelData.index
-                contentItem: RowLayout {
-                    Controls.Label { Layout.fillWidth: true; text: modelData.name + " — " + modelData.arguments.join(" "); wrapMode: Text.Wrap; elide: Text.ElideRight }
-                    Controls.Button { text: qsTr("Изменить"); onClicked: editor.openFor(modelData.index, modelData.arguments) }
-                    Controls.Button { text: qsTr("Копировать"); enabled: profileController.profiles.length < 128; onClicked: profileController.copy(modelData.index) }
-                    Controls.Button { text: qsTr("Удалить"); enabled: profileController.profiles.length > 1; onClicked: { deleteDialog.indexToDelete = modelData.index; deleteDialog.open() } }
+                contentItem: ColumnLayout {
+                    Controls.Label {
+                        Layout.fillWidth: true
+                        text: modelData.name + " — " + modelData.arguments.join(" ")
+                        wrapMode: Text.Wrap
+                    }
+                    Flow {
+                        Layout.fillWidth: true
+                        spacing: Kirigami.Units.smallSpacing
+                        Controls.Button { text: qsTr("Изменить"); enabled: !profileController.busy; onClicked: editor.openFor(modelData.index, modelData.arguments) }
+                        Controls.Button { text: qsTr("Копировать"); enabled: !profileController.busy && profileController.profiles.length < 128; onClicked: profileController.copy(modelData.index) }
+                        Controls.Button { text: qsTr("Удалить"); enabled: !profileController.busy && profileController.profiles.length > 1; onClicked: { deleteDialog.indexToDelete = modelData.index; deleteDialog.open() } }
+                    }
                 }
             }
         }
@@ -57,9 +66,9 @@ Kirigami.ScrollablePage {
             else profileController.edit(profileIndex, args)
         }
         ColumnLayout {
-            width: 560
+            width: Math.min(page.availableWidth, Kirigami.Units.gridUnit * 40)
             Controls.Label { Layout.fillWidth: true; wrapMode: Text.WordWrap; text: qsTr("Один аргумент на строку. Не добавляйте --new, кавычки, shell-подстановки или пробелы внутри аргумента.") }
-            Controls.TextArea { id: argumentEditor; Layout.fillWidth: true; Layout.preferredHeight: 320; wrapMode: TextEdit.NoWrap; font.family: "monospace"; selectByMouse: true; Accessible.name: qsTr("Аргументы профиля"); Accessible.description: qsTr("Один аргумент на строку.") }
+            Controls.TextArea { id: argumentEditor; Layout.fillWidth: true; Layout.preferredHeight: 320; Layout.minimumWidth: 0; wrapMode: TextEdit.NoWrap; font.family: "monospace"; selectByMouse: true; Accessible.name: qsTr("Аргументы профиля"); Accessible.description: qsTr("Один аргумент на строку.") }
         }
     }
     Controls.Dialog {
