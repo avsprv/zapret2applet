@@ -14,6 +14,8 @@
 #include <QDebug>
 #include <QColor>
 #include <QImage>
+#include <QGuiApplication>
+#include <QPalette>
 #include <QPainter>
 #include <QPen>
 
@@ -89,7 +91,9 @@ TrayImageList renderTrayPixmap(int size, const QColor &indicator)
     QPainter painter(&image);
     painter.setRenderHint(QPainter::Antialiasing, true);
     const qreal scale = size / 32.0;
-    const QColor foreground(QStringLiteral("#eff0f1"));
+    QColor foreground = QGuiApplication::palette().color(QPalette::WindowText);
+    if (!foreground.isValid())
+        foreground = QColor(QStringLiteral("#232629"));
     QPen pen(foreground, 2.5 * scale, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin);
     painter.setPen(pen);
     painter.setBrush(Qt::NoBrush);
@@ -193,6 +197,11 @@ public:
     }
     bool itemIsMenu() const { return false; }
 
+    void refreshTheme()
+    {
+        emit NewIcon();
+    }
+
     void setServiceState(const QString &stateCode)
     {
         const bool inactive = stateCode == QLatin1String("inactive");
@@ -259,6 +268,10 @@ TrayController::TrayController(QObject *parent)
     });
     connect(m_item, &StatusNotifierItem::activateRequested,
             this, &TrayController::activateRequested);
+    if (qGuiApp) {
+        connect(qGuiApp, &QGuiApplication::paletteChanged,
+                m_item, &StatusNotifierItem::refreshTheme);
+    }
     connect(m_menu, &DBusMenu::activateRequested, this, &TrayController::activateRequested);
     connect(m_menu, &DBusMenu::startRequested, this, &TrayController::startRequested);
     connect(m_menu, &DBusMenu::stopRequested, this, &TrayController::stopRequested);
