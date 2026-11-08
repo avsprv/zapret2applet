@@ -1,10 +1,10 @@
 # Quality and engineering standards
 
-This document defines the acceptance criteria for changes to zapret2applet. It applies to the
+This document defines the acceptance criteria for changes to zapret2control. It applies to the
 existing Qt Widgets application and, in particular, to the QML/Kirigami migration.
 
 These rules use the official KDE Kirigami documentation and KDE Human Interface Guidelines as
-the design and implementation baseline. They do not imply that zapret2applet is an official KDE
+the design and implementation baseline. They do not imply that zapret2control is an official KDE
 project or has passed KDE project review.
 
 ## 1. Architecture
