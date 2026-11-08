@@ -66,11 +66,13 @@ jobs:
           test -n "$policy" && test -f "$policy"
           test -f /usr/lib/systemd/system/zapret2control-blockcheck.service
           test -f /usr/lib/systemd/system/zapret2control-blockcheck-recovery.service
+          test -f /usr/share/zapret2control/blockcheck_admission.py
           DEBIAN_FRONTEND=noninteractive apt-get purge -y zapret2control
           ! dpkg-query -W zapret2control >/dev/null 2>&1
           test ! -e /usr/bin/zapret2control
           test ! -e "$helper"
           test ! -e "$policy"
+          test ! -e /usr/share/zapret2control/blockcheck_admission.py
       - name: Smoke-test DEB upgrade from zapret2applet 0.4.0
         run: |
           set -eu
@@ -93,12 +95,14 @@ jobs:
           test -n "$policy" && test -f "$policy"
           test -f /usr/lib/systemd/system/zapret2control-blockcheck.service
           test -f /usr/lib/systemd/system/zapret2control-blockcheck-recovery.service
+          test -f /usr/share/zapret2control/blockcheck_admission.py
 
           DEBIAN_FRONTEND=noninteractive apt-get purge -y zapret2control
           ! dpkg-query -W zapret2control >/dev/null 2>&1
           test ! -e /usr/bin/zapret2control
           test ! -e "$helper"
           test ! -e "$policy"
+          test ! -e /usr/share/zapret2control/blockcheck_admission.py
       - uses: actions/upload-artifact@v6
         with:
           name: zapret2control-deb
@@ -186,11 +190,13 @@ jobs:
           test -n "$policy" && test -f "$policy"
           test -f /usr/lib/systemd/system/zapret2control-blockcheck.service
           test -f /usr/lib/systemd/system/zapret2control-blockcheck-recovery.service
+          test -f /usr/share/zapret2control/blockcheck_admission.py
           dnf remove -y zapret2control
           ! rpm -q zapret2control >/dev/null 2>&1
           test ! -e /usr/bin/zapret2control
           test ! -e "$helper"
           test ! -e "$policy"
+          test ! -e /usr/share/zapret2control/blockcheck_admission.py
       - name: Smoke-test RPM upgrade from zapret2applet 0.4.0
         run: |
           set -eu
@@ -229,12 +235,14 @@ jobs:
           test -n "$policy" && test -f "$policy"
           test -f /usr/lib/systemd/system/zapret2control-blockcheck.service
           test -f /usr/lib/systemd/system/zapret2control-blockcheck-recovery.service
+          test -f /usr/share/zapret2control/blockcheck_admission.py
 
           dnf remove -y zapret2control
           ! rpm -q zapret2control >/dev/null 2>&1
           test ! -e /usr/bin/zapret2control
           test ! -e "$helper"
           test ! -e "$policy"
+          test ! -e /usr/share/zapret2control/blockcheck_admission.py
       - uses: actions/upload-artifact@v6
         with:
           name: zapret2control-rpm
