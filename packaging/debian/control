@@ -31,8 +31,9 @@ Depends: ${shlibs:Depends}, ${misc:Depends},
          systemd
 Recommends: qt6-translations-l10n
 Description: unofficial Qt6 GUI for zapret2
- Graphical front-end for zapret2 (bol-van): service and configuration management,
- profile and user hostlist editing, journal monitoring, DPI bypass strategy
- selection (blockcheck2), system tray applet, autostart, and installation/update
- of zapret2 from the latest GitHub release. Privileged operations go through a
- small polkit-protected helper. zapret2 itself is not bundled.
+ Graphical front-end for zapret2 (bol-van): service and configuration
+ management, profile and user hostlist editing, journal monitoring, DPI bypass
+ strategy selection (blockcheck2), system tray applet, autostart, and
+ installation/update of zapret2 from the latest GitHub release. Privileged
+ operations go through a small polkit-protected helper. zapret2 itself is not
+ bundled.
