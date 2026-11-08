@@ -87,7 +87,7 @@ Kirigami.ScrollablePage {
         Controls.Frame {
             Layout.fillWidth: true
             Layout.fillHeight: true
-            implicitHeight: 360
+            implicitHeight: Kirigami.Units.gridUnit * 20
 
             Controls.TextArea {
                 anchors.fill: parent
