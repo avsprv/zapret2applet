@@ -5,6 +5,7 @@
 #include <QString>
 
 class QDBusServiceWatcher;
+class QEvent;
 class StatusNotifierItem;
 class DBusMenu;
 
@@ -33,6 +34,7 @@ signals:
     void stopRequested();
 
 private:
+    bool eventFilter(QObject *watched, QEvent *event) override;
     void refreshWatcherAvailability();
     void registerWithWatcher();
     void setRegistered(bool registered);

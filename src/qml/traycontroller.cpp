@@ -13,6 +13,7 @@
 #include <QDBusMetaType>
 #include <QCoreApplication>
 #include <QDebug>
+#include <QEvent>
 #include <QColor>
 #include <QImage>
 #include <QGuiApplication>
@@ -371,10 +372,8 @@ TrayController::TrayController(QObject *parent)
     });
     connect(m_item, &StatusNotifierItem::activateRequested,
             this, &TrayController::activateRequested);
-    if (qGuiApp) {
-        connect(qGuiApp, &QGuiApplication::paletteChanged,
-                m_item, &StatusNotifierItem::refreshTheme);
-    }
+    if (qGuiApp)
+        qGuiApp->installEventFilter(this);
     connect(m_menu, &DBusMenu::activateRequested, this, &TrayController::activateRequested);
     connect(m_menu, &DBusMenu::startRequested, this, &TrayController::startRequested);
     connect(m_menu, &DBusMenu::stopRequested, this, &TrayController::stopRequested);
@@ -382,6 +381,14 @@ TrayController::TrayController(QObject *parent)
     connect(m_menu, &DBusMenu::quitRequested, this, &TrayController::quitRequested);
 
     refreshWatcherAvailability();
+}
+
+bool TrayController::eventFilter(QObject *watched, QEvent *event)
+{
+    if (watched == qGuiApp && event->type() == QEvent::ApplicationPaletteChange)
+        m_item->refreshTheme();
+
+    return QObject::eventFilter(watched, event);
 }
 
 void TrayController::setServiceState(const QString &state, const QString &stateCode,
