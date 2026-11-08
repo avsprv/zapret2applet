@@ -212,8 +212,22 @@ public:
         const bool statusChanged = m_failed != failed;
         m_inactive = inactive;
         m_failed = failed;
-        if (statusChanged)
-            emit NewStatus(status());
+        if (statusChanged) {
+            const QString currentStatus = status();
+            emit NewStatus(currentStatus);
+
+            // QtDBus exports the property getter, but does not automatically publish
+            // org.freedesktop.DBus.Properties.PropertiesChanged for this QObject.
+            // StatusNotifier hosts may use the standard Properties interface to refresh it.
+            QDBusMessage propertiesChanged = QDBusMessage::createSignal(
+                QString::fromLatin1(itemPath),
+                QStringLiteral("org.freedesktop.DBus.Properties"),
+                QStringLiteral("PropertiesChanged"));
+            propertiesChanged << QStringLiteral("org.freedesktop.StatusNotifierItem")
+                              << QVariantMap{{QStringLiteral("Status"), currentStatus}}
+                              << QStringList{};
+            QDBusConnection::sessionBus().send(propertiesChanged);
+        }
         emit NewOverlayIcon();
         emit NewAttentionIcon();
     }
