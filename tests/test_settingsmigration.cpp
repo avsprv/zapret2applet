@@ -66,6 +66,7 @@ private slots:
         QSettings legacy;
         QCoreApplication::setApplicationName(currentApplicationName);
         legacy.setValue(QStringLiteral("appearance/theme"), QStringLiteral("dark"));
+        legacy.setValue(QStringLiteral("appearance/language"), QStringLiteral("ru"));
         legacy.sync();
 
         QVERIFY(SettingsMigration::migrateLegacyProfile());
@@ -88,6 +89,7 @@ private slots:
 
         QVERIFY(SettingsMigration::migrateLegacyProfile());
         QCOMPARE(current.value(QStringLiteral("appearance/theme")).toString(), QStringLiteral("light"));
+        QCOMPARE(current.value(QStringLiteral("appearance/language")).toString(), QStringLiteral("ru"));
         QVERIFY(current.value(QStringLiteral("migration/zapret2control-v1")).toBool());
     }
 };
