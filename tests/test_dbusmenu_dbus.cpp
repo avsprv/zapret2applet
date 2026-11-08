@@ -176,64 +176,79 @@ private slots:
         QVERIFY(m_bus.objectRegisteredAt(QStringLiteral("/Menu")) == nullptr);
         QString itemService;
         {
-        TrayController controller;
-        QVERIFY(!controller.watcherAvailable());
-        QVERIFY(!controller.registered());
+            TrayController controller;
+            QVERIFY(!controller.watcherAvailable());
+            QVERIFY(!controller.registered());
 
-        FakeStatusNotifierWatcher watcher;
-        QVERIFY2(m_bus.registerObject(QString::fromLatin1(watcherPath), &watcher,
-                                      QDBusConnection::ExportAllSlots),
-                 qPrintable(m_bus.lastError().message()));
-        QVERIFY2(m_bus.registerService(QString::fromLatin1(watcherService)),
-                 qPrintable(m_bus.lastError().message()));
+            FakeStatusNotifierWatcher watcher;
+            QVERIFY2(m_bus.registerObject(QString::fromLatin1(watcherPath), &watcher,
+                                          QDBusConnection::ExportAllSlots),
+                     qPrintable(m_bus.lastError().message()));
+            QVERIFY2(m_bus.registerService(QString::fromLatin1(watcherService)),
+                     qPrintable(m_bus.lastError().message()));
 
-        QTRY_VERIFY(controller.watcherAvailable());
-        QTRY_VERIFY(controller.registered());
-        QCOMPARE(watcher.registeredItems.size(), 1);
-        itemService = watcher.registeredItems.constFirst();
-        QVERIFY(itemService.startsWith(QStringLiteral("org.freedesktop.StatusNotifierItem-")));
+            QTRY_VERIFY(controller.watcherAvailable());
+            QTRY_VERIFY(controller.registered());
+            QCOMPARE(watcher.registeredItems.size(), 1);
+            itemService = watcher.registeredItems.constFirst();
+            QVERIFY(itemService.startsWith(QStringLiteral("org.freedesktop.StatusNotifierItem-")));
 
-        const auto introspect = [this, &itemService](const QString &path) {
-            const QDBusMessage request = QDBusMessage::createMethodCall(
-                itemService, path, QStringLiteral("org.freedesktop.DBus.Introspectable"),
-                QStringLiteral("Introspect"));
-            return m_bus.call(request);
-        };
-        const QDBusMessage itemReply = introspect(QStringLiteral("/StatusNotifierItem"));
-        QCOMPARE(itemReply.type(), QDBusMessage::ReplyMessage);
-        const QString itemXml = itemReply.arguments().constFirst().toString();
-        QVERIFY(itemXml.contains(QStringLiteral("org.freedesktop.StatusNotifierItem")));
-        QVERIFY(itemXml.contains(QStringLiteral("Activate")));
-        QVERIFY(itemXml.contains(QStringLiteral("SecondaryActivate")));
-        QVERIFY(itemXml.contains(QStringLiteral("ContextMenu")));
-        QVERIFY(itemXml.contains(QStringLiteral("Scroll")));
-        QVERIFY(itemXml.contains(QStringLiteral("IconPixmap")));
-        QVERIFY(itemXml.contains(QStringLiteral("ToolTip")));
-        QVERIFY(itemXml.contains(QStringLiteral("NewStatus")));
+            const auto introspect = [this, &itemService](const QString &path) {
+                const QDBusMessage request = QDBusMessage::createMethodCall(
+                    itemService, path, QStringLiteral("org.freedesktop.DBus.Introspectable"),
+                    QStringLiteral("Introspect"));
+                return m_bus.call(request);
+            };
+            const QDBusMessage itemReply = introspect(QStringLiteral("/StatusNotifierItem"));
+            QCOMPARE(itemReply.type(), QDBusMessage::ReplyMessage);
+            const QString itemXml = itemReply.arguments().constFirst().toString();
+            QVERIFY(itemXml.contains(QStringLiteral("org.freedesktop.StatusNotifierItem")));
+            QVERIFY(itemXml.contains(QStringLiteral("Activate")));
+            QVERIFY(itemXml.contains(QStringLiteral("SecondaryActivate")));
+            QVERIFY(itemXml.contains(QStringLiteral("ContextMenu")));
+            QVERIFY(itemXml.contains(QStringLiteral("Scroll")));
+            QVERIFY(itemXml.contains(QStringLiteral("IconPixmap")));
+            QVERIFY(itemXml.contains(QStringLiteral("ToolTip")));
+            QVERIFY(itemXml.contains(QStringLiteral("NewStatus")));
+        QVERIFY(itemXml.contains(QStringLiteral("type=\"a(iiay)\"")));
+        QVERIFY(itemXml.contains(QStringLiteral("type=\"(sa(iiay)ss)\"")));
+        QVERIFY(itemXml.contains(QStringLiteral("NewOverlayIcon")));
+        QVERIFY(itemXml.contains(QStringLiteral("NewAttentionIcon")));
+        QVERIFY(itemXml.contains(QStringLiteral("NewToolTip")));
 
-        QDBusInterface item(itemService, QStringLiteral("/StatusNotifierItem"),
-                            QStringLiteral("org.freedesktop.StatusNotifierItem"), m_bus);
-        QVERIFY(item.isValid());
-        QCOMPARE(item.property("Category").toString(), QStringLiteral("ApplicationStatus"));
-        QCOMPARE(item.property("Id").toString(), QStringLiteral("zapret2applet"));
+            QDBusInterface item(itemService, QStringLiteral("/StatusNotifierItem"),
+                                QStringLiteral("org.freedesktop.StatusNotifierItem"), m_bus);
+            QVERIFY(item.isValid());
+            QCOMPARE(item.property("Category").toString(), QStringLiteral("ApplicationStatus"));
+            QCOMPARE(item.property("Id").toString(), QStringLiteral("zapret2applet"));
+        QCOMPARE(item.property("Status").toString(), QStringLiteral("Active"));
+        controller.setServiceState(QStringLiteral("Не удалось запустить"), QStringLiteral("failed"),
+                                   false, false);
+        QTRY_COMPARE(item.property("Status").toString(), QStringLiteral("NeedsAttention"));
+        controller.setServiceState(QStringLiteral("Остановлен"), QStringLiteral("inactive"),
+                                   false, false);
+        QCOMPARE(item.property("Status").toString(), QStringLiteral("NeedsAttention"));
+        controller.setServiceState(QStringLiteral("Работает"), QStringLiteral("active"),
+                                   true, false);
+        QCOMPARE(item.property("Status").toString(), QStringLiteral("Active"));
 
-        const QDBusMessage menuReply = introspect(QStringLiteral("/Menu"));
-        QCOMPARE(menuReply.type(), QDBusMessage::ReplyMessage);
-        QVERIFY(menuReply.arguments().constFirst().toString().contains(
-            QStringLiteral("com.canonical.dbusmenu")));
+            const QDBusMessage menuReply = introspect(QStringLiteral("/Menu"));
+            QCOMPARE(menuReply.type(), QDBusMessage::ReplyMessage);
+            QVERIFY(menuReply.arguments().constFirst().toString().contains(
+                QStringLiteral("com.canonical.dbusmenu")));
 
-        QVERIFY(m_bus.unregisterService(QString::fromLatin1(watcherService)));
-        QTRY_VERIFY(!controller.watcherAvailable());
-        QTRY_VERIFY(!controller.registered());
+            QVERIFY(m_bus.unregisterService(QString::fromLatin1(watcherService)));
+            QTRY_VERIFY(!controller.watcherAvailable());
+            QTRY_VERIFY(!controller.registered());
 
-        QVERIFY2(m_bus.registerService(QString::fromLatin1(watcherService)),
-                 qPrintable(m_bus.lastError().message()));
-        QTRY_COMPARE(watcher.registeredItems.size(), 2);
-        QCOMPARE(watcher.registeredItems.constLast(), itemService);
-        QTRY_VERIFY(controller.registered());
+            QVERIFY2(m_bus.registerService(QString::fromLatin1(watcherService)),
+                     qPrintable(m_bus.lastError().message()));
+            QTRY_COMPARE(watcher.registeredItems.size(), 2);
+            QCOMPARE(watcher.registeredItems.constLast(), itemService);
+            QTRY_VERIFY(controller.registered());
 
-        m_bus.unregisterService(QString::fromLatin1(watcherService));
-        m_bus.unregisterObject(QString::fromLatin1(watcherPath));
+            m_bus.unregisterService(QString::fromLatin1(watcherService));
+            m_bus.unregisterObject(QString::fromLatin1(watcherPath));
         }
 
         QVERIFY(m_bus.objectRegisteredAt(QStringLiteral("/StatusNotifierItem")) == nullptr);
