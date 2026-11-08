@@ -36,6 +36,8 @@ Kirigami.ApplicationWindow {
         title: qsTr("zapret2applet")
         titleIcon: "zapret2applet"
         isMenu: true
+        // Keep primary navigation visible on desktop, but use an overlay on narrow windows.
+        modal: root.width < Kirigami.Units.gridUnit * 50
 
         actions: [
             Kirigami.Action {
