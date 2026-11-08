@@ -29,7 +29,7 @@ jobs:
       - name: Checkout previous package
         uses: actions/checkout@v6
         with:
-          ref: v0.4.0
+          ref: e531add824768176129ffe59344277056080d75b
           path: legacy-source
           submodules: recursive
       - name: Build previous DEB package
@@ -122,7 +122,7 @@ jobs:
       - name: Checkout previous package
         uses: actions/checkout@v6
         with:
-          ref: v0.4.0
+          ref: e531add824768176129ffe59344277056080d75b
           path: legacy-source
           submodules: recursive
       - name: Prepare RPM build tree
