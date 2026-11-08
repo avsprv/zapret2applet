@@ -229,11 +229,11 @@ private slots:
             QVERIFY(itemXml.contains(QStringLiteral("IconPixmap")));
             QVERIFY(itemXml.contains(QStringLiteral("ToolTip")));
             QVERIFY(itemXml.contains(QStringLiteral("NewStatus")));
-        QVERIFY(itemXml.contains(QStringLiteral("type=\"a(iiay)\"")));
-        QVERIFY(itemXml.contains(QStringLiteral("type=\"(sa(iiay)ss)\"")));
-        QVERIFY(itemXml.contains(QStringLiteral("NewOverlayIcon")));
-        QVERIFY(itemXml.contains(QStringLiteral("NewAttentionIcon")));
-        QVERIFY(itemXml.contains(QStringLiteral("NewToolTip")));
+            QVERIFY(itemXml.contains(QStringLiteral("type=\"a(iiay)\"")));
+            QVERIFY(itemXml.contains(QStringLiteral("type=\"(sa(iiay)ss)\"")));
+            QVERIFY(itemXml.contains(QStringLiteral("NewOverlayIcon")));
+            QVERIFY(itemXml.contains(QStringLiteral("NewAttentionIcon")));
+            QVERIFY(itemXml.contains(QStringLiteral("NewToolTip")));
 
             QDBusInterface item(itemService, QStringLiteral("/StatusNotifierItem"),
                                 QStringLiteral("org.freedesktop.StatusNotifierItem"), m_bus);
@@ -242,13 +242,13 @@ private slots:
             QCOMPARE(item.property("Id").toString(), QStringLiteral("zapret2applet"));
             QTRY_COMPARE(item.property("Status").toString(), QStringLiteral("Active"));
             controller.setServiceState(QStringLiteral("Не удалось запустить"), QStringLiteral("failed"),
-                                   false, false);
+                                       false, false);
             QTRY_COMPARE(item.property("Status").toString(), QStringLiteral("NeedsAttention"));
             controller.setServiceState(QStringLiteral("Остановлен"), QStringLiteral("inactive"),
-                                   false, false);
+                                       false, false);
             QTRY_COMPARE(item.property("Status").toString(), QStringLiteral("NeedsAttention"));
             controller.setServiceState(QStringLiteral("Работает"), QStringLiteral("active"),
-                                   true, false);
+                                       true, false);
             QTRY_COMPARE(item.property("Status").toString(), QStringLiteral("Active"));
 
             const QDBusMessage menuReply = introspect(QStringLiteral("/Menu"));
