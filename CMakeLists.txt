@@ -210,6 +210,7 @@ install(FILES
         ${CMAKE_BINARY_DIR}/zapret2control-blockcheck-recovery.service
         DESTINATION lib/systemd/system)
 install(FILES data/zapret2control.desktop DESTINATION ${CMAKE_INSTALL_DATADIR}/applications)
+install(FILES data/zapret2control.1 DESTINATION ${CMAKE_INSTALL_MANDIR}/man1)
 install(FILES data/org.avsprv.zapret2control.metainfo.xml
         DESTINATION ${CMAKE_INSTALL_DATADIR}/metainfo)
 install(FILES data/icons/hicolor/scalable/apps/zapret2control.svg
