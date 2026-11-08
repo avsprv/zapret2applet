@@ -124,13 +124,13 @@ private slots:
         QVERIFY(interface.isValid());
 
         QCOMPARE(interface.call(QStringLiteral("Event"), 3, QStringLiteral("clicked"),
-                                QDBusVariant(), uint{0}).type(),
+                                QDBusVariant(QVariant(false)), uint{0}).type(),
                  QDBusMessage::ReplyMessage);
         QTRY_COMPARE(startSpy.size(), 1);
 
         m_menu->setServiceState(QStringLiteral("Работает"), true, false);
         QCOMPARE(interface.call(QStringLiteral("Event"), 3, QStringLiteral("clicked"),
-                                QDBusVariant(), uint{0}).type(),
+                                QDBusVariant(QVariant(false)), uint{0}).type(),
                  QDBusMessage::ReplyMessage);
         QTest::qWait(50);
         QCOMPARE(startSpy.size(), 1);
