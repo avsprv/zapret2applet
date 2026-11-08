@@ -393,6 +393,9 @@ if(BUILD_TESTING)
     add_test(NAME blockcheck_admission
              COMMAND ${Python3_EXECUTABLE} ${CMAKE_SOURCE_DIR}/tests/test_blockcheck_admission.py)
 
+    add_test(NAME package_migration
+             COMMAND ${Python3_EXECUTABLE} ${CMAKE_SOURCE_DIR}/tests/test_package_migration.py)
+
     add_test(NAME polkit_policy
              COMMAND ${Python3_EXECUTABLE} ${CMAKE_SOURCE_DIR}/tests/test_polkit_policy.py
                      ${CMAKE_BINARY_DIR}/org.zapret2control.policy)

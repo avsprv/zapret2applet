@@ -55,6 +55,17 @@ installed separately.
 %postun
 %systemd_postun zapret2control-blockcheck.service zapret2control-blockcheck-recovery.service
 
+# The previous package used different unit names. Stop and disable them after
+# the transaction, once the replacement package and helper are installed.
+%posttrans
+if command -v systemctl >/dev/null 2>&1; then
+    systemctl stop zapret2applet-blockcheck.service >/dev/null 2>&1 || :
+    systemctl stop zapret2applet-blockcheck-recovery.service >/dev/null 2>&1 || :
+    systemctl disable zapret2applet-blockcheck.service >/dev/null 2>&1 || :
+    systemctl disable zapret2applet-blockcheck-recovery.service >/dev/null 2>&1 || :
+    systemctl daemon-reload >/dev/null 2>&1 || :
+fi
+
 %build
 %cmake -G Ninja -DCMAKE_SKIP_RPATH=ON
 %cmake_build
