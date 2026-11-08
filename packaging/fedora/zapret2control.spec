@@ -55,19 +55,21 @@ installed separately.
 %postun
 %systemd_postun zapret2control-blockcheck.service zapret2control-blockcheck-recovery.service
 
-# Stop the legacy worker before package files are replaced so its old
-# ExecStopPost helper can complete service recovery.
+# Stop and disable legacy units before replacing their helper and unit files.
 %pretrans
-if command -v systemctl >/dev/null 2>&1; then
-    systemctl stop zapret2applet-blockcheck.service >/dev/null 2>&1 || :
-    systemctl stop zapret2applet-blockcheck-recovery.service >/dev/null 2>&1 || :
-fi
+for unit in zapret2applet-blockcheck.service zapret2applet-blockcheck-recovery.service; do
+    if [ -e "/usr/lib/systemd/system/$unit" ] || [ -e "/lib/systemd/system/$unit" ]; then
+        if [ -d /run/systemd/system ] && command -v systemctl >/dev/null 2>&1; then
+            systemctl stop "$unit" || exit 1
+        fi
+        if command -v systemctl >/dev/null 2>&1; then
+            systemctl disable "$unit" || exit 1
+        fi
+    fi
+done
 
-# Remove old enablement links after the replacement package is installed.
 %posttrans
 if command -v systemctl >/dev/null 2>&1; then
-    systemctl disable zapret2applet-blockcheck.service >/dev/null 2>&1 || :
-    systemctl disable zapret2applet-blockcheck-recovery.service >/dev/null 2>&1 || :
     systemctl daemon-reload >/dev/null 2>&1 || :
 fi
 

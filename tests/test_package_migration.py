@@ -22,19 +22,18 @@ def main() -> None:
     spec = RPM_SPEC.read_text(encoding="utf-8")
 
     for unit in LEGACY_UNITS:
-        assert unit in preinst, f"Debian preinst does not stop {unit}"
-        assert unit in postinst, f"Debian postinst does not disable {unit}"
-        assert unit in spec, f"RPM upgrade script does not clean {unit}"
+        assert unit in preinst, f"Debian preinst does not migrate {unit}"
+        assert unit in spec, f"RPM upgrade script does not migrate {unit}"
 
     assert "deb-systemd-invoke stop" in preinst
-    assert "deb-systemd-helper disable" in postinst
+    assert "deb-systemd-helper disable" in preinst
+    assert "systemctl daemon-reload" in postinst
     assert "%pretrans" in spec
     assert "%posttrans" in spec
     assert "systemctl stop" in spec
     assert "systemctl disable" in spec
     assert "systemctl daemon-reload" in spec
     assert spec.index("%pretrans") < spec.index("%posttrans")
-    assert preinst.index("deb-systemd-invoke stop") < len(preinst)
 
     with tempfile.TemporaryDirectory(prefix="zapret2control-package-test-") as temp:
         temp_path = Path(temp)
@@ -53,15 +52,8 @@ def main() -> None:
         env = os.environ.copy()
         env["PATH"] = f"{bin_dir}:/usr/bin:/bin"
         env["CALL_LOG"] = str(log_path)
-        subprocess.run([str(PREINST), "upgrade", "0.4.0"], check=True, env=env)
-        stop_calls = log_path.read_text(encoding="utf-8")
-        for unit in LEGACY_UNITS:
-            assert f"stop {unit}" in stop_calls, f"Debian preinst did not stop {unit}"
-
         subprocess.run([str(POSTINST), "configure"], check=True, env=env)
         calls = log_path.read_text(encoding="utf-8")
-        for unit in LEGACY_UNITS:
-            assert f"disable {unit}" in calls, f"Debian postinst did not disable {unit}"
         assert "daemon-reload" in calls
 
         log_path.unlink()

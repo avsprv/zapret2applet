@@ -3,14 +3,6 @@ set -e
 
 case "$1" in
     configure)
-        # The legacy worker was stopped before unpacking the replacement package.
-        # Now remove its enablement links and refresh the systemd unit cache.
-        if command -v deb-systemd-helper >/dev/null 2>&1; then
-            deb-systemd-helper disable \
-                zapret2applet-blockcheck.service \
-                zapret2applet-blockcheck-recovery.service >/dev/null 2>&1 || true
-        fi
-
         if command -v systemctl >/dev/null 2>&1; then
             systemctl daemon-reload >/dev/null 2>&1 || true
         fi
