@@ -8,4 +8,6 @@ Comment[ru]=Управление фильтрацией трафика и слу
 Exec=zapret2control
 Icon=zapret2control
 Categories=Network;
+Keywords=network;zapret2;traffic;filtering;configuration;
+Keywords[ru]=сеть;zapret2;трафик;фильтрация;настройка;
 Terminal=false
