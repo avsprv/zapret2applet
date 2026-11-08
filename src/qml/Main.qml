@@ -128,7 +128,7 @@ Kirigami.ApplicationWindow {
 
                     ColumnLayout {
                         anchors.fill: parent
-                        spacing: Kirigami.Units.mediumSpacing
+                        spacing: Kirigami.Units.smallSpacing
 
                         RowLayout {
                             Layout.fillWidth: true
@@ -144,7 +144,7 @@ Kirigami.ApplicationWindow {
                                 Layout.preferredWidth: 12
                                 Layout.preferredHeight: 12
                                 radius: width / 2
-                                color: root.appController.serviceStateCode === "inactive" ? "#d79921"
+                                color: root.appController.serviceStateCode === "inactive" ? Kirigami.Theme.neutralTextColor
                                      : root.appController.serviceStateCode === "failed" ? Kirigami.Theme.negativeTextColor
                                      : Kirigami.Theme.textColor
                                 Accessible.ignored: true
