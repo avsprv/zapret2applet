@@ -55,12 +55,17 @@ installed separately.
 %postun
 %systemd_postun zapret2control-blockcheck.service zapret2control-blockcheck-recovery.service
 
-# The previous package used different unit names. Stop and disable them after
-# the transaction, once the replacement package and helper are installed.
-%posttrans
+# Stop the legacy worker before package files are replaced so its old
+# ExecStopPost helper can complete service recovery.
+%pretrans
 if command -v systemctl >/dev/null 2>&1; then
     systemctl stop zapret2applet-blockcheck.service >/dev/null 2>&1 || :
     systemctl stop zapret2applet-blockcheck-recovery.service >/dev/null 2>&1 || :
+fi
+
+# Remove old enablement links after the replacement package is installed.
+%posttrans
+if command -v systemctl >/dev/null 2>&1; then
     systemctl disable zapret2applet-blockcheck.service >/dev/null 2>&1 || :
     systemctl disable zapret2applet-blockcheck-recovery.service >/dev/null 2>&1 || :
     systemctl daemon-reload >/dev/null 2>&1 || :

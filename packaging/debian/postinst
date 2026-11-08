@@ -3,18 +3,8 @@ set -e
 
 case "$1" in
     configure)
-        # Stop the previous worker before the old helper path is removed from disk.
-        if command -v deb-systemd-invoke >/dev/null 2>&1; then
-            deb-systemd-invoke stop \
-                zapret2applet-blockcheck.service \
-                zapret2applet-blockcheck-recovery.service >/dev/null 2>&1 || true
-        elif command -v systemctl >/dev/null 2>&1; then
-            systemctl stop \
-                zapret2applet-blockcheck.service \
-                zapret2applet-blockcheck-recovery.service >/dev/null 2>&1 || true
-        fi
-
-        # Remove legacy enablement links even when systemd is not PID 1.
+        # The legacy worker was stopped before unpacking the replacement package.
+        # Now remove its enablement links and refresh the systemd unit cache.
         if command -v deb-systemd-helper >/dev/null 2>&1; then
             deb-systemd-helper disable \
                 zapret2applet-blockcheck.service \

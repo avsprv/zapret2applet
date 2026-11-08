@@ -1,0 +1,18 @@
+#!/bin/sh
+set -e
+
+case "$1" in
+    install|upgrade)
+        # Stop the old worker while its helper and ExecStopPost recovery command
+        # are still installed. This lets the legacy unit restore zapret2.service.
+        if command -v deb-systemd-invoke >/dev/null 2>&1; then
+            deb-systemd-invoke stop \
+                zapret2applet-blockcheck.service \
+                zapret2applet-blockcheck-recovery.service >/dev/null 2>&1 || true
+        elif command -v systemctl >/dev/null 2>&1; then
+            systemctl stop \
+                zapret2applet-blockcheck.service \
+                zapret2applet-blockcheck-recovery.service >/dev/null 2>&1 || true
+        fi
+        ;;
+esac
