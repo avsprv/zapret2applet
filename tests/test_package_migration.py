@@ -31,7 +31,10 @@ def main() -> None:
     assert "data/zapret2control.1" in cmake
     assert "%{_mandir}/man1/zapret2control.1*" in spec
     assert manpage.is_file()
-    assert package_workflow.count("zapret2control.1.gz") == 8
+    assert package_workflow.count("rpm -ql zapret2control | grep -Eq") == 2
+    deb_workflow = package_workflow.split("\n  rpm:\n", 1)[0]
+    assert "rpm -ql zapret2control" not in deb_workflow
+    assert deb_workflow.count("dpkg-query -L zapret2control | grep -Eq") == 2
     assert "test -f /usr/share/man/man1/zapret2control.1\n" not in package_workflow
 
     for unit in LEGACY_UNITS:
