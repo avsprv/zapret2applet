@@ -276,9 +276,10 @@ private slots:
             QTRY_COMPARE(readStatus(), QStringLiteral("Active"));
             controller.setServiceState(QStringLiteral("Не удалось запустить"), QStringLiteral("failed"),
                                        false, false);
-            QTRY_COMPARE(readStatus(), QStringLiteral("NeedsAttention"));
+            // Check the protocol notification independently before reading the property.
             QTRY_COMPARE(statusSignals.statuses.size(), 1);
             QCOMPARE(statusSignals.statuses.constLast(), QStringLiteral("NeedsAttention"));
+            QTRY_COMPARE(readStatus(), QStringLiteral("NeedsAttention"));
 
             controller.setServiceState(QStringLiteral("Остановлен"), QStringLiteral("inactive"),
                                        false, false);
