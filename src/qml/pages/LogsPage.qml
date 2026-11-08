@@ -36,8 +36,9 @@ Kirigami.ScrollablePage {
             text: qsTr("Показывается журнал только фиксированной службы zapret2.service. Чтение выполняется через read-only действие Polkit; журнал не изменяет состояние службы.")
         }
 
-        RowLayout {
+        Flow {
             Layout.fillWidth: true
+            spacing: Kirigami.Units.smallSpacing
 
             Controls.ComboBox {
                 id: lineCountSelector
@@ -63,8 +64,6 @@ Kirigami.ScrollablePage {
                 enabled: !page.logsController.busy
                 onClicked: page.logsController.readLogs(page.logsController.lineCount)
             }
-
-            Item { Layout.fillWidth: true }
 
             Controls.CheckBox {
                 text: qsTr("Автообновление каждые 10 секунд")
