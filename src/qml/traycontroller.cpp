@@ -191,7 +191,11 @@ public:
     void setServiceState(const QString &stateCode)
     {
         const bool inactive = stateCode == QLatin1String("inactive");
-        const bool failed = stateCode == QLatin1String("failed");
+        // Keep the attention state until the service successfully becomes active.
+        // A failed unit may transition to inactive during recovery; clearing the
+        // failure here would hide the error before the next successful start.
+        const bool failed = stateCode == QLatin1String("failed")
+                            || (m_failed && stateCode != QLatin1String("active"));
         const bool changed = m_inactive != inactive || m_failed != failed;
         if (!changed)
             return;
