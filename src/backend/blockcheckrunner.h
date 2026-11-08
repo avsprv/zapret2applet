@@ -7,7 +7,7 @@
 #include <QStringList>
 #include <optional>
 
-// Запускает blockcheck2.sh из апстрима (через zapret2applet-helper) в batch-режиме
+// Запускает blockcheck2.sh из апстрима (через zapret2control-helper) в batch-режиме
 // и разбирает найденные стратегии из его вывода.
 class BlockcheckRunner : public QObject
 {

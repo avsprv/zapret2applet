@@ -8,8 +8,8 @@ from blockcheck_manager import BlockcheckOptions, OptionsError
 from blockcheck_staging import StagedOptionsStore, StagingError
 from blockcheck_state import StateError, StateStore
 
-WORKER_UNIT = "zapret2applet-blockcheck.service"
-RECOVERY_UNIT = "zapret2applet-blockcheck-recovery.service"
+WORKER_UNIT = "zapret2control-blockcheck.service"
+RECOVERY_UNIT = "zapret2control-blockcheck-recovery.service"
 STATE_DIRECTORY = "/var/lib/zapret2applet/blockcheck"
 RUNTIME_DIRECTORY = "/run/zapret2applet/blockcheck"
 
@@ -99,7 +99,7 @@ def main(argv: list[str] | None = None) -> int:
         staged = StagedOptionsStore(state, RUNTIME_DIRECTORY)
         operation_id = BlockcheckSubmitter(state, staged).submit(options)
     except (OptionsError, StateError, StagingError, UnicodeError) as exc:
-        print(f"zapret2applet blockcheck submit: {exc}", file=sys.stderr)
+        print(f"zapret2control blockcheck submit: {exc}", file=sys.stderr)
         return 1
     print(operation_id)
     return 0

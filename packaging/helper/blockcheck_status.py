@@ -9,8 +9,8 @@ import uuid
 from blockcheck_staging import StagedOptionsStore
 from blockcheck_state import StateError, StateStore
 
-WORKER_UNIT = "zapret2applet-blockcheck.service"
-RECOVERY_UNIT = "zapret2applet-blockcheck-recovery.service"
+WORKER_UNIT = "zapret2control-blockcheck.service"
+RECOVERY_UNIT = "zapret2control-blockcheck-recovery.service"
 STATE_DIRECTORY = "/var/lib/zapret2applet/blockcheck"
 RUNTIME_DIRECTORY = "/run/zapret2applet/blockcheck"
 PROPERTIES = ("LoadState", "ActiveState", "SubState", "Result", "ExecMainStatus")
@@ -177,7 +177,7 @@ def main(argv: list[str] | None = None) -> int:
         staged = StagedOptionsStore(state, RUNTIME_DIRECTORY)
         status = get_job_status(state, staged, argv[0])
     except (StateError, ValueError, UnicodeError) as exc:
-        print(f"zapret2applet blockcheck status: {exc}", file=sys.stderr)
+        print(f"zapret2control blockcheck status: {exc}", file=sys.stderr)
         return 1
     print(json.dumps(status, sort_keys=True, separators=(",", ":")))
     return 0

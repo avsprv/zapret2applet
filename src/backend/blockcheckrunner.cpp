@@ -137,7 +137,7 @@ void BlockcheckRunner::handleLine(const QString &rawLine)
     line.remove(ansi);
     line.remove(QLatin1Char('\r'));
     emit logLine(line);
-    if (line.startsWith(QStringLiteral("zapret2applet-helper:")))
+    if (line.startsWith(QStringLiteral("zapret2control-helper:")))
         ++m_errorCount;
     if (const auto r = parseLine(line)) {
         const QString key = QStringList{r->test, r->ipv, r->domain, r->daemon, r->args}

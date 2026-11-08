@@ -108,7 +108,7 @@ def main() -> int:
     try:
         return BlockcheckWorker(state, staged).run()
     except StateError as exc:
-        print(f"zapret2applet blockcheck worker: {exc}", file=sys.stderr)
+        print(f"zapret2control blockcheck worker: {exc}", file=sys.stderr)
         return 1
 
 

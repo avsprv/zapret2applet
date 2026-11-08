@@ -14,7 +14,7 @@ def main() -> int:
         with state.locked(create=True):
             state.recover_locked()
     except StateError as exc:
-        print(f"zapret2applet blockcheck recovery: {exc}", file=sys.stderr)
+        print(f"zapret2control blockcheck recovery: {exc}", file=sys.stderr)
         return 1
     return 0
 
