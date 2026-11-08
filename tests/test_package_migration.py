@@ -91,9 +91,9 @@ def main() -> None:
         for command in ("deb-systemd-invoke", "deb-systemd-helper"):
             executable = failing_bin / command
             executable.write_text(
-                "#!/bin/sh\\n"
-                "printf '%s %s\\\\n' \\"$0\\" \\"$*\\" >> \\"$CALL_LOG\\"\\n"
-                + ("exit 1\\n" if command == "deb-systemd-invoke" else "exit 0\\n"),
+                "#!/bin/sh\n"
+                "printf '%s %s\\n' \"$0\" \"$*\" >> \"$CALL_LOG\"\n"
+                + ("exit 1\n" if command == "deb-systemd-invoke" else "exit 0\n"),
                 encoding="utf-8",
             )
             executable.chmod(0o755)
