@@ -92,7 +92,9 @@ TrayImageList renderTrayPixmap(int size, const QColor &indicator)
     QPainter painter(&image);
     painter.setRenderHint(QPainter::Antialiasing, true);
     const qreal scale = size / 32.0;
-    QColor foreground = QGuiApplication::palette().color(QPalette::WindowText);
+    QColor foreground;
+    if (qGuiApp)
+        foreground = qGuiApp->palette().color(QPalette::WindowText);
     if (!foreground.isValid())
         foreground = QColor(QStringLiteral("#232629"));
     QPen pen(foreground, 2.5 * scale, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin);
