@@ -73,7 +73,7 @@ jobs:
         run: |
           dnf install -y ca-certificates cmake curl desktop-file-utils gcc-c++ git \
             extra-cmake-modules kf6-kirigami-devel qt6-qtbase-devel \
-            qt6-qtdeclarative-devel qt6-qttools-devel rpm-build rpmlint systemd-rpm-macros tar
+            qt6-qtdeclarative-devel qt6-qttools-devel rpm-build rpmlint systemd-rpm-macros tar dbus-daemon
       - uses: actions/checkout@v4
         with:
           submodules: recursive
