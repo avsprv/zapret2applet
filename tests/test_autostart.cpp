@@ -1,7 +1,6 @@
 #include <QFile>
 #include <QTemporaryDir>
 #include <QDir>
-#include <QStandardPaths>
 #include <QtTest>
 
 #include "autostart.h"
