@@ -58,7 +58,7 @@ The recovery unit is enabled as a boot fallback. It must not start Blockcheck or
 zapret service state when no valid recovery marker exists.
 ## State and invariants
 
-Persist state under `/var/lib/zapret2control/blockcheck/`, owned by root, directory mode
+Persist state under `/var/lib/zapret2applet/blockcheck/`, owned by root, directory mode
 `0700`, state file mode `0600`. The state is durable across reboot; `/run` is not
 suitable for this purpose.
 
@@ -93,7 +93,7 @@ Required invariants:
 
 1. GUI validates the options and invokes a narrow privileged submit command through
    the existing Polkit boundary. The submit command validates all options again, writes
-   a bounded options record atomically into a root-owned `/run/zapret2control/`
+   a bounded options record atomically into a root-owned `/run/zapret2applet/`
    directory, then queues `systemctl start --no-block zapret2control-blockcheck.service`.
    It must reject a second submission while the unit or a recovery operation is active.
 2. The static worker unit invokes a dedicated helper worker command. The worker securely
