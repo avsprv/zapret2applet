@@ -80,7 +80,7 @@ Kirigami.ScrollablePage {
                 }
                 GridLayout {
                     Layout.fillWidth: true
-                    columns: 2
+                    columns: page.availableWidth < Kirigami.Units.gridUnit * 35 ? 1 : 2
                     Controls.Label { text: qsTr("IP-протокол") }
                     Controls.ComboBox {
                         Layout.fillWidth: true
@@ -112,7 +112,9 @@ Kirigami.ScrollablePage {
                     Controls.CheckBox { text: "HTTPS TLS 1.3"; checked: blockcheckController.tls13; onToggled: blockcheckController.tls13 = checked; enabled: !blockcheckController.busy }
                     Controls.CheckBox { text: "HTTP/3 (QUIC)"; checked: blockcheckController.http3; onToggled: blockcheckController.http3 = checked; enabled: !blockcheckController.busy }
                 }
-                RowLayout {
+                Flow {
+                    Layout.fillWidth: true
+                    spacing: Kirigami.Units.smallSpacing
                     Controls.Button {
                         text: qsTr("Начать подбор")
                         icon.name: "media-playback-start"
