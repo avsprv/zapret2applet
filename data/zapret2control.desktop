@@ -1,10 +1,10 @@
 [Desktop Entry]
 Type=Application
 Name=Zapret2 Control
-GenericName=Network Control for Linux
-GenericName[ru]=Управление сетевым трафиком Linux
-Comment=Network Control for Linux
-Comment[ru]=Управление сетевым трафиком Linux
+GenericName=Network configuration tool
+GenericName[ru]=Утилита настройки сети
+Comment=Manage zapret2 traffic filtering and services
+Comment[ru]=Управление фильтрацией трафика и службами zapret2
 Exec=zapret2control
 Icon=zapret2control
 Categories=Network;
