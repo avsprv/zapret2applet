@@ -418,7 +418,8 @@ void TrayController::registerWithWatcher()
             m_bus.unregisterService(m_serviceName);
             return;
         }
-        new StatusNotifierItemAdaptor(m_item);
+        if (!m_item->findChild<StatusNotifierItemAdaptor *>())
+            new StatusNotifierItemAdaptor(m_item);
         if (!m_bus.registerObject(QString::fromLatin1(itemPath), m_item,
                                   QDBusConnection::ExportAdaptors)) {
             qWarning() << "Unable to export StatusNotifierItem:"
