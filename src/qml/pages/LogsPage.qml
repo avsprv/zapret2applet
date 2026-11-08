@@ -40,6 +40,7 @@ Kirigami.ScrollablePage {
 
             Controls.ComboBox {
                 id: lineCountSelector
+                enabled: !logsController.busy
                 model: [
                     { text: qsTr("Последние 50 строк"), value: 50 },
                     { text: qsTr("Последние 100 строк"), value: 100 },
@@ -88,18 +89,15 @@ Kirigami.ScrollablePage {
             Layout.fillHeight: true
             implicitHeight: 360
 
-            Controls.ScrollView {
+            Controls.TextArea {
                 anchors.fill: parent
-
-                Controls.TextArea {
-                    text: logsController.logText
-                    readOnly: true
-                    wrapMode: TextEdit.NoWrap
-                    selectByMouse: true
-                    font.family: "monospace"
-                    Accessible.name: qsTr("Журнал службы zapret2")
-                    Accessible.description: qsTr("Последние записи журнала systemd службы zapret2.service")
-                }
+                text: logsController.logText
+                readOnly: true
+                wrapMode: TextEdit.NoWrap
+                selectByMouse: true
+                font.family: "monospace"
+                Accessible.name: qsTr("Журнал службы zapret2")
+                Accessible.description: qsTr("Последние записи журнала systemd службы zapret2.service")
             }
         }
     }
