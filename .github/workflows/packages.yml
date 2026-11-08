@@ -74,7 +74,7 @@ jobs:
           test -f /usr/lib/systemd/system/zapret2control-blockcheck.service
           test -f /usr/lib/systemd/system/zapret2control-blockcheck-recovery.service
           test -f /usr/share/zapret2control/blockcheck_admission.py
-          { test -f /usr/share/man/man1/zapret2control.1 || test -f /usr/share/man/man1/zapret2control.1.gz; }
+          rpm -ql zapret2control | grep -Eq "^/usr/share/man/man1/zapret2control\\.1(\\.gz)?$"
           DEBIAN_FRONTEND=noninteractive apt-get purge -y zapret2control
           ! dpkg-query -W zapret2control >/dev/null 2>&1
           test ! -e /usr/bin/zapret2control
@@ -105,7 +105,7 @@ jobs:
           test -f /usr/lib/systemd/system/zapret2control-blockcheck.service
           test -f /usr/lib/systemd/system/zapret2control-blockcheck-recovery.service
           test -f /usr/share/zapret2control/blockcheck_admission.py
-          { test -f /usr/share/man/man1/zapret2control.1 || test -f /usr/share/man/man1/zapret2control.1.gz; }
+          rpm -ql zapret2control | grep -Eq "^/usr/share/man/man1/zapret2control\\.1(\\.gz)?$"
 
           DEBIAN_FRONTEND=noninteractive apt-get purge -y zapret2control
           ! dpkg-query -W zapret2control >/dev/null 2>&1
@@ -207,7 +207,7 @@ jobs:
           test -f /usr/lib/systemd/system/zapret2control-blockcheck.service
           test -f /usr/lib/systemd/system/zapret2control-blockcheck-recovery.service
           test -f /usr/share/zapret2control/blockcheck_admission.py
-          { test -f /usr/share/man/man1/zapret2control.1 || test -f /usr/share/man/man1/zapret2control.1.gz; }
+          rpm -ql zapret2control | grep -Eq "^/usr/share/man/man1/zapret2control\\.1(\\.gz)?$"
           dnf remove -y zapret2control
           ! rpm -q zapret2control >/dev/null 2>&1
           test ! -e /usr/bin/zapret2control
@@ -254,7 +254,7 @@ jobs:
           test -f /usr/lib/systemd/system/zapret2control-blockcheck.service
           test -f /usr/lib/systemd/system/zapret2control-blockcheck-recovery.service
           test -f /usr/share/zapret2control/blockcheck_admission.py
-          { test -f /usr/share/man/man1/zapret2control.1 || test -f /usr/share/man/man1/zapret2control.1.gz; }
+          rpm -ql zapret2control | grep -Eq "^/usr/share/man/man1/zapret2control\\.1(\\.gz)?$"
 
           dnf remove -y zapret2control
           ! rpm -q zapret2control >/dev/null 2>&1
