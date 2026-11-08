@@ -1,9 +1,11 @@
-Name:           zapret2applet
-Version:        0.4.0
+Name:           zapret2control
+Version:        0.5.0
 Release:        1%{?dist}
+Obsoletes:      zapret2applet < 0.5.0
+Provides:       zapret2applet = %{version}-%{release}
 Summary:        Unofficial Qt6 GUI for zapret2
 License:        MIT
-URL:            https://github.com/avsprv/zapret2applet
+URL:            https://github.com/avsprv/zapret2control
 Source0:        %{url}/archive/v%{version}/%{name}-%{version}.tar.gz
 
 BuildRequires:  cmake >= 3.21
@@ -44,14 +46,14 @@ installed separately.
 %autosetup
 
 %post
-%systemd_post zapret2applet-blockcheck-recovery.service
+%systemd_post zapret2control-blockcheck-recovery.service
 
 %preun
-%systemd_preun zapret2applet-blockcheck.service
-%systemd_preun zapret2applet-blockcheck-recovery.service
+%systemd_preun zapret2control-blockcheck.service
+%systemd_preun zapret2control-blockcheck-recovery.service
 
 %postun
-%systemd_postun zapret2applet-blockcheck.service zapret2applet-blockcheck-recovery.service
+%systemd_postun zapret2control-blockcheck.service zapret2control-blockcheck-recovery.service
 
 %build
 %cmake -G Ninja -DCMAKE_SKIP_RPATH=ON
@@ -63,22 +65,22 @@ installed separately.
 %check
 export QT_QPA_PLATFORM=offscreen
 %ctest
-desktop-file-validate %{buildroot}%{_datadir}/applications/zapret2applet.desktop
-appstream-util validate-relax --nonet %{buildroot}%{_datadir}/metainfo/org.avsprv.zapret2applet.metainfo.xml
+desktop-file-validate %{buildroot}%{_datadir}/applications/zapret2control.desktop
+appstream-util validate-relax --nonet %{buildroot}%{_datadir}/metainfo/org.avsprv.zapret2control.metainfo.xml
 
 %files
 %license LICENSE NOTICE.md
 %doc README.md
-%{_bindir}/zapret2applet
-%{_libexecdir}/zapret2applet/zapret2applet-helper
-%{_libexecdir}/zapret2applet/blockcheck_*.py
-%{_unitdir}/zapret2applet-blockcheck.service
-%{_unitdir}/zapret2applet-blockcheck-recovery.service
-%{_datadir}/polkit-1/actions/org.zapret2applet.policy
-%{_datadir}/applications/zapret2applet.desktop
-%{_datadir}/metainfo/org.avsprv.zapret2applet.metainfo.xml
-%{_datadir}/icons/hicolor/scalable/apps/zapret2applet.svg
-%{_datadir}/icons/hicolor/symbolic/apps/zapret2applet-tray-symbolic.svg
+%{_bindir}/zapret2control
+%{_libexecdir}/zapret2control/zapret2control-helper
+%{_libexecdir}/zapret2control/blockcheck_*.py
+%{_unitdir}/zapret2control-blockcheck.service
+%{_unitdir}/zapret2control-blockcheck-recovery.service
+%{_datadir}/polkit-1/actions/org.zapret2control.policy
+%{_datadir}/applications/zapret2control.desktop
+%{_datadir}/metainfo/org.avsprv.zapret2control.metainfo.xml
+%{_datadir}/icons/hicolor/scalable/apps/zapret2control.svg
+%{_datadir}/icons/hicolor/symbolic/apps/zapret2control-tray-symbolic.svg
 
 %changelog
 * Sat Nov 07 2026 avsprv <avsprv@users.noreply.github.com> - 0.4.0-1
@@ -88,7 +90,7 @@ appstream-util validate-relax --nonet %{buildroot}%{_datadir}/metainfo/org.avspr
 - Expand helper validation and regression test coverage
 
 * Fri Nov 06 2026 avsprv <avsprv@users.noreply.github.com> - 0.3.0-1
-- Project renamed to zapret2applet (binary, polkit actions, helper, translations)
+- Project renamed to zapret2control (binary, polkit actions, helper, translations)
 - Install and update zapret2 from the latest GitHub release (sha256 verified)
 - Qt 6.8 LTS is now the minimum; English localization
 * Tue Nov 03 2026 avsprv - 0.2.0-1

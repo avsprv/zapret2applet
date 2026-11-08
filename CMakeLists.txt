@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.21)
-project(zapret2applet VERSION 0.4.0 LANGUAGES CXX)
+project(zapret2control VERSION 0.5.0 LANGUAGES CXX)
 
 # Minimum supported Qt release. Keep the API compatible with the Qt 6.8 LTS baseline.
 set(QZAPRET_QT_MIN 6.8 CACHE STRING "Minimum supported Qt version (LTS)")
@@ -26,7 +26,7 @@ find_package(Qt6 ${QZAPRET_QT_MIN} REQUIRED COMPONENTS
 
 qt_standard_project_setup(REQUIRES ${QZAPRET_QT_MIN})
 
-set(QZAPRET_HELPER "${CMAKE_INSTALL_FULL_LIBEXECDIR}/zapret2applet/zapret2applet-helper")
+set(QZAPRET_HELPER "${CMAKE_INSTALL_FULL_LIBEXECDIR}/zapret2control/zapret2control-helper")
 
 set(QZAPRET_SOURCES
     src/appsettings.cpp
@@ -71,11 +71,11 @@ set(QZAPRET_SOURCES
     src/backend/zapretbackend.h
 )
 
-qt_add_library(zapret2applet_i18n STATIC src/i18n.cpp src/i18n.h)
-target_include_directories(zapret2applet_i18n PUBLIC src)
-target_link_libraries(zapret2applet_i18n PUBLIC Qt6::Core)
-qt_add_translations(zapret2applet_i18n
-    TS_FILES i18n/zapret2applet_en.ts i18n/zapret2applet_about_en.ts
+qt_add_library(zapret2control_i18n STATIC src/i18n.cpp src/i18n.h)
+target_include_directories(zapret2control_i18n PUBLIC src)
+target_link_libraries(zapret2control_i18n PUBLIC Qt6::Core)
+qt_add_translations(zapret2control_i18n
+    TS_FILES i18n/zapret2control_en.ts i18n/zapret2control_about_en.ts
     SOURCES
         ${QZAPRET_SOURCES}
         src/i18n.cpp
@@ -100,17 +100,17 @@ qt_add_translations(zapret2applet_i18n
 
 # Current production application. It remains the installed executable until the
 # QML implementation reaches feature parity and passes the full regression suite.
-qt_add_executable(zapret2applet ${QZAPRET_SOURCES})
-target_include_directories(zapret2applet PRIVATE src)
-target_link_libraries(zapret2applet PRIVATE Qt6::Widgets Qt6::Network zapret2applet_i18n)
-target_compile_definitions(zapret2applet PRIVATE
+qt_add_executable(zapret2control ${QZAPRET_SOURCES})
+target_include_directories(zapret2control PRIVATE src)
+target_link_libraries(zapret2control PRIVATE Qt6::Widgets Qt6::Network zapret2control_i18n)
+target_compile_definitions(zapret2control PRIVATE
     QZAPRET_VERSION="${PROJECT_VERSION}"
     QZAPRET_HELPER_PATH="${QZAPRET_HELPER}")
-target_compile_options(zapret2applet PRIVATE -Wall -Wextra)
+target_compile_options(zapret2control PRIVATE -Wall -Wextra)
 
 # Parallel Kirigami application shell. This target is deliberately not installed
 # or packaged yet; it is built in CI while features are migrated incrementally.
-qt_add_executable(zapret2applet-qml-preview
+qt_add_executable(zapret2control-qml-preview
     src/qml/main.cpp
     src/settingsmigration.cpp
     src/settingsmigration.h
@@ -150,8 +150,8 @@ qt_add_executable(zapret2applet-qml-preview
     src/backend/zapretbackend.h
     src/backend/helperpath.h
 )
-qt_add_qml_module(zapret2applet-qml-preview
-    URI org.avsprv.zapret2applet
+qt_add_qml_module(zapret2control-qml-preview
+    URI org.avsprv.zapret2control
     VERSION 1.0
     QML_FILES
         src/qml/Main.qml
@@ -164,34 +164,34 @@ qt_add_qml_module(zapret2applet-qml-preview
         src/qml/pages/BlockcheckPage.qml
         src/qml/pages/UpdatePage.qml
 )
-target_include_directories(zapret2applet-qml-preview PRIVATE src src/qml)
-target_link_libraries(zapret2applet-qml-preview PRIVATE
+target_include_directories(zapret2control-qml-preview PRIVATE src src/qml)
+target_link_libraries(zapret2control-qml-preview PRIVATE
     Qt6::Core Qt6::Gui Qt6::Network Qt6::Qml Qt6::Quick Qt6::QuickControls2 Qt6::QuickDialogs2 Qt6::DBus
-    zapret2applet_i18n
+    zapret2control_i18n
 )
 
 # Keep the QML process independent from Qt Widgets. This is an architectural
 # boundary, not merely a current implementation detail.
-get_target_property(QZAPRET_QML_LINK_LIBRARIES zapret2applet-qml-preview LINK_LIBRARIES)
+get_target_property(QZAPRET_QML_LINK_LIBRARIES zapret2control-qml-preview LINK_LIBRARIES)
 if("Qt6::Widgets" IN_LIST QZAPRET_QML_LINK_LIBRARIES)
     message(FATAL_ERROR "The QML preview target must not link Qt6::Widgets")
 endif()
 
-target_compile_definitions(zapret2applet-qml-preview PRIVATE
+target_compile_definitions(zapret2control-qml-preview PRIVATE
     QZAPRET_VERSION="${PROJECT_VERSION}"
     QZAPRET_HELPER_PATH="${QZAPRET_HELPER}")
-target_compile_options(zapret2applet-qml-preview PRIVATE -Wall -Wextra)
+target_compile_options(zapret2control-qml-preview PRIVATE -Wall -Wextra)
 
-configure_file(data/org.zapret2applet.policy.in ${CMAKE_BINARY_DIR}/org.zapret2applet.policy @ONLY)
+configure_file(data/org.zapret2control.policy.in ${CMAKE_BINARY_DIR}/org.zapret2control.policy @ONLY)
 
-configure_file(data/systemd/zapret2applet-blockcheck.service.in
-    ${CMAKE_BINARY_DIR}/zapret2applet-blockcheck.service @ONLY)
-configure_file(data/systemd/zapret2applet-blockcheck-recovery.service.in
-    ${CMAKE_BINARY_DIR}/zapret2applet-blockcheck-recovery.service @ONLY)
+configure_file(data/systemd/zapret2control-blockcheck.service.in
+    ${CMAKE_BINARY_DIR}/zapret2control-blockcheck.service @ONLY)
+configure_file(data/systemd/zapret2control-blockcheck-recovery.service.in
+    ${CMAKE_BINARY_DIR}/zapret2control-blockcheck-recovery.service @ONLY)
 
-install(TARGETS zapret2applet RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
-install(PROGRAMS packaging/helper/zapret2applet-helper
-        DESTINATION ${CMAKE_INSTALL_LIBEXECDIR}/zapret2applet)
+install(TARGETS zapret2control RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
+install(PROGRAMS packaging/helper/zapret2control-helper
+        DESTINATION ${CMAKE_INSTALL_LIBEXECDIR}/zapret2control)
 install(FILES
         packaging/helper/blockcheck_manager.py
         packaging/helper/blockcheck_state.py
@@ -202,19 +202,19 @@ install(FILES
         packaging/helper/blockcheck_status.py
         packaging/helper/blockcheck_probe.py
         packaging/helper/blockcheck_admission.py
-        DESTINATION ${CMAKE_INSTALL_LIBEXECDIR}/zapret2applet)
-install(FILES ${CMAKE_BINARY_DIR}/org.zapret2applet.policy
+        DESTINATION ${CMAKE_INSTALL_LIBEXECDIR}/zapret2control)
+install(FILES ${CMAKE_BINARY_DIR}/org.zapret2control.policy
         DESTINATION ${CMAKE_INSTALL_DATADIR}/polkit-1/actions)
 install(FILES
-        ${CMAKE_BINARY_DIR}/zapret2applet-blockcheck.service
-        ${CMAKE_BINARY_DIR}/zapret2applet-blockcheck-recovery.service
+        ${CMAKE_BINARY_DIR}/zapret2control-blockcheck.service
+        ${CMAKE_BINARY_DIR}/zapret2control-blockcheck-recovery.service
         DESTINATION lib/systemd/system)
-install(FILES data/zapret2applet.desktop DESTINATION ${CMAKE_INSTALL_DATADIR}/applications)
-install(FILES data/org.avsprv.zapret2applet.metainfo.xml
+install(FILES data/zapret2control.desktop DESTINATION ${CMAKE_INSTALL_DATADIR}/applications)
+install(FILES data/org.avsprv.zapret2control.metainfo.xml
         DESTINATION ${CMAKE_INSTALL_DATADIR}/metainfo)
-install(FILES data/icons/hicolor/scalable/apps/zapret2applet.svg
+install(FILES data/icons/hicolor/scalable/apps/zapret2control.svg
         DESTINATION ${CMAKE_INSTALL_DATADIR}/icons/hicolor/scalable/apps)
-install(FILES data/icons/hicolor/symbolic/apps/zapret2applet-tray-symbolic.svg
+install(FILES data/icons/hicolor/symbolic/apps/zapret2control-tray-symbolic.svg
         DESTINATION ${CMAKE_INSTALL_DATADIR}/icons/hicolor/symbolic/apps)
 
 if(BUILD_TESTING)
@@ -285,7 +285,7 @@ if(BUILD_TESTING)
     set_tests_properties(dbusmenu_session_bus PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen")
 
     qt_add_executable(test_i18n tests/test_i18n.cpp)
-    target_link_libraries(test_i18n PRIVATE Qt6::Test zapret2applet_i18n)
+    target_link_libraries(test_i18n PRIVATE Qt6::Test zapret2control_i18n)
     target_compile_definitions(test_i18n PRIVATE QZAPRET_I18N_DIR="${CMAKE_SOURCE_DIR}/i18n")
     add_test(NAME i18n COMMAND test_i18n)
 
@@ -352,15 +352,15 @@ if(BUILD_TESTING)
 
     add_test(NAME update_helper
              COMMAND sh ${CMAKE_SOURCE_DIR}/tests/test_update_helper.sh
-                     ${CMAKE_SOURCE_DIR}/packaging/helper/zapret2applet-helper)
+                     ${CMAKE_SOURCE_DIR}/packaging/helper/zapret2control-helper)
 
     add_test(NAME helper_validation
              COMMAND sh ${CMAKE_SOURCE_DIR}/tests/test_helper.sh
-                     ${CMAKE_SOURCE_DIR}/packaging/helper/zapret2applet-helper)
+                     ${CMAKE_SOURCE_DIR}/packaging/helper/zapret2control-helper)
 
     add_test(NAME blockcheck_helper
              COMMAND sh ${CMAKE_SOURCE_DIR}/tests/test_blockcheck_helper.sh
-                     ${CMAKE_SOURCE_DIR}/packaging/helper/zapret2applet-helper)
+                     ${CMAKE_SOURCE_DIR}/packaging/helper/zapret2control-helper)
 
     find_package(Python3 COMPONENTS Interpreter REQUIRED)
     add_test(NAME blockcheck_state
@@ -389,19 +389,19 @@ if(BUILD_TESTING)
 
     add_test(NAME polkit_policy
              COMMAND ${Python3_EXECUTABLE} ${CMAKE_SOURCE_DIR}/tests/test_polkit_policy.py
-                     ${CMAKE_BINARY_DIR}/org.zapret2applet.policy)
+                     ${CMAKE_BINARY_DIR}/org.zapret2control.policy)
 
     add_test(NAME config_helper
              COMMAND sh ${CMAKE_SOURCE_DIR}/tests/test_config_helper.sh
-                     ${CMAKE_SOURCE_DIR}/packaging/helper/zapret2applet-helper)
+                     ${CMAKE_SOURCE_DIR}/packaging/helper/zapret2control-helper)
 
     add_test(NAME lists_helper
              COMMAND sh ${CMAKE_SOURCE_DIR}/tests/test_lists_helper.sh
-                     ${CMAKE_SOURCE_DIR}/packaging/helper/zapret2applet-helper)
+                     ${CMAKE_SOURCE_DIR}/packaging/helper/zapret2control-helper)
 
     add_test(NAME logs_helper
              COMMAND sh ${CMAKE_SOURCE_DIR}/tests/test_logs_helper.sh
-                     ${CMAKE_SOURCE_DIR}/packaging/helper/zapret2applet-helper)
+                     ${CMAKE_SOURCE_DIR}/packaging/helper/zapret2control-helper)
 
     qt_add_executable(test_profileanalyzer tests/test_profileanalyzer.cpp
         src/profileanalyzer.cpp src/profileanalyzer.h)

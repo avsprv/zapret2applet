@@ -1,4 +1,4 @@
-Source: zapret2applet
+Source: zapret2control
 Section: net
 Priority: optional
 Maintainer: avsprv <avsprv@users.noreply.github.com>
@@ -16,11 +16,14 @@ Build-Depends: debhelper-compat (= 13),
                tar,
                dbus-daemon
 Standards-Version: 4.7.0
-Homepage: https://github.com/avsprv/zapret2applet
+Homepage: https://github.com/avsprv/zapret2control
 Rules-Requires-Root: no
 
-Package: zapret2applet
+Package: zapret2control
 Architecture: any
+Provides: zapret2applet
+Conflicts: zapret2applet
+Replaces: zapret2applet
 Depends: ${shlibs:Depends}, ${misc:Depends},
          pkexec | policykit-1,
          curl,

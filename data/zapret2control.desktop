@@ -1,0 +1,11 @@
+[Desktop Entry]
+Type=Application
+Name=Zapret2 Control
+GenericName=Network Control for Linux
+GenericName[ru]=Оболочка для zapret2
+Comment=Network Control for Linux
+Comment[ru]=Управление сетевым трафиком Linux
+Exec=zapret2control
+Icon=zapret2control
+Categories=Network;
+Terminal=false
