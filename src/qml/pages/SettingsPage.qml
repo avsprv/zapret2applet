@@ -95,6 +95,23 @@ Kirigami.ScrollablePage {
         Kirigami.Heading {
             Layout.fillWidth: true
             level: 2
+            text: qsTr("Поведение окна")
+        }
+
+        Controls.CheckBox {
+            Layout.fillWidth: true
+            text: qsTr("Сворачивать окно в системный трей при закрытии")
+            checked: settingsManager.closeToTray
+            onToggled: settingsManager.closeToTray = checked
+        }
+
+        Kirigami.Separator {
+            Layout.fillWidth: true
+        }
+
+        Kirigami.Heading {
+            Layout.fillWidth: true
+            level: 2
             text: qsTr("Обновления")
         }
 
