@@ -1,5 +1,7 @@
 #include <QFile>
 #include <QTemporaryDir>
+#include <QDir>
+#include <QStandardPaths>
 #include <QtTest>
 
 #include "autostart.h"
@@ -53,6 +55,19 @@ private slots:
         QVERIFY(Autostart::migrateLegacyEntry(directory.path(), QStringLiteral("/usr/bin/zapret2control")));
         QVERIFY(QFile::exists(legacyPath));
         QVERIFY(!QFile::exists(directory.filePath(QStringLiteral("zapret2control.desktop"))));
+    }
+
+    void directoryNamedDesktopEntryIsNotEnabled()
+    {
+        QTemporaryDir directory;
+        QVERIFY(directory.isValid());
+        QStandardPaths::setPath(QStandardPaths::GenericConfigLocation, directory.path());
+
+        const QString autostartDirectory = directory.filePath(QStringLiteral("autostart"));
+        QVERIFY(QDir().mkpath(autostartDirectory));
+        QVERIFY(QDir().mkdir(QDir(autostartDirectory).filePath(QStringLiteral("zapret2control.desktop"))));
+
+        QVERIFY(!Autostart::isEnabled());
     }
 
     void doesNotOverwriteExistingNewEntry()
