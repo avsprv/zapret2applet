@@ -79,13 +79,14 @@ private slots:
         const uint revision = reply.arguments().at(0).toUInt();
         QCOMPARE(revision, 1u);
 
-        const DBusMenuLayoutItem layout =
-            reply.arguments().at(1).value<DBusMenuLayoutItem>();
+        const QDBusArgument layoutArgument = reply.arguments().at(1).value<QDBusArgument>();
+        const DBusMenuLayoutItem layout = qdbus_cast<DBusMenuLayoutItem>(layoutArgument);
         QCOMPARE(layout.id, 0);
         QCOMPARE(layout.children.size(), 7);
 
-        const DBusMenuLayoutItem startItem =
-            layout.children.at(2).variant().value<DBusMenuLayoutItem>();
+        const QDBusArgument startItemArgument =
+            layout.children.at(2).variant().value<QDBusArgument>();
+        const DBusMenuLayoutItem startItem = qdbus_cast<DBusMenuLayoutItem>(startItemArgument);
         QCOMPARE(startItem.id, 3);
         QCOMPARE(startItem.properties.value(QStringLiteral("label")).toString(),
                  QStringLiteral("Запустить zapret2"));
@@ -104,8 +105,10 @@ private slots:
                          QVariant::fromValue(QStringList{})});
         QCOMPARE(groupReply.type(), QDBusMessage::ReplyMessage);
         QCOMPARE(groupReply.arguments().size(), 1);
+        const QDBusArgument propertiesArgument =
+            groupReply.arguments().at(0).value<QDBusArgument>();
         const DBusMenuItemPropertiesList properties =
-            groupReply.arguments().at(0).value<DBusMenuItemPropertiesList>();
+            qdbus_cast<DBusMenuItemPropertiesList>(propertiesArgument);
         QCOMPARE(properties.size(), 2);
         QCOMPARE(properties.at(0).id, 3);
         QCOMPARE(properties.at(1).id, 4);
