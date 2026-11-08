@@ -22,10 +22,14 @@ def main() -> None:
     spec = RPM_SPEC.read_text(encoding="utf-8")
     cmake = (ROOT / "CMakeLists.txt").read_text(encoding="utf-8")
     helper = (ROOT / "packaging/helper/zapret2control-helper").read_text(encoding="utf-8")
+    manpage = ROOT / "data/zapret2control.1"
 
     assert "DESTINATION ${CMAKE_INSTALL_DATADIR}/zapret2control)" in cmake
     assert "module_dir=/usr/share/zapret2control" in helper
     assert "%{_datadir}/zapret2control/*.py" in spec
+    assert "data/zapret2control.1" in cmake
+    assert "%{_mandir}/man1/zapret2control.1*" in spec
+    assert manpage.is_file()
 
     for unit in LEGACY_UNITS:
         assert unit in preinst, f"Debian preinst does not migrate {unit}"
