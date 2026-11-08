@@ -100,7 +100,7 @@ Kirigami.ScrollablePage {
             id: editor
             Layout.fillWidth: true
             Layout.fillHeight: true
-            Layout.minimumHeight: 300
+            Layout.minimumHeight: Kirigami.Units.gridUnit * 17
             text: page.listsController.content
             readOnly: !page.listsController.loaded || !page.listsController.editable || page.listsController.busy
             wrapMode: TextEdit.NoWrap
