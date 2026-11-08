@@ -1,3 +1,5 @@
+pragma ComponentBehavior: Bound
+
 import QtQuick
 import QtQuick.Controls as Controls
 import QtQuick.Layouts
@@ -26,6 +28,7 @@ Kirigami.ScrollablePage {
         Repeater {
             model: page.profileController.profiles
             delegate: Controls.ItemDelegate {
+                id: profileDelegate
                 required property var modelData
                 Layout.fillWidth: true
                 highlighted: page.profileController.selectedIndex === modelData.index
@@ -34,15 +37,15 @@ Kirigami.ScrollablePage {
                 contentItem: ColumnLayout {
                     Controls.Label {
                         Layout.fillWidth: true
-                        text: modelData.name + " — " + modelData.arguments.join(" ")
+                        text: profileDelegate.modelData.name + " — " + profileDelegate.modelData.arguments.join(" ")
                         wrapMode: Text.Wrap
                     }
                     Flow {
                         Layout.fillWidth: true
                         spacing: Kirigami.Units.smallSpacing
-                        Controls.Button { text: qsTr("Изменить"); enabled: !page.profileController.busy; onClicked: editor.openFor(modelData.index, modelData.arguments) }
-                        Controls.Button { text: qsTr("Копировать"); enabled: !page.profileController.busy && page.profileController.profiles.length < 128; onClicked: page.profileController.copy(modelData.index) }
-                        Controls.Button { text: qsTr("Удалить"); enabled: !page.profileController.busy && page.profileController.profiles.length > 1; onClicked: { deleteDialog.indexToDelete = modelData.index; deleteDialog.open() } }
+                        Controls.Button { text: qsTr("Изменить"); enabled: !page.profileController.busy; onClicked: editor.openFor(profileDelegate.modelData.index, profileDelegate.modelData.arguments) }
+                        Controls.Button { text: qsTr("Копировать"); enabled: !page.profileController.busy && page.profileController.profiles.length < 128; onClicked: page.profileController.copy(profileDelegate.modelData.index) }
+                        Controls.Button { text: qsTr("Удалить"); enabled: !page.profileController.busy && page.profileController.profiles.length > 1; onClicked: { deleteDialog.indexToDelete = profileDelegate.modelData.index; deleteDialog.open() } }
                     }
                 }
             }
