@@ -31,8 +31,8 @@ private slots:
     // плейсхолдеры %1, %2 … совпадают с исходной строкой.
     void tsFileIsComplete()
     {
-        QFile f(QStringLiteral(QZAPRET_I18N_DIR "/zapret2applet_en.ts"));
-        QVERIFY2(f.open(QIODevice::ReadOnly), "cannot open zapret2applet_en.ts");
+        QFile f(QStringLiteral(QZAPRET_I18N_DIR "/zapret2control_en.ts"));
+        QVERIFY2(f.open(QIODevice::ReadOnly), "cannot open zapret2control_en.ts");
 
         const QRegularExpression placeholder(QStringLiteral("%\\d+"));
         const QRegularExpression cyrillic(QStringLiteral("[А-Яа-яЁё]"));

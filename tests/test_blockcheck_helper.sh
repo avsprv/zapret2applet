@@ -2,7 +2,7 @@
 # Runtime directory, PID identity, and lock lifecycle tests for the privileged helper.
 set -eu
 H="$1"
-[ -n "$H" ] || { echo "usage: test_blockcheck_helper.sh /path/to/zapret2applet-helper"; exit 2; }
+[ -n "$H" ] || { echo "usage: test_blockcheck_helper.sh /path/to/zapret2control-helper"; exit 2; }
 W=$(mktemp -d)
 runner_pid=
 cleanup() {

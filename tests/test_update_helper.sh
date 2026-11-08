@@ -1,7 +1,7 @@
 #!/bin/sh
 # Офлайн-тесты команд `install` и `update` хелпера: фейковый релиз по file://, без сети и без root.
 # Переопределения QZAPRET_TEST_* работают, только если хелпер лежит вне системных каталогов.
-H="${1:?usage: test_update_helper.sh /path/to/zapret2applet-helper}"
+H="${1:?usage: test_update_helper.sh /path/to/zapret2control-helper}"
 fail=0
 W=$(mktemp -d "${TMPDIR:-/tmp}/qz-upd.XXXXXX") || exit 1
 trap 'rm -rf "$W"' EXIT
@@ -13,7 +13,7 @@ cat > "$SYSTEMCTL" <<'EOS'
 [ "$1" = show ] || exit 1
 for unit do :; done
 case "$unit" in
-    zapret2applet-blockcheck.service|zapret2applet-blockcheck-recovery.service) ;;
+    zapret2control-blockcheck.service|zapret2control-blockcheck-recovery.service) ;;
     *) exit 4 ;;
 esac
 printf 'LoadState=loaded\nActiveState=inactive\nSubState=dead\nResult=success\nExecMainStatus=0\n'
@@ -151,7 +151,7 @@ case "$1" in
     show)
         for unit do :; done
         case "$unit" in
-            zapret2applet-blockcheck.service|zapret2applet-blockcheck-recovery.service) ;;
+            zapret2control-blockcheck.service|zapret2control-blockcheck-recovery.service) ;;
             *) exit 4 ;;
         esac
         printf 'LoadState=loaded\nActiveState=inactive\nSubState=dead\nResult=success\nExecMainStatus=0\n'

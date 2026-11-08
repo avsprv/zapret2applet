@@ -1,6 +1,6 @@
 #!/bin/sh
-# Проверка валидации аргументов zapret2applet-helper (до любых привилегированных действий).
-H="${1:?usage: test_helper.sh /path/to/zapret2applet-helper}"
+# Проверка валидации аргументов zapret2control-helper (до любых привилегированных действий).
+H="${1:?usage: test_helper.sh /path/to/zapret2control-helper}"
 fail=0
 
 expect_reject() {

@@ -72,7 +72,7 @@ private slots:
     {
         QVERIFY2(m_bus.isConnected(), "A private session bus is required (run with dbus-run-session)");
 
-        m_serviceName = QStringLiteral("org.avsprv.zapret2applet.Test_%1")
+        m_serviceName = QStringLiteral("org.avsprv.zapret2control.Test_%1")
                             .arg(QCoreApplication::applicationPid());
         QVERIFY2(m_bus.registerService(m_serviceName), qPrintable(m_bus.lastError().message()));
 
@@ -269,7 +269,7 @@ private slots:
                                 QStringLiteral("org.freedesktop.StatusNotifierItem"), m_bus);
             QVERIFY(item.isValid());
             QCOMPARE(item.property("Category").toString(), QStringLiteral("ApplicationStatus"));
-            QCOMPARE(item.property("Id").toString(), QStringLiteral("zapret2applet"));
+            QCOMPARE(item.property("Id").toString(), QStringLiteral("zapret2control"));
 
             // Read the property through the D-Bus Properties interface. QDBusInterface's
             // property cache is signal-driven and is not a reliable source for a fresh
