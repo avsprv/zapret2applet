@@ -52,7 +52,7 @@ Kirigami.ScrollablePage {
 
             GridLayout {
                 anchors.fill: parent
-                columns: 2
+                columns: page.availableWidth < Kirigami.Units.gridUnit * 35 ? 1 : 2
 
                 Controls.Label { text: qsTr("Установлена:") }
                 Controls.Label { text: page.updateController.installedVersion }
@@ -62,8 +62,9 @@ Kirigami.ScrollablePage {
             }
         }
 
-        RowLayout {
+        Flow {
             Layout.fillWidth: true
+            spacing: Kirigami.Units.smallSpacing
 
             Controls.Button {
                 text: qsTr("Проверить обновления")
