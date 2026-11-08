@@ -88,6 +88,7 @@ private slots:
         legacy.sync();
 
         QVERIFY(SettingsMigration::migrateLegacyProfile());
+        current.sync();
         QCOMPARE(current.value(QStringLiteral("appearance/theme")).toString(), QStringLiteral("light"));
         QCOMPARE(current.value(QStringLiteral("appearance/language")).toString(), QStringLiteral("ru"));
         QVERIFY(current.value(QStringLiteral("migration/zapret2control-v1")).toBool());
