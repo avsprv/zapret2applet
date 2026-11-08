@@ -17,8 +17,9 @@ Kirigami.ScrollablePage {
             text: qsTr("Файл config является shell include. Он не исполняется при проверке. Перед записью helper повторно проверяет синтаксис, контрольную сумму и создаёт резервную копию. Служба автоматически не перезапускается.")
         }
 
-        RowLayout {
+        Flow {
             Layout.fillWidth: true
+            spacing: Kirigami.Units.smallSpacing
             Controls.Button {
                 text: qsTr("Прочитать")
                 icon.name: "document-open"
