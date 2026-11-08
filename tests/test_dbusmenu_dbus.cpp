@@ -170,6 +170,9 @@ private slots:
         constexpr auto watcherService = "org.freedesktop.StatusNotifierWatcher";
         constexpr auto watcherPath = "/StatusNotifierWatcher";
 
+        QVERIFY2(m_bus.unregisterObject(QStringLiteral("/Menu")),
+                 qPrintable(m_bus.lastError().message()));
+        {
         TrayController controller;
         QVERIFY(!controller.watcherAvailable());
         QVERIFY(!controller.registered());
@@ -228,6 +231,13 @@ private slots:
 
         m_bus.unregisterService(QString::fromLatin1(watcherService));
         m_bus.unregisterObject(QString::fromLatin1(watcherPath));
+        }
+
+        const auto flags = QDBusConnection::ExportAllSlots
+                           | QDBusConnection::ExportAllSignals
+                           | QDBusConnection::ExportAllProperties;
+        QVERIFY2(m_bus.registerObject(QStringLiteral("/Menu"), m_menu, flags),
+                 qPrintable(m_bus.lastError().message()));
     }
 
     void invalidItemReturnsDBusError()
