@@ -13,7 +13,8 @@ Build-Depends: debhelper-compat (= 13),
                qt6-l10n-tools (>= 6.8),
                desktop-file-utils,
                curl,
-               tar
+               tar,
+               dbus-daemon
 Standards-Version: 4.7.0
 Homepage: https://github.com/avsprv/zapret2applet
 Rules-Requires-Root: no
