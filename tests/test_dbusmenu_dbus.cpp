@@ -335,6 +335,10 @@ private slots:
                              QStringLiteral("org.freedesktop.StatusNotifierItem"),
                              QStringLiteral("NewStatus"), &statusSignals,
                              SLOT(statusChanged(QString)));
+            m_bus.disconnect(itemService, QStringLiteral("/StatusNotifierItem"),
+                             QStringLiteral("org.freedesktop.DBus.Properties"),
+                             QStringLiteral("PropertiesChanged"), &propertyChanges,
+                             SLOT(propertiesChanged(QString,QVariantMap,QStringList)));
 
             const QDBusMessage menuReply = introspect(QStringLiteral("/Menu"));
             QCOMPARE(menuReply.type(), QDBusMessage::ReplyMessage);
