@@ -161,7 +161,7 @@ sudo cmake --install build --prefix /usr
 
 Ручные инструкции находятся в [packaging/README.md](packaging/README.md).
 
-GitHub Actions собирает пакеты для Debian 13 и Fedora при push в main и pull request в main. Готовые файлы доступны как workflow artifacts в [запусках сборки пакетов](https://github.com/avsprv/zapret2control/actions/workflows/packages.yml). Артефакты предназначены для проверки сборки; для обычной установки используйте пакеты из [Releases](https://github.com/avsprv/zapret2control/releases).
+GitHub Actions собирает пакеты для Debian 13 и Fedora при push в настроенные workflow ветки и при pull request в main. Готовые файлы доступны как workflow artifacts в [запусках сборки пакетов](https://github.com/avsprv/zapret2control/actions/workflows/packages.yml). Артефакты предназначены для проверки сборки; для обычной установки используйте пакеты из [Releases](https://github.com/avsprv/zapret2control/releases).
 
 ## Разработка и тестирование
 
