@@ -69,7 +69,7 @@ bool SettingsDialog::applySettings()
     if (Autostart::isEnabled() != m_guiAutostart->isChecked()
         && !Autostart::setEnabled(m_guiAutostart->isChecked())) {
         QMessageBox::warning(this, tr("Ошибка"),
-                             tr("Не удалось изменить автозапуск zapret2control."));
+                             tr("Не удалось изменить автозапуск Zapret2 Control."));
         m_guiAutostart->setChecked(Autostart::isEnabled());
         return false;
     }

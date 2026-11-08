@@ -3,7 +3,7 @@
  "-//freedesktop//DTD PolicyKit Policy Configuration 1.0//EN"
  "http://www.freedesktop.org/standards/PolicyKit/1/policyconfig.dtd">
 <policyconfig>
-  <vendor>zapret2control</vendor>
+  <vendor>Zapret2 Control</vendor>
   <vendor_url>https://github.com/avsprv/zapret2control</vendor_url>
 
   <action id="org.zapret2control.helper">

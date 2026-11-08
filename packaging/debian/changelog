@@ -5,7 +5,7 @@ zapret2control (0.5.0) unstable; urgency=medium
   * Add a read-only systemd journal monitor for zapret2.service.
   * Expand helper validation and regression test coverage.
 
- -- avsprv <avsprv@users.noreply.github.com>  Sat, 07 Nov 2026 09:00:00 +0300
+ -- avsprv <avsprv@users.noreply.github.com>  Sun, 08 Nov 2026 09:00:00 +0300
 
 zapret2control (0.3.0) unstable; urgency=medium
 

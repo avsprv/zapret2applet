@@ -78,7 +78,7 @@ MainWindow::MainWindow(QWidget *parent)
     , m_poll(new QTimer(this))
 {
     setWindowTitle(QStringLiteral("Zapret2 Control"));
-    setWindowIcon(QIcon::fromTheme(QStringLiteral("Zapret2 Control")));
+    setWindowIcon(QIcon::fromTheme(QStringLiteral("zapret2control")));
     resize(760, 640);
 
     auto *appMenu = menuBar()->addMenu(tr("Приложение"));
@@ -234,7 +234,7 @@ void MainWindow::onStateChanged(ZapretBackend::State state)
 
     if (m_tray) {
         updateTrayIcon(state);
-        m_tray->setToolTip(tr("zapret2control: %1").arg(text));
+        m_tray->setToolTip(tr("Zapret2 Control: %1").arg(text));
         m_trayStart->setEnabled(!active && !locked);
         m_trayStop->setEnabled(active && !locked);
     }

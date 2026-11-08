@@ -3,7 +3,7 @@ Version:        0.5.0
 Release:        1%{?dist}
 Obsoletes:      zapret2applet < 0.5.0
 Provides:       zapret2applet = %{version}-%{release}
-Summary:        Unofficial Qt6 GUI for zapret2
+Summary:        Network Control for Linux
 License:        MIT
 URL:            https://github.com/avsprv/zapret2control
 Source0:        %{url}/archive/v%{version}/%{name}-%{version}.tar.gz
@@ -83,6 +83,11 @@ appstream-util validate-relax --nonet %{buildroot}%{_datadir}/metainfo/org.avspr
 %{_datadir}/icons/hicolor/symbolic/apps/zapret2control-tray-symbolic.svg
 
 %changelog
+* Sun Nov 08 2026 avsprv <avsprv@users.noreply.github.com> - 0.5.0-1
+- Rename the application, executable, helper, desktop, Polkit and systemd identifiers
+- Migrate user settings and managed autostart entries from zapret2applet
+- Preserve legacy Blockcheck recovery state across package upgrades
+
 * Sat Nov 07 2026 avsprv <avsprv@users.noreply.github.com> - 0.4.0-1
 - Add safe configuration and profile management with validation and backups
 - Add user hostlist editing and read-only access to generated IP lists
