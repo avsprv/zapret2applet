@@ -56,7 +56,14 @@ jobs:
           lintian -I dist/*.deb
       - name: Smoke-test DEB clean installation and removal
         run: |
-          set -eu
+          set -eux
+          control_dir="$RUNNER_TEMP/zapret2control-deb-control"
+          mkdir -p "$control_dir"
+          dpkg-deb --control dist/*.deb "$control_dir"
+          echo '--- generated postinst ---'
+          cat "$control_dir/postinst"
+          echo '--- generated postrm ---'
+          cat "$control_dir/postrm"
           DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends ./dist/*.deb
           test "$(dpkg-query -W -f='${Status}' zapret2control)" = "install ok installed"
           test -x /usr/bin/zapret2control
@@ -175,7 +182,7 @@ jobs:
           rpmlint dist/*.rpm
       - name: Smoke-test RPM clean installation and removal
         run: |
-          set -eu
+          set -eux
           package=""
           for candidate in dist/zapret2control-[0-9]*.x86_64.rpm; do
             [ -f "$candidate" ] || continue
@@ -187,6 +194,11 @@ jobs:
           test "$(rpm -qp --qf '%{ARCH}' "$package")" = "x86_64"
           dnf install -y "$package"
           rpm -q zapret2control
+          echo '--- installed application metadata ---'
+          ls -l /usr/bin/zapret2control
+          stat /usr/bin/zapret2control
+          rpm -qf /usr/bin/zapret2control
+          rpm -q --qf '[%{FILENAMES} %{FILEMODES:perms}\\n]' zapret2control
           test -x /usr/bin/zapret2control
           helper="$(rpm -ql zapret2control | grep '/zapret2control-helper$')"
           policy="$(rpm -ql zapret2control | grep '/org.zapret2control.policy$')"
