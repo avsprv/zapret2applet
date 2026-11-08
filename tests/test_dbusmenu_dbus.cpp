@@ -174,6 +174,25 @@ private slots:
         QVERIFY(m_bus.objectRegisteredAt(QStringLiteral("/Menu")) == m_menu);
         m_bus.unregisterObject(QStringLiteral("/Menu"));
         QVERIFY(m_bus.objectRegisteredAt(QStringLiteral("/Menu")) == nullptr);
+
+        struct CleanupGuard
+        {
+            QDBusConnection bus;
+            DBusMenu *menu = nullptr;
+
+            ~CleanupGuard()
+            {
+                bus.unregisterService(QStringLiteral("org.freedesktop.StatusNotifierWatcher"));
+                bus.unregisterObject(QStringLiteral("/StatusNotifierWatcher"));
+                if (bus.objectRegisteredAt(QStringLiteral("/Menu")) == nullptr) {
+                    const auto flags = QDBusConnection::ExportAllSlots
+                                       | QDBusConnection::ExportAllSignals
+                                       | QDBusConnection::ExportAllProperties;
+                    bus.registerObject(QStringLiteral("/Menu"), menu, flags);
+                }
+            }
+        } cleanup{m_bus, m_menu};
+
         QString itemService;
         {
             TrayController controller;
@@ -221,16 +240,16 @@ private slots:
             QVERIFY(item.isValid());
             QCOMPARE(item.property("Category").toString(), QStringLiteral("ApplicationStatus"));
             QCOMPARE(item.property("Id").toString(), QStringLiteral("zapret2applet"));
-        QCOMPARE(item.property("Status").toString(), QStringLiteral("Active"));
-        controller.setServiceState(QStringLiteral("Не удалось запустить"), QStringLiteral("failed"),
+            QTRY_COMPARE(item.property("Status").toString(), QStringLiteral("Active"));
+            controller.setServiceState(QStringLiteral("Не удалось запустить"), QStringLiteral("failed"),
                                    false, false);
-        QTRY_COMPARE(item.property("Status").toString(), QStringLiteral("NeedsAttention"));
-        controller.setServiceState(QStringLiteral("Остановлен"), QStringLiteral("inactive"),
+            QTRY_COMPARE(item.property("Status").toString(), QStringLiteral("NeedsAttention"));
+            controller.setServiceState(QStringLiteral("Остановлен"), QStringLiteral("inactive"),
                                    false, false);
-        QCOMPARE(item.property("Status").toString(), QStringLiteral("NeedsAttention"));
-        controller.setServiceState(QStringLiteral("Работает"), QStringLiteral("active"),
+            QTRY_COMPARE(item.property("Status").toString(), QStringLiteral("NeedsAttention"));
+            controller.setServiceState(QStringLiteral("Работает"), QStringLiteral("active"),
                                    true, false);
-        QCOMPARE(item.property("Status").toString(), QStringLiteral("Active"));
+            QTRY_COMPARE(item.property("Status").toString(), QStringLiteral("Active"));
 
             const QDBusMessage menuReply = introspect(QStringLiteral("/Menu"));
             QCOMPARE(menuReply.type(), QDBusMessage::ReplyMessage);
