@@ -26,6 +26,20 @@ jobs:
       - uses: actions/checkout@v4
         with:
           submodules: recursive
+      - name: Checkout previous DEB package
+        uses: actions/checkout@v4
+        with:
+          ref: v0.4.0
+          path: legacy-source
+          submodules: recursive
+      - name: Build previous DEB package
+        run: |
+          set -eu
+          cd legacy-source
+          ln -sfn packaging/debian debian
+          dpkg-buildpackage -us -uc -b
+          mkdir -p "$RUNNER_TEMP/legacy-deb"
+          cp ../zapret2applet_*.deb "$RUNNER_TEMP/legacy-deb/"
       - name: Install package build dependencies
         run: |
           ln -sfn packaging/debian debian
@@ -40,18 +54,571 @@ jobs:
           dpkg-deb --info dist/*.deb
           dpkg-deb --contents dist/*.deb
           lintian -I dist/*.deb
-      - name: Smoke-test DEB installation and removal
+      - name: Smoke-test DEB upgrade from zapret2applet 0.4.0
         run: |
           set -eu
+          legacy_deb="$(find "$RUNNER_TEMP/legacy-deb" -maxdepth 1 -name 'zapret2applet_*.deb' -print -quit)"
+          test -n "$legacy_deb"
+          DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends "$legacy_deb"
+          test "$(dpkg-query -W -f='${Status}' zapret2applet)" = "install ok installed"
+          test -x /usr/bin/zapret2applet
+          test -x /usr/libexec/zapret2applet/zapret2applet-helper
+
           DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends ./dist/*.deb
           test "$(dpkg-query -W -f='${Status}' zapret2control)" = "install ok installed"
+          ! dpkg-query -W zapret2applet >/dev/null 2>&1
           test -x /usr/bin/zapret2control
-          helper="$(dpkg-query -L zapret2control | grep '/zapret2control-helper$')"
-          policy="$(dpkg-query -L zapret2control | grep '/org.zapret2control.policy$')"
+          test ! -e /usr/bin/zapret2applet
+          test ! -e /usr/libexec/zapret2applet
+          helper="$(dpkg-query -L zapret2control | grep '/zapret2control-helper      - uses: actions/upload-artifact@v4
+        with:
+          name: zapret2control-deb
+          path: dist/*.deb
+          if-no-files-found: error
+          retention-days: 30
+
+  rpm:
+    name: Build RPM (Fedora)
+    runs-on: ubuntu-latest
+    container: fedora:latest
+    steps:
+      - name: Install build tools
+        run: |
+          dnf install -y ca-certificates cmake curl desktop-file-utils gcc-c++ git \
+            extra-cmake-modules kf6-kirigami-devel qt6-qtbase-devel \
+            qt6-qtdeclarative-devel qt6-qttools-devel rpm-build rpmlint systemd-rpm-macros tar dbus-daemon
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+      - name: Checkout previous RPM package
+        uses: actions/checkout@v4
+        with:
+          ref: v0.4.0
+          path: legacy-source
+          submodules: recursive
+      - name: Prepare RPM build tree
+        run: |
+          git config --global --add safe.directory "$GITHUB_WORKSPACE"
+          mkdir -p "$HOME/rpmbuild"/{BUILD,BUILDROOT,RPMS,SOURCES,SPECS,SRPMS}
+          source_dir="$RUNNER_TEMP/zapret2control-source"
+          mkdir -p "$source_dir"
+          git archive HEAD | tar -x -C "$source_dir"
+          mkdir -p "$source_dir/third_party"
+          cp -a third_party/zapret2 "$source_dir/third_party/zapret2"
+          version="$(sed -n 's/^project(zapret2control VERSION \([0-9.]*\).*/\1/p' CMakeLists.txt)"
+          test -n "$version"
+          tar -czf "$HOME/rpmbuild/SOURCES/zapret2control-${version}.tar.gz" \
+            --transform="s,^,zapret2control-${version}/," -C "$source_dir" .
+          cp packaging/fedora/zapret2control.spec "$HOME/rpmbuild/SPECS/"
+      - name: Build previous RPM package
+        run: |
+          set -eu
+          mkdir -p "$RUNNER_TEMP/zapret2applet-source"
+          git -C legacy-source archive --prefix=zapret2applet-0.4.0/ v0.4.0 \
+            | tar -x -C "$RUNNER_TEMP/zapret2applet-source"
+          mkdir -p "$RUNNER_TEMP/zapret2applet-source/zapret2applet-0.4.0/third_party"
+          cp -a legacy-source/third_party/zapret2 \
+            "$RUNNER_TEMP/zapret2applet-source/zapret2applet-0.4.0/third_party/zapret2"
+          tar -czf "$HOME/rpmbuild/SOURCES/zapret2applet-0.4.0.tar.gz" \
+            -C "$RUNNER_TEMP/zapret2applet-source" zapret2applet-0.4.0
+          cp legacy-source/packaging/fedora/zapret2applet.spec "$HOME/rpmbuild/SPECS/"
+          rpmbuild -ba "$HOME/rpmbuild/SPECS/zapret2applet.spec" \
+            --define "_topdir $HOME/rpmbuild"
+      - name: Build RPM
+        run: |
+          rpmbuild -ba "$HOME/rpmbuild/SPECS/zapret2control.spec" \
+            --define "_topdir $HOME/rpmbuild"
+      - name: Inspect packages
+        run: |
+          mkdir -p dist
+          cp "$HOME"/rpmbuild/RPMS/*/zapret2control-*.rpm dist/
+          cp "$HOME"/rpmbuild/SRPMS/zapret2control-*.src.rpm dist/
+          rpm -qpl dist/zapret2control-*.rpm
+          rpm -qpR dist/zapret2control-*.rpm
+          rpmlint dist/*.rpm
+      - name: Smoke-test RPM upgrade from zapret2applet 0.4.0
+        run: |
+          set -eu
+          legacy_package=""
+          for candidate in "$HOME"/rpmbuild/RPMS/*/zapret2applet-0.4.0-*.rpm; do
+            [ -f "$candidate" ] || continue
+            legacy_package="$candidate"
+            break
+          done
+          test -n "$legacy_package"
+          package=""
+          for candidate in dist/zapret2control-[0-9]*.x86_64.rpm; do
+            [ -f "$candidate" ] || continue
+            package="$candidate"
+            break
+          done
+          test -n "$package"
+          test "$(rpm -qp --qf '%{NAME}' "$legacy_package")" = "zapret2applet"
+          test "$(rpm -qp --qf '%{NAME}' "$package")" = "zapret2control"
+          test "$(rpm -qp --qf '%{ARCH}' "$package")" = "x86_64"
+
+          dnf install -y "$legacy_package"
+          rpm -q zapret2applet
+          test -x /usr/bin/zapret2applet
+          test -x /usr/libexec/zapret2applet/zapret2applet-helper
+
+          dnf upgrade -y "$package"
+          rpm -q zapret2control
+          ! rpm -q zapret2applet >/dev/null 2>&1
+          test -x /usr/bin/zapret2control
+          test ! -e /usr/bin/zapret2applet
+          test ! -e /usr/libexec/zapret2applet
+          helper="$(rpm -ql zapret2control | grep '/zapret2control-helper      - uses: actions/upload-artifact@v4
+        with:
+          name: zapret2control-rpm
+          path: dist/*.rpm
+          if-no-files-found: error
+          retention-days: 30
+)"
+          policy="$(dpkg-query -L zapret2control | grep '/org.zapret2control.policy      - uses: actions/upload-artifact@v4
+        with:
+          name: zapret2control-deb
+          path: dist/*.deb
+          if-no-files-found: error
+          retention-days: 30
+
+  rpm:
+    name: Build RPM (Fedora)
+    runs-on: ubuntu-latest
+    container: fedora:latest
+    steps:
+      - name: Install build tools
+        run: |
+          dnf install -y ca-certificates cmake curl desktop-file-utils gcc-c++ git \
+            extra-cmake-modules kf6-kirigami-devel qt6-qtbase-devel \
+            qt6-qtdeclarative-devel qt6-qttools-devel rpm-build rpmlint systemd-rpm-macros tar dbus-daemon
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+      - name: Prepare RPM build tree
+        run: |
+          git config --global --add safe.directory "$GITHUB_WORKSPACE"
+          mkdir -p "$HOME/rpmbuild"/{BUILD,BUILDROOT,RPMS,SOURCES,SPECS,SRPMS}
+          source_dir="$RUNNER_TEMP/zapret2control-source"
+          mkdir -p "$source_dir"
+          git archive HEAD | tar -x -C "$source_dir"
+          mkdir -p "$source_dir/third_party"
+          cp -a third_party/zapret2 "$source_dir/third_party/zapret2"
+          version="$(sed -n 's/^project(zapret2control VERSION \([0-9.]*\).*/\1/p' CMakeLists.txt)"
+          test -n "$version"
+          tar -czf "$HOME/rpmbuild/SOURCES/zapret2control-${version}.tar.gz" \
+            --transform="s,^,zapret2control-${version}/," -C "$source_dir" .
+          cp packaging/fedora/zapret2control.spec "$HOME/rpmbuild/SPECS/"
+      - name: Build RPM
+        run: |
+          rpmbuild -ba "$HOME/rpmbuild/SPECS/zapret2control.spec" \
+            --define "_topdir $HOME/rpmbuild"
+      - name: Inspect packages
+        run: |
+          mkdir -p dist
+          cp "$HOME"/rpmbuild/RPMS/*/zapret2control-*.rpm dist/
+          cp "$HOME"/rpmbuild/SRPMS/zapret2control-*.src.rpm dist/
+          rpm -qpl dist/zapret2control-*.rpm
+          rpm -qpR dist/zapret2control-*.rpm
+          rpmlint dist/*.rpm
+      - name: Smoke-test RPM installation and removal
+        run: |
+          set -eu
+          package=""
+          for candidate in dist/zapret2control-[0-9]*.x86_64.rpm; do
+            [ -f "$candidate" ] || continue
+            package="$candidate"
+            break
+          done
+          test -n "$package"
+          test "$(rpm -qp --qf '%{NAME}' "$package")" = "zapret2control"
+          test "$(rpm -qp --qf '%{ARCH}' "$package")" = "x86_64"
+          dnf install -y "$package"
+          rpm -q zapret2control
+          test -x /usr/bin/zapret2control
+          helper="$(rpm -ql zapret2control | grep '/zapret2control-helper$')"
+          policy="$(rpm -ql zapret2control | grep '/org.zapret2control.policy$')"
           test -n "$helper" && test -x "$helper"
           test -n "$policy" && test -f "$policy"
           test -f /usr/lib/systemd/system/zapret2control-blockcheck.service
           test -f /usr/lib/systemd/system/zapret2control-blockcheck-recovery.service
+          dnf remove -y zapret2control
+          ! rpm -q zapret2control >/dev/null 2>&1
+          test ! -e /usr/bin/zapret2control
+          test ! -e "$helper"
+          test ! -e "$policy"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: zapret2control-rpm
+          path: dist/*.rpm
+          if-no-files-found: error
+          retention-days: 30
+)"
+          test -n "$helper" && test -x "$helper"
+          test -n "$policy" && test -f "$policy"
+          test -f /usr/lib/systemd/system/zapret2control-blockcheck.service
+          test -f /usr/lib/systemd/system/zapret2control-blockcheck-recovery.service
+
+          DEBIAN_FRONTEND=noninteractive apt-get purge -y zapret2control
+          ! dpkg-query -W zapret2control >/dev/null 2>&1
+          test ! -e /usr/bin/zapret2control
+          test ! -e "$helper"
+          test ! -e "$policy"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: zapret2control-deb
+          path: dist/*.deb
+          if-no-files-found: error
+          retention-days: 30
+
+  rpm:
+    name: Build RPM (Fedora)
+    runs-on: ubuntu-latest
+    container: fedora:latest
+    steps:
+      - name: Install build tools
+        run: |
+          dnf install -y ca-certificates cmake curl desktop-file-utils gcc-c++ git \
+            extra-cmake-modules kf6-kirigami-devel qt6-qtbase-devel \
+            qt6-qtdeclarative-devel qt6-qttools-devel rpm-build rpmlint systemd-rpm-macros tar dbus-daemon
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+      - name: Prepare RPM build tree
+        run: |
+          git config --global --add safe.directory "$GITHUB_WORKSPACE"
+          mkdir -p "$HOME/rpmbuild"/{BUILD,BUILDROOT,RPMS,SOURCES,SPECS,SRPMS}
+          source_dir="$RUNNER_TEMP/zapret2control-source"
+          mkdir -p "$source_dir"
+          git archive HEAD | tar -x -C "$source_dir"
+          mkdir -p "$source_dir/third_party"
+          cp -a third_party/zapret2 "$source_dir/third_party/zapret2"
+          version="$(sed -n 's/^project(zapret2control VERSION \([0-9.]*\).*/\1/p' CMakeLists.txt)"
+          test -n "$version"
+          tar -czf "$HOME/rpmbuild/SOURCES/zapret2control-${version}.tar.gz" \
+            --transform="s,^,zapret2control-${version}/," -C "$source_dir" .
+          cp packaging/fedora/zapret2control.spec "$HOME/rpmbuild/SPECS/"
+      - name: Build RPM
+        run: |
+          rpmbuild -ba "$HOME/rpmbuild/SPECS/zapret2control.spec" \
+            --define "_topdir $HOME/rpmbuild"
+      - name: Inspect packages
+        run: |
+          mkdir -p dist
+          cp "$HOME"/rpmbuild/RPMS/*/zapret2control-*.rpm dist/
+          cp "$HOME"/rpmbuild/SRPMS/zapret2control-*.src.rpm dist/
+          rpm -qpl dist/zapret2control-*.rpm
+          rpm -qpR dist/zapret2control-*.rpm
+          rpmlint dist/*.rpm
+      - name: Smoke-test RPM installation and removal
+        run: |
+          set -eu
+          package=""
+          for candidate in dist/zapret2control-[0-9]*.x86_64.rpm; do
+            [ -f "$candidate" ] || continue
+            package="$candidate"
+            break
+          done
+          test -n "$package"
+          test "$(rpm -qp --qf '%{NAME}' "$package")" = "zapret2control"
+          test "$(rpm -qp --qf '%{ARCH}' "$package")" = "x86_64"
+          dnf install -y "$package"
+          rpm -q zapret2control
+          test -x /usr/bin/zapret2control
+          helper="$(rpm -ql zapret2control | grep '/zapret2control-helper$')"
+          policy="$(rpm -ql zapret2control | grep '/org.zapret2control.policy$')"
+          test -n "$helper" && test -x "$helper"
+          test -n "$policy" && test -f "$policy"
+          test -f /usr/lib/systemd/system/zapret2control-blockcheck.service
+          test -f /usr/lib/systemd/system/zapret2control-blockcheck-recovery.service
+          dnf remove -y zapret2control
+          ! rpm -q zapret2control >/dev/null 2>&1
+          test ! -e /usr/bin/zapret2control
+          test ! -e "$helper"
+          test ! -e "$policy"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: zapret2control-rpm
+          path: dist/*.rpm
+          if-no-files-found: error
+          retention-days: 30
+)"
+          policy="$(rpm -ql zapret2control | grep '/org.zapret2control.policy      - uses: actions/upload-artifact@v4
+        with:
+          name: zapret2control-rpm
+          path: dist/*.rpm
+          if-no-files-found: error
+          retention-days: 30
+)"
+          policy="$(dpkg-query -L zapret2control | grep '/org.zapret2control.policy      - uses: actions/upload-artifact@v4
+        with:
+          name: zapret2control-deb
+          path: dist/*.deb
+          if-no-files-found: error
+          retention-days: 30
+
+  rpm:
+    name: Build RPM (Fedora)
+    runs-on: ubuntu-latest
+    container: fedora:latest
+    steps:
+      - name: Install build tools
+        run: |
+          dnf install -y ca-certificates cmake curl desktop-file-utils gcc-c++ git \
+            extra-cmake-modules kf6-kirigami-devel qt6-qtbase-devel \
+            qt6-qtdeclarative-devel qt6-qttools-devel rpm-build rpmlint systemd-rpm-macros tar dbus-daemon
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+      - name: Prepare RPM build tree
+        run: |
+          git config --global --add safe.directory "$GITHUB_WORKSPACE"
+          mkdir -p "$HOME/rpmbuild"/{BUILD,BUILDROOT,RPMS,SOURCES,SPECS,SRPMS}
+          source_dir="$RUNNER_TEMP/zapret2control-source"
+          mkdir -p "$source_dir"
+          git archive HEAD | tar -x -C "$source_dir"
+          mkdir -p "$source_dir/third_party"
+          cp -a third_party/zapret2 "$source_dir/third_party/zapret2"
+          version="$(sed -n 's/^project(zapret2control VERSION \([0-9.]*\).*/\1/p' CMakeLists.txt)"
+          test -n "$version"
+          tar -czf "$HOME/rpmbuild/SOURCES/zapret2control-${version}.tar.gz" \
+            --transform="s,^,zapret2control-${version}/," -C "$source_dir" .
+          cp packaging/fedora/zapret2control.spec "$HOME/rpmbuild/SPECS/"
+      - name: Build RPM
+        run: |
+          rpmbuild -ba "$HOME/rpmbuild/SPECS/zapret2control.spec" \
+            --define "_topdir $HOME/rpmbuild"
+      - name: Inspect packages
+        run: |
+          mkdir -p dist
+          cp "$HOME"/rpmbuild/RPMS/*/zapret2control-*.rpm dist/
+          cp "$HOME"/rpmbuild/SRPMS/zapret2control-*.src.rpm dist/
+          rpm -qpl dist/zapret2control-*.rpm
+          rpm -qpR dist/zapret2control-*.rpm
+          rpmlint dist/*.rpm
+      - name: Smoke-test RPM installation and removal
+        run: |
+          set -eu
+          package=""
+          for candidate in dist/zapret2control-[0-9]*.x86_64.rpm; do
+            [ -f "$candidate" ] || continue
+            package="$candidate"
+            break
+          done
+          test -n "$package"
+          test "$(rpm -qp --qf '%{NAME}' "$package")" = "zapret2control"
+          test "$(rpm -qp --qf '%{ARCH}' "$package")" = "x86_64"
+          dnf install -y "$package"
+          rpm -q zapret2control
+          test -x /usr/bin/zapret2control
+          helper="$(rpm -ql zapret2control | grep '/zapret2control-helper$')"
+          policy="$(rpm -ql zapret2control | grep '/org.zapret2control.policy$')"
+          test -n "$helper" && test -x "$helper"
+          test -n "$policy" && test -f "$policy"
+          test -f /usr/lib/systemd/system/zapret2control-blockcheck.service
+          test -f /usr/lib/systemd/system/zapret2control-blockcheck-recovery.service
+          dnf remove -y zapret2control
+          ! rpm -q zapret2control >/dev/null 2>&1
+          test ! -e /usr/bin/zapret2control
+          test ! -e "$helper"
+          test ! -e "$policy"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: zapret2control-rpm
+          path: dist/*.rpm
+          if-no-files-found: error
+          retention-days: 30
+)"
+          test -n "$helper" && test -x "$helper"
+          test -n "$policy" && test -f "$policy"
+          test -f /usr/lib/systemd/system/zapret2control-blockcheck.service
+          test -f /usr/lib/systemd/system/zapret2control-blockcheck-recovery.service
+
+          DEBIAN_FRONTEND=noninteractive apt-get purge -y zapret2control
+          ! dpkg-query -W zapret2control >/dev/null 2>&1
+          test ! -e /usr/bin/zapret2control
+          test ! -e "$helper"
+          test ! -e "$policy"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: zapret2control-deb
+          path: dist/*.deb
+          if-no-files-found: error
+          retention-days: 30
+
+  rpm:
+    name: Build RPM (Fedora)
+    runs-on: ubuntu-latest
+    container: fedora:latest
+    steps:
+      - name: Install build tools
+        run: |
+          dnf install -y ca-certificates cmake curl desktop-file-utils gcc-c++ git \
+            extra-cmake-modules kf6-kirigami-devel qt6-qtbase-devel \
+            qt6-qtdeclarative-devel qt6-qttools-devel rpm-build rpmlint systemd-rpm-macros tar dbus-daemon
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+      - name: Prepare RPM build tree
+        run: |
+          git config --global --add safe.directory "$GITHUB_WORKSPACE"
+          mkdir -p "$HOME/rpmbuild"/{BUILD,BUILDROOT,RPMS,SOURCES,SPECS,SRPMS}
+          source_dir="$RUNNER_TEMP/zapret2control-source"
+          mkdir -p "$source_dir"
+          git archive HEAD | tar -x -C "$source_dir"
+          mkdir -p "$source_dir/third_party"
+          cp -a third_party/zapret2 "$source_dir/third_party/zapret2"
+          version="$(sed -n 's/^project(zapret2control VERSION \([0-9.]*\).*/\1/p' CMakeLists.txt)"
+          test -n "$version"
+          tar -czf "$HOME/rpmbuild/SOURCES/zapret2control-${version}.tar.gz" \
+            --transform="s,^,zapret2control-${version}/," -C "$source_dir" .
+          cp packaging/fedora/zapret2control.spec "$HOME/rpmbuild/SPECS/"
+      - name: Build RPM
+        run: |
+          rpmbuild -ba "$HOME/rpmbuild/SPECS/zapret2control.spec" \
+            --define "_topdir $HOME/rpmbuild"
+      - name: Inspect packages
+        run: |
+          mkdir -p dist
+          cp "$HOME"/rpmbuild/RPMS/*/zapret2control-*.rpm dist/
+          cp "$HOME"/rpmbuild/SRPMS/zapret2control-*.src.rpm dist/
+          rpm -qpl dist/zapret2control-*.rpm
+          rpm -qpR dist/zapret2control-*.rpm
+          rpmlint dist/*.rpm
+      - name: Smoke-test RPM installation and removal
+        run: |
+          set -eu
+          package=""
+          for candidate in dist/zapret2control-[0-9]*.x86_64.rpm; do
+            [ -f "$candidate" ] || continue
+            package="$candidate"
+            break
+          done
+          test -n "$package"
+          test "$(rpm -qp --qf '%{NAME}' "$package")" = "zapret2control"
+          test "$(rpm -qp --qf '%{ARCH}' "$package")" = "x86_64"
+          dnf install -y "$package"
+          rpm -q zapret2control
+          test -x /usr/bin/zapret2control
+          helper="$(rpm -ql zapret2control | grep '/zapret2control-helper$')"
+          policy="$(rpm -ql zapret2control | grep '/org.zapret2control.policy$')"
+          test -n "$helper" && test -x "$helper"
+          test -n "$policy" && test -f "$policy"
+          test -f /usr/lib/systemd/system/zapret2control-blockcheck.service
+          test -f /usr/lib/systemd/system/zapret2control-blockcheck-recovery.service
+          dnf remove -y zapret2control
+          ! rpm -q zapret2control >/dev/null 2>&1
+          test ! -e /usr/bin/zapret2control
+          test ! -e "$helper"
+          test ! -e "$policy"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: zapret2control-rpm
+          path: dist/*.rpm
+          if-no-files-found: error
+          retention-days: 30
+)"
+          test -n "$helper" && test -x "$helper"
+          test -n "$policy" && test -f "$policy"
+          test -f /usr/lib/systemd/system/zapret2control-blockcheck.service
+          test -f /usr/lib/systemd/system/zapret2control-blockcheck-recovery.service
+
+          dnf remove -y zapret2control
+          ! rpm -q zapret2control >/dev/null 2>&1
+          test ! -e /usr/bin/zapret2control
+          test ! -e "$helper"
+          test ! -e "$policy"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: zapret2control-rpm
+          path: dist/*.rpm
+          if-no-files-found: error
+          retention-days: 30
+)"
+          policy="$(dpkg-query -L zapret2control | grep '/org.zapret2control.policy      - uses: actions/upload-artifact@v4
+        with:
+          name: zapret2control-deb
+          path: dist/*.deb
+          if-no-files-found: error
+          retention-days: 30
+
+  rpm:
+    name: Build RPM (Fedora)
+    runs-on: ubuntu-latest
+    container: fedora:latest
+    steps:
+      - name: Install build tools
+        run: |
+          dnf install -y ca-certificates cmake curl desktop-file-utils gcc-c++ git \
+            extra-cmake-modules kf6-kirigami-devel qt6-qtbase-devel \
+            qt6-qtdeclarative-devel qt6-qttools-devel rpm-build rpmlint systemd-rpm-macros tar dbus-daemon
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+      - name: Prepare RPM build tree
+        run: |
+          git config --global --add safe.directory "$GITHUB_WORKSPACE"
+          mkdir -p "$HOME/rpmbuild"/{BUILD,BUILDROOT,RPMS,SOURCES,SPECS,SRPMS}
+          source_dir="$RUNNER_TEMP/zapret2control-source"
+          mkdir -p "$source_dir"
+          git archive HEAD | tar -x -C "$source_dir"
+          mkdir -p "$source_dir/third_party"
+          cp -a third_party/zapret2 "$source_dir/third_party/zapret2"
+          version="$(sed -n 's/^project(zapret2control VERSION \([0-9.]*\).*/\1/p' CMakeLists.txt)"
+          test -n "$version"
+          tar -czf "$HOME/rpmbuild/SOURCES/zapret2control-${version}.tar.gz" \
+            --transform="s,^,zapret2control-${version}/," -C "$source_dir" .
+          cp packaging/fedora/zapret2control.spec "$HOME/rpmbuild/SPECS/"
+      - name: Build RPM
+        run: |
+          rpmbuild -ba "$HOME/rpmbuild/SPECS/zapret2control.spec" \
+            --define "_topdir $HOME/rpmbuild"
+      - name: Inspect packages
+        run: |
+          mkdir -p dist
+          cp "$HOME"/rpmbuild/RPMS/*/zapret2control-*.rpm dist/
+          cp "$HOME"/rpmbuild/SRPMS/zapret2control-*.src.rpm dist/
+          rpm -qpl dist/zapret2control-*.rpm
+          rpm -qpR dist/zapret2control-*.rpm
+          rpmlint dist/*.rpm
+      - name: Smoke-test RPM installation and removal
+        run: |
+          set -eu
+          package=""
+          for candidate in dist/zapret2control-[0-9]*.x86_64.rpm; do
+            [ -f "$candidate" ] || continue
+            package="$candidate"
+            break
+          done
+          test -n "$package"
+          test "$(rpm -qp --qf '%{NAME}' "$package")" = "zapret2control"
+          test "$(rpm -qp --qf '%{ARCH}' "$package")" = "x86_64"
+          dnf install -y "$package"
+          rpm -q zapret2control
+          test -x /usr/bin/zapret2control
+          helper="$(rpm -ql zapret2control | grep '/zapret2control-helper$')"
+          policy="$(rpm -ql zapret2control | grep '/org.zapret2control.policy$')"
+          test -n "$helper" && test -x "$helper"
+          test -n "$policy" && test -f "$policy"
+          test -f /usr/lib/systemd/system/zapret2control-blockcheck.service
+          test -f /usr/lib/systemd/system/zapret2control-blockcheck-recovery.service
+          dnf remove -y zapret2control
+          ! rpm -q zapret2control >/dev/null 2>&1
+          test ! -e /usr/bin/zapret2control
+          test ! -e "$helper"
+          test ! -e "$policy"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: zapret2control-rpm
+          path: dist/*.rpm
+          if-no-files-found: error
+          retention-days: 30
+)"
+          test -n "$helper" && test -x "$helper"
+          test -n "$policy" && test -f "$policy"
+          test -f /usr/lib/systemd/system/zapret2control-blockcheck.service
+          test -f /usr/lib/systemd/system/zapret2control-blockcheck-recovery.service
+
           DEBIAN_FRONTEND=noninteractive apt-get purge -y zapret2control
           ! dpkg-query -W zapret2control >/dev/null 2>&1
           test ! -e /usr/bin/zapret2control
