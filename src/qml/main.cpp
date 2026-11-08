@@ -3,7 +3,7 @@
 #include <QGuiApplication>
 #include <QLocale>
 #include <QQmlApplicationEngine>
-#include <QQmlContext>
+#include <QVariant>
 #include <QTranslator>
 #include <QStyleHints>
 
@@ -105,16 +105,18 @@ int main(int argc, char *argv[])
     QLocale::setDefault(initialLocale);
     QList<QTranslator *> translators = I18n::install(app, initialLocale);
     QQmlApplicationEngine engine;
-    engine.rootContext()->setContextProperty(QStringLiteral("appController"), &controller);
-    engine.rootContext()->setContextProperty(QStringLiteral("settingsManager"), &settingsManager);
-    engine.rootContext()->setContextProperty(QStringLiteral("autostartController"), &autostartController);
-    engine.rootContext()->setContextProperty(QStringLiteral("trayController"), &trayController);
-    engine.rootContext()->setContextProperty(QStringLiteral("configController"), &configController);
-    engine.rootContext()->setContextProperty(QStringLiteral("profileController"), &profileController);
-    engine.rootContext()->setContextProperty(QStringLiteral("logsController"), &logsController);
-    engine.rootContext()->setContextProperty(QStringLiteral("listsController"), &listsController);
-    engine.rootContext()->setContextProperty(QStringLiteral("blockcheckController"), &blockcheckController);
-    engine.rootContext()->setContextProperty(QStringLiteral("updateController"), &updateController);
+    engine.setInitialProperties({
+        {QStringLiteral("appController"), QVariant::fromValue(static_cast<QObject *>(&controller))},
+        {QStringLiteral("settingsManager"), QVariant::fromValue(static_cast<QObject *>(&settingsManager))},
+        {QStringLiteral("autostartController"), QVariant::fromValue(static_cast<QObject *>(&autostartController))},
+        {QStringLiteral("trayController"), QVariant::fromValue(static_cast<QObject *>(&trayController))},
+        {QStringLiteral("configController"), QVariant::fromValue(static_cast<QObject *>(&configController))},
+        {QStringLiteral("profileController"), QVariant::fromValue(static_cast<QObject *>(&profileController))},
+        {QStringLiteral("logsController"), QVariant::fromValue(static_cast<QObject *>(&logsController))},
+        {QStringLiteral("listsController"), QVariant::fromValue(static_cast<QObject *>(&listsController))},
+        {QStringLiteral("blockcheckController"), QVariant::fromValue(static_cast<QObject *>(&blockcheckController))},
+        {QStringLiteral("updateController"), QVariant::fromValue(static_cast<QObject *>(&updateController))}
+    });
     engine.loadFromModule(QStringLiteral("org.avsprv.zapret2control"), QStringLiteral("Main"));
 
     if (engine.rootObjects().isEmpty())

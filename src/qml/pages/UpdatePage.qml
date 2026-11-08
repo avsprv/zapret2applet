@@ -5,6 +5,7 @@ import org.kde.kirigami as Kirigami
 
 Kirigami.ScrollablePage {
     id: page
+    required property var page.updateController
     title: qsTr("Обновления")
 
     Kirigami.Dialog {
@@ -18,16 +19,16 @@ Kirigami.ScrollablePage {
             wrapMode: Text.WordWrap
             text: confirmDialog.installing
                   ? qsTr("Установить zapret2 %1 в /opt/zapret2? Будет проверена структура архива и SHA-256 бинарных компонентов, создана конфигурация по умолчанию с NFQWS2_ENABLE=0 и установлен systemd unit. Служба не будет запущена или добавлена в автозагрузку. Потребуется пароль администратора.")
-                    .arg(updateController.latestVersion)
+                    .arg(page.updateController.latestVersion)
                   : qsTr("Обновить zapret2 с %1 до %2? Если служба запущена, она будет остановлена на время обновления и запущена снова. Потребуется пароль администратора.")
-                    .arg(updateController.installedVersion).arg(updateController.latestVersion)
+                    .arg(page.updateController.installedVersion).arg(page.updateController.latestVersion)
         }
 
         onAccepted: {
             if (installing)
-                updateController.install()
+                page.updateController.install()
             else
-                updateController.update()
+                page.updateController.update()
         }
     }
 
@@ -37,11 +38,11 @@ Kirigami.ScrollablePage {
 
         Kirigami.InlineMessage {
             Layout.fillWidth: true
-            visible: updateController.status.length > 0
-            text: updateController.status
-            type: updateController.busy || updateController.checking
+            visible: page.updateController.status.length > 0
+            text: page.updateController.status
+            type: page.updateController.busy || page.updateController.checking
                   ? Kirigami.MessageType.Information
-                  : (updateController.canInstall || updateController.canUpdate
+                  : (page.updateController.canInstall || page.updateController.canUpdate
                      ? Kirigami.MessageType.Positive : Kirigami.MessageType.Information)
         }
 
@@ -54,10 +55,10 @@ Kirigami.ScrollablePage {
                 columns: 2
 
                 Controls.Label { text: qsTr("Установлена:") }
-                Controls.Label { text: updateController.installedVersion }
+                Controls.Label { text: page.updateController.installedVersion }
 
                 Controls.Label { text: qsTr("Последняя версия:") }
-                Controls.Label { text: updateController.latestVersion }
+                Controls.Label { text: page.updateController.latestVersion }
             }
         }
 
@@ -67,18 +68,18 @@ Kirigami.ScrollablePage {
             Controls.Button {
                 text: qsTr("Проверить обновления")
                 icon.name: "view-refresh"
-                enabled: !updateController.busy && !updateController.checking
-                onClicked: updateController.checkNow()
+                enabled: !page.updateController.busy && !page.updateController.checking
+                onClicked: page.updateController.checkNow()
             }
 
             Controls.Button {
-                text: updateController.installed
-                      ? qsTr("Обновить до %1").arg(updateController.latestVersion)
-                      : qsTr("Установить %1").arg(updateController.latestVersion)
+                text: page.updateController.installed
+                      ? qsTr("Обновить до %1").arg(page.updateController.latestVersion)
+                      : qsTr("Установить %1").arg(page.updateController.latestVersion)
                 icon.name: "system-software-update"
-                enabled: updateController.canInstall || updateController.canUpdate
+                enabled: page.updateController.canInstall || page.updateController.canUpdate
                 onClicked: {
-                    confirmDialog.installing = updateController.canInstall
+                    confirmDialog.installing = page.updateController.canInstall
                     confirmDialog.open()
                 }
             }
@@ -86,8 +87,8 @@ Kirigami.ScrollablePage {
             Controls.Button {
                 text: qsTr("Что нового…")
                 icon.name: "document-open"
-                enabled: updateController.releaseNotesUrl.length > 0
-                onClicked: Qt.openUrlExternally(updateController.releaseNotesUrl)
+                enabled: page.updateController.releaseNotesUrl.length > 0
+                onClicked: Qt.openUrlExternally(page.updateController.releaseNotesUrl)
             }
         }
 
@@ -105,8 +106,8 @@ Kirigami.ScrollablePage {
             Controls.Button {
                 text: qsTr("Очистить")
                 icon.name: "edit-clear"
-                enabled: updateController.logText.length > 0 && !updateController.busy
-                onClicked: updateController.clearLog()
+                enabled: page.updateController.logText.length > 0 && !page.updateController.busy
+                onClicked: page.updateController.clearLog()
             }
         }
 
@@ -114,7 +115,7 @@ Kirigami.ScrollablePage {
             Layout.fillWidth: true
             Layout.preferredHeight: 280
             readOnly: true
-            text: updateController.logText
+            text: page.updateController.logText
             wrapMode: TextEdit.NoWrap
             font.family: "monospace"
             Accessible.name: qsTr("Журнал обновления")

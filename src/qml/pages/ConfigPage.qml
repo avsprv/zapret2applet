@@ -4,6 +4,8 @@ import QtQuick.Layouts
 import org.kde.kirigami as Kirigami
 
 Kirigami.ScrollablePage {
+    id: page
+    required property var page.configController
     title: qsTr("Конфигурация")
 
     ColumnLayout {
@@ -23,25 +25,25 @@ Kirigami.ScrollablePage {
             Controls.Button {
                 text: qsTr("Прочитать")
                 icon.name: "document-open"
-                enabled: !configController.busy
-                onClicked: configController.read()
+                enabled: !page.configController.busy
+                onClicked: page.configController.read()
             }
             Controls.Button {
                 text: qsTr("Проверить")
                 icon.name: "check"
-                enabled: configController.loaded && !configController.busy
-                onClicked: configController.validate()
+                enabled: page.configController.loaded && !page.configController.busy
+                onClicked: page.configController.validate()
             }
             Controls.Button {
                 text: qsTr("Сохранить")
                 icon.name: "document-save"
-                enabled: configController.loaded && !configController.busy
+                enabled: page.configController.loaded && !page.configController.busy
                 onClicked: saveConfirmation.open()
             }
             Controls.Button {
                 text: qsTr("Откатить")
                 icon.name: "edit-undo"
-                enabled: configController.loaded && !configController.busy
+                enabled: page.configController.loaded && !page.configController.busy
                 onClicked: rollbackConfirmation.open()
             }
         }
@@ -50,11 +52,11 @@ Kirigami.ScrollablePage {
             Layout.fillWidth: true
             Layout.fillHeight: true
             Layout.minimumHeight: 360
-            enabled: configController.loaded && !configController.busy
-            text: configController.configText
+            enabled: page.configController.loaded && !page.configController.busy
+            text: page.configController.configText
             Accessible.name: qsTr("Содержимое файла конфигурации")
             Accessible.description: qsTr("Редактор shell-конфигурации zapret2. Проверка не исполняет файл.")
-            onTextChanged: if (text !== configController.configText) configController.configText = text
+            onTextChanged: if (text !== page.configController.configText) page.configController.configText = text
             wrapMode: TextEdit.NoWrap
             font.family: "monospace"
             selectByMouse: true
@@ -63,16 +65,16 @@ Kirigami.ScrollablePage {
 
         Controls.ProgressBar {
             Layout.fillWidth: true
-            visible: configController.busy
+            visible: page.configController.busy
             indeterminate: true
         }
 
         Kirigami.InlineMessage {
             Layout.fillWidth: true
-            visible: configController.status.length > 0
-            type: configController.status.startsWith("Ошибка") || configController.status.startsWith("Не удалось")
+            visible: page.configController.status.length > 0
+            type: page.configController.status.startsWith("Ошибка") || page.configController.status.startsWith("Не удалось")
                   ? Kirigami.MessageType.Error : Kirigami.MessageType.Information
-            text: configController.status
+            text: page.configController.status
         }
     }
 
@@ -81,7 +83,7 @@ Kirigami.ScrollablePage {
         title: qsTr("Сохранить конфигурацию?")
         modal: true
         standardButtons: Controls.Dialog.Yes | Controls.Dialog.No
-        onAccepted: configController.save()
+        onAccepted: page.configController.save()
         Controls.Label {
             width: parent.width
             wrapMode: Text.WordWrap
@@ -94,7 +96,7 @@ Kirigami.ScrollablePage {
         title: qsTr("Откатить конфигурацию?")
         modal: true
         standardButtons: Controls.Dialog.Yes | Controls.Dialog.No
-        onAccepted: configController.rollback()
+        onAccepted: page.configController.rollback()
         Controls.Label {
             width: parent.width
             wrapMode: Text.WordWrap
@@ -102,5 +104,5 @@ Kirigami.ScrollablePage {
         }
     }
 
-    Component.onCompleted: configController.read()
+    Component.onCompleted: page.configController.read()
 }

@@ -4,6 +4,9 @@ import QtQuick.Layouts
 import org.kde.kirigami as Kirigami
 
 Kirigami.ScrollablePage {
+    id: page
+    required property var page.settingsManager
+    required property var page.autostartController
     title: qsTr("Настройки")
 
     ColumnLayout {
@@ -31,10 +34,10 @@ Kirigami.ScrollablePage {
             textRole: "text"
             Accessible.name: qsTr("Тема оформления")
             currentIndex: {
-                const index = model.findIndex(item => item.value === settingsManager.theme)
+                const index = model.findIndex(item => item.value === page.settingsManager.theme)
                 return Math.max(0, index)
             }
-            onActivated: settingsManager.theme = model[currentIndex].value
+            onActivated: page.settingsManager.theme = model[currentIndex].value
         }
 
         Controls.Label {
@@ -58,10 +61,10 @@ Kirigami.ScrollablePage {
             textRole: "text"
             Accessible.name: qsTr("Язык интерфейса")
             currentIndex: {
-                const index = model.findIndex(item => item.value === settingsManager.language)
+                const index = model.findIndex(item => item.value === page.settingsManager.language)
                 return Math.max(0, index)
             }
-            onActivated: settingsManager.language = model[currentIndex].value
+            onActivated: page.settingsManager.language = model[currentIndex].value
         }
 
         Kirigami.Separator {
@@ -77,15 +80,15 @@ Kirigami.ScrollablePage {
         Controls.CheckBox {
             Layout.fillWidth: true
             text: qsTr("Запускать приложение при входе в систему")
-            checked: autostartController.enabled
-            onToggled: autostartController.setEnabled(checked)
+            checked: page.autostartController.enabled
+            onToggled: page.autostartController.setEnabled(checked)
         }
 
         Kirigami.InlineMessage {
             Layout.fillWidth: true
-            visible: autostartController.errorMessage.length > 0
+            visible: page.autostartController.errorMessage.length > 0
             type: Kirigami.MessageType.Error
-            text: autostartController.errorMessage
+            text: page.autostartController.errorMessage
         }
 
         Kirigami.Separator {
@@ -101,8 +104,8 @@ Kirigami.ScrollablePage {
         Controls.CheckBox {
             Layout.fillWidth: true
             text: qsTr("Сворачивать окно в системный трей при закрытии")
-            checked: settingsManager.closeToTray
-            onToggled: settingsManager.closeToTray = checked
+            checked: page.settingsManager.closeToTray
+            onToggled: page.settingsManager.closeToTray = checked
         }
 
         Kirigami.Separator {
@@ -118,8 +121,8 @@ Kirigami.ScrollablePage {
         Controls.CheckBox {
             Layout.fillWidth: true
             text: qsTr("Автоматически проверять обновления")
-            checked: settingsManager.autoCheckUpdates
-            onToggled: settingsManager.autoCheckUpdates = checked
+            checked: page.settingsManager.autoCheckUpdates
+            onToggled: page.settingsManager.autoCheckUpdates = checked
         }
 
         Kirigami.InlineMessage {

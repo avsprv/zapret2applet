@@ -7,6 +7,17 @@ import "pages"
 Kirigami.ApplicationWindow {
     id: root
 
+    required property var appController
+    required property var settingsManager
+    required property var autostartController
+    required property var trayController
+    required property var configController
+    required property var profileController
+    required property var logsController
+    required property var listsController
+    required property var blockcheckController
+    required property var updateController
+
     title: qsTr("Zapret2 Control")
     width: 980
     height: 680
@@ -15,7 +26,7 @@ Kirigami.ApplicationWindow {
     pageStack.initialPage: dashboardPage
 
     onClosing: function(close) {
-        if (settingsManager.closeToTray && trayController.registered) {
+        if (root.settingsManager.closeToTray && root.trayController.registered) {
             close.accepted = false
             hide()
         }
@@ -97,7 +108,7 @@ Kirigami.ApplicationWindow {
                 Kirigami.Action {
                     text: qsTr("Обновить")
                     icon.name: "view-refresh"
-                    onTriggered: appController.refresh()
+                    onTriggered: root.appController.refresh()
                 }
             ]
 
@@ -122,7 +133,7 @@ Kirigami.ApplicationWindow {
 
                             Kirigami.Heading {
                                 level: 2
-                                text: appController.serviceState
+                                text: root.appController.serviceState
                             }
 
                             Item { Layout.fillWidth: true }
@@ -131,8 +142,8 @@ Kirigami.ApplicationWindow {
                                 width: 12
                                 height: 12
                                 radius: width / 2
-                                color: appController.serviceStateCode === "inactive" ? "#d79921"
-                                     : appController.serviceStateCode === "failed" ? Kirigami.Theme.negativeTextColor
+                                color: root.appController.serviceStateCode === "inactive" ? "#d79921"
+                                     : root.appController.serviceStateCode === "failed" ? Kirigami.Theme.negativeTextColor
                                      : Kirigami.Theme.textColor
                                 Accessible.ignored: true
                             }
@@ -147,9 +158,9 @@ Kirigami.ApplicationWindow {
 
                         Controls.CheckBox {
                             text: qsTr("Запускать zapret2 при загрузке системы")
-                            checked: appController.bootEnabled
-                            onToggled: appController.setBootEnabled(checked)
-                            enabled: !appController.operationsBusy
+                            checked: root.appController.bootEnabled
+                            onToggled: root.appController.setBootEnabled(checked)
+                            enabled: !root.appController.operationsBusy
                         }
 
                         Flow {
@@ -159,22 +170,22 @@ Kirigami.ApplicationWindow {
                             Controls.Button {
                                 text: qsTr("Запустить")
                                 icon.name: "media-playback-start"
-                                enabled: !appController.serviceActive && !appController.operationsBusy
-                                onClicked: appController.startService()
+                                enabled: !root.appController.serviceActive && !root.appController.operationsBusy
+                                onClicked: root.appController.startService()
                             }
 
                             Controls.Button {
                                 text: qsTr("Остановить")
                                 icon.name: "media-playback-stop"
-                                enabled: appController.serviceActive && !appController.operationsBusy
-                                onClicked: appController.stopService()
+                                enabled: root.appController.serviceActive && !root.appController.operationsBusy
+                                onClicked: root.appController.stopService()
                             }
 
                             Controls.Button {
                                 text: qsTr("Обновить состояние")
                                 icon.name: "view-refresh"
-                                enabled: !appController.operationsBusy
-                                onClicked: appController.refresh()
+                                enabled: !root.appController.operationsBusy
+                                onClicked: root.appController.refresh()
                             }
                         }
                     }
@@ -203,14 +214,14 @@ Kirigami.ApplicationWindow {
                             Item { Layout.fillWidth: true }
 
                             Controls.Label {
-                                text: updateController.installedVersion
+                                text: root.updateController.installedVersion
                                 font.weight: Font.DemiBold
                             }
                         }
 
                         Controls.Label {
                             Layout.fillWidth: true
-                            text: updateController.installed
+                            text: root.updateController.installed
                                   ? qsTr("Проверить наличие новых версий можно в разделе «Обновления».")
                                   : qsTr("zapret2 пока не установлен. Перейдите в раздел «Обновления», чтобы выполнить установку.")
                             wrapMode: Text.WordWrap
@@ -227,9 +238,9 @@ Kirigami.ApplicationWindow {
 
                 Kirigami.InlineMessage {
                     Layout.fillWidth: true
-                    visible: appController.errorMessage.length > 0
+                    visible: root.appController.errorMessage.length > 0
                     type: Kirigami.MessageType.Error
-                    text: appController.errorMessage
+                    text: root.appController.errorMessage
                 }
 
                 Kirigami.InlineMessage {
@@ -244,17 +255,20 @@ Kirigami.ApplicationWindow {
 
     Component {
         id: configPageComponent
-        ConfigPage {}
+        ConfigPage { configController: root.configController }
     }
 
     Component {
         id: profilesPageComponent
-        ProfilesPage {}
+        ProfilesPage { profileController: root.profileController }
     }
 
     Component {
         id: settingsPageComponent
-        SettingsPage {}
+        SettingsPage {
+            settingsManager: root.settingsManager
+            autostartController: root.autostartController
+        }
     }
 
     Component {
@@ -264,21 +278,21 @@ Kirigami.ApplicationWindow {
 
     Component {
         id: logsPageComponent
-        LogsPage {}
+        LogsPage { logsController: root.logsController }
     }
 
     Component {
         id: listsPageComponent
-        ListsPage {}
+        ListsPage { listsController: root.listsController }
     }
 
     Component {
         id: blockcheckPageComponent
-        BlockcheckPage {}
+        BlockcheckPage { blockcheckController: root.blockcheckController }
     }
 
     Component {
         id: updatePageComponent
-        UpdatePage {}
+        UpdatePage { updateController: root.updateController }
     }
 }

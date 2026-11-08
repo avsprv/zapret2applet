@@ -5,12 +5,13 @@ import org.kde.kirigami as Kirigami
 
 Kirigami.ScrollablePage {
     id: page
+    required property var page.logsController
 
     title: qsTr("Мониторинг")
 
     property bool autoRefresh: false
 
-    Component.onCompleted: logsController.readLogs(logsController.lineCount)
+    Component.onCompleted: page.logsController.readLogs(page.logsController.lineCount)
     onVisibleChanged: {
         if (visible && autoRefresh)
             refreshTimer.start()
@@ -22,7 +23,7 @@ Kirigami.ScrollablePage {
         id: refreshTimer
         interval: 10000
         repeat: true
-        onTriggered: logsController.readLogs(logsController.lineCount)
+        onTriggered: page.logsController.readLogs(page.logsController.lineCount)
     }
 
     ColumnLayout {
@@ -40,7 +41,7 @@ Kirigami.ScrollablePage {
 
             Controls.ComboBox {
                 id: lineCountSelector
-                enabled: !logsController.busy
+                enabled: !page.logsController.busy
                 model: [
                     { text: qsTr("Последние 50 строк"), value: 50 },
                     { text: qsTr("Последние 100 строк"), value: 100 },
@@ -49,18 +50,18 @@ Kirigami.ScrollablePage {
                 ]
                 textRole: "text"
                 currentIndex: {
-                    const index = model.findIndex(item => item.value === logsController.lineCount)
+                    const index = model.findIndex(item => item.value === page.logsController.lineCount)
                     return Math.max(0, index)
                 }
                 Accessible.name: qsTr("Количество строк журнала")
-                onActivated: logsController.readLogs(model[currentIndex].value)
+                onActivated: page.logsController.readLogs(model[currentIndex].value)
             }
 
             Controls.Button {
                 text: qsTr("Обновить журнал")
                 icon.name: "view-refresh"
-                enabled: !logsController.busy
-                onClicked: logsController.readLogs(logsController.lineCount)
+                enabled: !page.logsController.busy
+                onClicked: page.logsController.readLogs(page.logsController.lineCount)
             }
 
             Item { Layout.fillWidth: true }
@@ -80,7 +81,7 @@ Kirigami.ScrollablePage {
 
         Controls.Label {
             Layout.fillWidth: true
-            text: logsController.status
+            text: page.logsController.status
             wrapMode: Text.WordWrap
         }
 
@@ -91,7 +92,7 @@ Kirigami.ScrollablePage {
 
             Controls.TextArea {
                 anchors.fill: parent
-                text: logsController.logText
+                text: page.logsController.logText
                 readOnly: true
                 wrapMode: TextEdit.NoWrap
                 selectByMouse: true

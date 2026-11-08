@@ -6,10 +6,11 @@ import org.kde.kirigami as Kirigami
 
 Kirigami.ScrollablePage {
     id: page
+    required property var page.blockcheckController
     title: qsTr("Подбор стратегий")
 
     Connections {
-        target: blockcheckController
+        target: page.blockcheckController
         function onConfirmationRequired(title, message) {
             stopServiceDialog.title = title
             stopServiceDialog.message = message
@@ -23,15 +24,15 @@ Kirigami.ScrollablePage {
         fileMode: FileDialog.SaveFile
         nameFilters: [qsTr("Текстовые файлы (*.txt)"), qsTr("Все файлы (*)")]
         defaultSuffix: "txt"
-        onAccepted: blockcheckController.saveLog(selectedFile)
+        onAccepted: page.blockcheckController.saveLog(selectedFile)
     }
 
     Kirigami.Dialog {
         id: stopServiceDialog
         property string message: ""
         standardButtons: Controls.Dialog.Yes | Controls.Dialog.No
-        onAccepted: blockcheckController.confirmStop(true)
-        onRejected: blockcheckController.confirmStop(false)
+        onAccepted: page.blockcheckController.confirmStop(true)
+        onRejected: page.blockcheckController.confirmStop(false)
         Controls.Label {
             Layout.fillWidth: true
             text: stopServiceDialog.message
@@ -45,17 +46,17 @@ Kirigami.ScrollablePage {
 
         Kirigami.InlineMessage {
             Layout.fillWidth: true
-            visible: blockcheckController.recoveryRequired
+            visible: page.blockcheckController.recoveryRequired
             type: Kirigami.MessageType.Error
             text: qsTr("Восстановление zapret2 не подтверждено. Управление службой и обновление заблокированы. Проверьте журнал; после устранения причины можно повторить восстановление.")
         }
 
         Kirigami.InlineMessage {
             Layout.fillWidth: true
-            visible: blockcheckController.status.length > 0
-            text: blockcheckController.status
+            visible: page.blockcheckController.status.length > 0
+            text: page.blockcheckController.status
             type: {
-                switch (blockcheckController.statusSeverity) {
+                switch (page.blockcheckController.statusSeverity) {
                 case "Error": return Kirigami.MessageType.Error
                 case "Warning": return Kirigami.MessageType.Warning
                 case "Success": return Kirigami.MessageType.Positive
@@ -72,9 +73,9 @@ Kirigami.ScrollablePage {
                 Controls.Label { text: qsTr("Домены (от 1 до 10, через пробел)") }
                 Controls.TextField {
                     Layout.fillWidth: true
-                    text: blockcheckController.domains
-                    onTextEdited: blockcheckController.domains = text
-                    enabled: !blockcheckController.busy
+                    text: page.blockcheckController.domains
+                    onTextEdited: page.blockcheckController.domains = text
+                    enabled: !page.blockcheckController.busy
                     placeholderText: "rutracker.org"
                     Accessible.name: qsTr("Домены для проверки")
                 }
@@ -85,32 +86,32 @@ Kirigami.ScrollablePage {
                     Controls.ComboBox {
                         Layout.fillWidth: true
                         model: [qsTr("IPv4"), qsTr("IPv6"), qsTr("IPv4 + IPv6")]
-                        currentIndex: blockcheckController.ipVersion === "6" ? 1 : blockcheckController.ipVersion === "46" ? 2 : 0
-                        onActivated: blockcheckController.ipVersion = ["4", "6", "46"][currentIndex]
-                        enabled: !blockcheckController.busy
+                        currentIndex: page.blockcheckController.ipVersion === "6" ? 1 : page.blockcheckController.ipVersion === "46" ? 2 : 0
+                        onActivated: page.blockcheckController.ipVersion = ["4", "6", "46"][currentIndex]
+                        enabled: !page.blockcheckController.busy
                     }
                     Controls.Label { text: qsTr("Уровень сканирования") }
                     Controls.ComboBox {
                         Layout.fillWidth: true
                         model: ["veryquick", "quick", "standard", "force"]
-                        currentIndex: model.indexOf(blockcheckController.scanLevel)
-                        onActivated: blockcheckController.scanLevel = currentText
-                        enabled: !blockcheckController.busy
+                        currentIndex: model.indexOf(page.blockcheckController.scanLevel)
+                        onActivated: page.blockcheckController.scanLevel = currentText
+                        enabled: !page.blockcheckController.busy
                     }
                     Controls.Label { text: qsTr("Количество повторов") }
                     Controls.SpinBox {
                         from: 1; to: 10
-                        value: blockcheckController.repeats
-                        onValueModified: blockcheckController.repeats = value
-                        enabled: !blockcheckController.busy
+                        value: page.blockcheckController.repeats
+                        onValueModified: page.blockcheckController.repeats = value
+                        enabled: !page.blockcheckController.busy
                     }
                 }
                 Flow {
                     Layout.fillWidth: true
-                    Controls.CheckBox { text: "HTTP"; checked: blockcheckController.http; onToggled: blockcheckController.http = checked; enabled: !blockcheckController.busy }
-                    Controls.CheckBox { text: "HTTPS TLS 1.2"; checked: blockcheckController.tls12; onToggled: blockcheckController.tls12 = checked; enabled: !blockcheckController.busy }
-                    Controls.CheckBox { text: "HTTPS TLS 1.3"; checked: blockcheckController.tls13; onToggled: blockcheckController.tls13 = checked; enabled: !blockcheckController.busy }
-                    Controls.CheckBox { text: "HTTP/3 (QUIC)"; checked: blockcheckController.http3; onToggled: blockcheckController.http3 = checked; enabled: !blockcheckController.busy }
+                    Controls.CheckBox { text: "HTTP"; checked: page.blockcheckController.http; onToggled: page.blockcheckController.http = checked; enabled: !page.blockcheckController.busy }
+                    Controls.CheckBox { text: "HTTPS TLS 1.2"; checked: page.blockcheckController.tls12; onToggled: page.blockcheckController.tls12 = checked; enabled: !page.blockcheckController.busy }
+                    Controls.CheckBox { text: "HTTPS TLS 1.3"; checked: page.blockcheckController.tls13; onToggled: page.blockcheckController.tls13 = checked; enabled: !page.blockcheckController.busy }
+                    Controls.CheckBox { text: "HTTP/3 (QUIC)"; checked: page.blockcheckController.http3; onToggled: page.blockcheckController.http3 = checked; enabled: !page.blockcheckController.busy }
                 }
                 Flow {
                     Layout.fillWidth: true
@@ -118,21 +119,21 @@ Kirigami.ScrollablePage {
                     Controls.Button {
                         text: qsTr("Начать подбор")
                         icon.name: "media-playback-start"
-                        enabled: !blockcheckController.busy && !blockcheckController.updateBusy && !blockcheckController.recoveryRequired
-                        onClicked: blockcheckController.start()
+                        enabled: !page.blockcheckController.busy && !page.blockcheckController.updateBusy && !page.blockcheckController.recoveryRequired
+                        onClicked: page.blockcheckController.start()
                     }
                     Controls.Button {
                         text: qsTr("Отмена")
                         icon.name: "dialog-cancel"
-                        enabled: blockcheckController.cancelAvailable
-                        onClicked: blockcheckController.cancel()
+                        enabled: page.blockcheckController.cancelAvailable
+                        onClicked: page.blockcheckController.cancel()
                     }
                     Controls.Button {
                         text: qsTr("Повторить восстановление")
                         icon.name: "view-refresh"
-                        visible: blockcheckController.recoveryRequired
-                        enabled: blockcheckController.recoveryRetryAvailable
-                        onClicked: blockcheckController.retryRecovery()
+                        visible: page.blockcheckController.recoveryRequired
+                        enabled: page.blockcheckController.recoveryRetryAvailable
+                        onClicked: page.blockcheckController.retryRecovery()
                     }
                 }
             }
@@ -141,16 +142,16 @@ Kirigami.ScrollablePage {
         Kirigami.Heading { level: 2; text: qsTr("Найденные стратегии") }
         Controls.Label {
             Layout.fillWidth: true
-            visible: blockcheckController.results.length === 0
+            visible: page.blockcheckController.results.length === 0
             text: qsTr("Стратегии пока не найдены.")
             opacity: 0.7
         }
         Repeater {
-            model: blockcheckController.results
+            model: page.blockcheckController.results
             delegate: Controls.ItemDelegate {
                 Layout.fillWidth: true
                 text: modelData.label
-                onClicked: blockcheckController.copyStrategy(index)
+                onClicked: page.blockcheckController.copyStrategy(index)
                 Accessible.name: qsTr("Копировать стратегию: %1").arg(modelData.label)
             }
         }
@@ -161,7 +162,7 @@ Kirigami.ScrollablePage {
             Controls.Button {
                 text: qsTr("Сохранить журнал")
                 icon.name: "document-save"
-                enabled: blockcheckController.logText.length > 0
+                enabled: page.blockcheckController.logText.length > 0
                 onClicked: saveLogDialog.open()
             }
         }
@@ -169,7 +170,7 @@ Kirigami.ScrollablePage {
             Layout.fillWidth: true
             Layout.preferredHeight: 260
             readOnly: true
-            text: blockcheckController.logText
+            text: page.blockcheckController.logText
             wrapMode: TextEdit.NoWrap
             font.family: "monospace"
             Accessible.name: qsTr("Журнал диагностики")
