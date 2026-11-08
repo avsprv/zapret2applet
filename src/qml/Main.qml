@@ -14,6 +14,13 @@ Kirigami.ApplicationWindow {
     minimumHeight: 480
     pageStack.initialPage: dashboardPage
 
+    onClosing: function(close) {
+        if (settingsManager.closeToTray && trayController.registered) {
+            close.accepted = false
+            hide()
+        }
+    }
+
     function showWindow() {
         show()
         raise()
