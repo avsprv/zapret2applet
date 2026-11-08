@@ -61,6 +61,52 @@ def main() -> None:
         subprocess.run([str(POSTINST), "abort-upgrade"], check=True, env=env)
         assert not log_path.exists(), "Non-upgrade maintainer action ran cleanup"
 
+        # Exercise Debian preinst against an isolated unit directory. The
+        # script copy differs only in the two absolute systemd unit paths.
+        unit_dir = temp_path / "systemd" / "system"
+        unit_dir.mkdir(parents=True)
+        (unit_dir / LEGACY_UNITS[0]).write_text("[Unit]\\n", encoding="utf-8")
+        test_preinst = temp_path / "preinst"
+        test_script = preinst.replace(
+            '"/usr/lib/systemd/system/$1"',
+            f'"{unit_dir}/$1"',
+        ).replace(
+            '"/lib/systemd/system/$1"',
+            f'"{unit_dir}/$1"',
+        )
+        test_preinst.write_text(test_script, encoding="utf-8")
+        test_preinst.chmod(0o755)
+
+        log_path.unlink(missing_ok=True)
+        subprocess.run([str(test_preinst), "upgrade"], check=True, env=env)
+        calls = log_path.read_text(encoding="utf-8").splitlines()
+        assert len(calls) == 2, calls
+        assert calls[0].endswith("stop " + LEGACY_UNITS[0]), calls
+        assert calls[1].endswith("disable " + LEGACY_UNITS[0]), calls
+        assert not any(LEGACY_UNITS[1] in call for call in calls), calls
+
+        # A failed stop must abort the upgrade and must not disable the unit.
+        failing_bin = temp_path / "failing-bin"
+        failing_bin.mkdir()
+        for command in ("deb-systemd-invoke", "deb-systemd-helper"):
+            executable = failing_bin / command
+            executable.write_text(
+                "#!/bin/sh\\n"
+                "printf '%s %s\\\\n' \\"$0\\" \\"$*\\" >> \\"$CALL_LOG\\"\\n"
+                + ("exit 1\\n" if command == "deb-systemd-invoke" else "exit 0\\n"),
+                encoding="utf-8",
+            )
+            executable.chmod(0o755)
+        failing_env = env.copy()
+        failing_env["PATH"] = f"{failing_bin}:/usr/bin:/bin"
+        log_path.unlink()
+        failed = subprocess.run([str(test_preinst), "upgrade"], env=failing_env)
+        assert failed.returncode != 0, "Failed stop unexpectedly allowed upgrade"
+        failed_calls = log_path.read_text(encoding="utf-8").splitlines()
+        assert len(failed_calls) == 1 and failed_calls[0].endswith(
+            "stop " + LEGACY_UNITS[0]
+        ), failed_calls
+
     print("package migration tests passed")
 
 
