@@ -2,6 +2,7 @@
 #include "dbusmenu.h"
 
 #include <QDBusConnectionInterface>
+#include <QDBusAbstractAdaptor>
 #include <QDBusMessage>
 #include <QDBusPendingCallWatcher>
 #include <QDBusPendingReply>
@@ -145,23 +146,6 @@ TrayImageList renderTrayPixmaps(const QColor &indicator)
 class StatusNotifierItem final : public QObject
 {
     Q_OBJECT
-    Q_CLASSINFO("D-Bus Interface", "org.freedesktop.StatusNotifierItem")
-    Q_PROPERTY(QString Category READ category)
-    Q_PROPERTY(QString Id READ id)
-    Q_PROPERTY(QString Title READ title)
-    Q_PROPERTY(uint WindowId READ windowId)
-    Q_PROPERTY(QString Status READ status NOTIFY NewStatus)
-    Q_PROPERTY(QString IconName READ iconName)
-    Q_PROPERTY(TrayImageList IconPixmap READ iconPixmap)
-    Q_PROPERTY(QString OverlayIconName READ overlayIconName)
-    Q_PROPERTY(TrayImageList OverlayIconPixmap READ overlayIconPixmap)
-    Q_PROPERTY(QString AttentionIconName READ attentionIconName)
-    Q_PROPERTY(TrayImageList AttentionIconPixmap READ attentionIconPixmap)
-    Q_PROPERTY(QString AttentionMovieName READ attentionMovieName)
-    Q_PROPERTY(TrayToolTip ToolTip READ toolTip)
-    Q_PROPERTY(bool ItemIsMenu READ itemIsMenu)
-    Q_PROPERTY(QDBusObjectPath Menu READ menu)
-
 public:
     explicit StatusNotifierItem(QObject *parent = nullptr) : QObject(parent)
     {
@@ -212,22 +196,8 @@ public:
         const bool statusChanged = m_failed != failed;
         m_inactive = inactive;
         m_failed = failed;
-        if (statusChanged) {
-            const QString currentStatus = status();
-            emit NewStatus(currentStatus);
-
-            // QtDBus exports the property getter, but does not automatically publish
-            // org.freedesktop.DBus.Properties.PropertiesChanged for this QObject.
-            // StatusNotifier hosts may use the standard Properties interface to refresh it.
-            QDBusMessage propertiesChanged = QDBusMessage::createSignal(
-                QString::fromLatin1(itemPath),
-                QStringLiteral("org.freedesktop.DBus.Properties"),
-                QStringLiteral("PropertiesChanged"));
-            propertiesChanged << QStringLiteral("org.freedesktop.StatusNotifierItem")
-                              << QVariantMap{{QStringLiteral("Status"), currentStatus}}
-                              << QStringList{};
-            QDBusConnection::sessionBus().send(propertiesChanged);
-        }
+        if (statusChanged)
+            emit NewStatus(status());
         emit NewOverlayIcon();
         emit NewAttentionIcon();
     }
@@ -251,6 +221,67 @@ signals:
 private:
     bool m_inactive = false;
     bool m_failed = false;
+};
+
+class StatusNotifierItemAdaptor final : public QDBusAbstractAdaptor
+{
+    Q_OBJECT
+    Q_CLASSINFO("D-Bus Interface", "org.freedesktop.StatusNotifierItem")
+    Q_PROPERTY(QString Category READ category)
+    Q_PROPERTY(QString Id READ id)
+    Q_PROPERTY(QString Title READ title)
+    Q_PROPERTY(uint WindowId READ windowId)
+    Q_PROPERTY(QString Status READ status NOTIFY NewStatus)
+    Q_PROPERTY(QString IconName READ iconName)
+    Q_PROPERTY(TrayImageList IconPixmap READ iconPixmap)
+    Q_PROPERTY(QString OverlayIconName READ overlayIconName)
+    Q_PROPERTY(TrayImageList OverlayIconPixmap READ overlayIconPixmap)
+    Q_PROPERTY(QString AttentionIconName READ attentionIconName)
+    Q_PROPERTY(TrayImageList AttentionIconPixmap READ attentionIconPixmap)
+    Q_PROPERTY(QString AttentionMovieName READ attentionMovieName)
+    Q_PROPERTY(TrayToolTip ToolTip READ toolTip)
+    Q_PROPERTY(bool ItemIsMenu READ itemIsMenu)
+    Q_PROPERTY(QDBusObjectPath Menu READ menu)
+
+public:
+    explicit StatusNotifierItemAdaptor(StatusNotifierItem *item)
+        : QDBusAbstractAdaptor(item)
+        , m_item(item)
+    {
+    }
+
+    QString category() const { return m_item->category(); }
+    QString id() const { return m_item->id(); }
+    QString title() const { return m_item->title(); }
+    uint windowId() const { return m_item->windowId(); }
+    QString status() const { return m_item->status(); }
+    QString iconName() const { return m_item->iconName(); }
+    TrayImageList iconPixmap() const { return m_item->iconPixmap(); }
+    QString overlayIconName() const { return m_item->overlayIconName(); }
+    TrayImageList overlayIconPixmap() const { return m_item->overlayIconPixmap(); }
+    QString attentionIconName() const { return m_item->attentionIconName(); }
+    TrayImageList attentionIconPixmap() const { return m_item->attentionIconPixmap(); }
+    QString attentionMovieName() const { return m_item->attentionMovieName(); }
+    TrayToolTip toolTip() const { return m_item->toolTip(); }
+    bool itemIsMenu() const { return m_item->itemIsMenu(); }
+    QDBusObjectPath menu() const { return m_item->menu(); }
+
+public slots:
+    void ContextMenu(int x, int y) { m_item->ContextMenu(x, y); }
+    void Activate(int x, int y) { m_item->Activate(x, y); }
+    void SecondaryActivate(int x, int y) { m_item->SecondaryActivate(x, y); }
+    void Scroll(int delta, const QString &orientation) { m_item->Scroll(delta, orientation); }
+
+signals:
+    void NewTitle();
+    void NewIcon();
+    void NewAttentionIcon();
+    void NewOverlayIcon();
+    void NewToolTip();
+    void NewStatus(const QString &status);
+
+private:
+    StatusNotifierItem *m_item = nullptr;
 };
 
 TrayController::~TrayController()
@@ -375,7 +406,9 @@ void TrayController::registerWithWatcher()
             m_bus.unregisterService(m_serviceName);
             return;
         }
-        if (!m_bus.registerObject(QString::fromLatin1(itemPath), m_item, exportFlags)) {
+        new StatusNotifierItemAdaptor(m_item);
+        if (!m_bus.registerObject(QString::fromLatin1(itemPath), m_item,
+                                  QDBusConnection::ExportAdaptors)) {
             qWarning() << "Unable to export StatusNotifierItem:"
                        << m_bus.lastError().message();
             m_bus.unregisterObject(QString::fromLatin1(menuPath));
