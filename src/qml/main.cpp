@@ -126,6 +126,10 @@ int main(int argc, char *argv[])
         QMetaObject::invokeMethod(rootWindow, "openSettings");
     });
     QObject::connect(&trayController, &TrayController::quitRequested, &app, &QCoreApplication::quit);
+    QObject::connect(&trayController, &TrayController::watcherAvailableChanged, &app, [rootWindow, &trayController] {
+        if (!trayController.watcherAvailable())
+            QMetaObject::invokeMethod(rootWindow, "showWindow");
+    });
 
     QObject::connect(&settingsManager, &SettingsManager::languageChanged, &app, [&]() {
         for (QTranslator *translator : translators)
