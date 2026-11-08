@@ -10,7 +10,7 @@ Kirigami.ScrollablePage {
 
     ColumnLayout {
         width: parent.width
-        spacing: Kirigami.Units.mediumSpacing
+        spacing: Kirigami.Units.largeSpacing
 
         Kirigami.InlineMessage {
             Layout.fillWidth: true
