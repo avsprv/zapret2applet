@@ -251,6 +251,12 @@ if(BUILD_TESTING)
     target_link_libraries(test_settingsmigration PRIVATE Qt6::Test Qt6::Core)
     add_test(NAME settingsmigration COMMAND test_settingsmigration)
 
+    qt_add_executable(test_autostart tests/test_autostart.cpp
+        src/autostart.cpp src/autostart.h)
+    target_include_directories(test_autostart PRIVATE src)
+    target_link_libraries(test_autostart PRIVATE Qt6::Test Qt6::Core)
+    add_test(NAME autostart_migration COMMAND test_autostart)
+
     qt_add_executable(test_appsettings tests/test_appsettings.cpp
         src/appsettings.cpp src/appsettings.h)
     target_include_directories(test_appsettings PRIVATE src)
