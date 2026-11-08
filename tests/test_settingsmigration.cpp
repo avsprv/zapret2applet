@@ -27,9 +27,10 @@ private slots:
         QSettings current;
         current.clear();
 
-        QSettings legacy(QSettings::IniFormat, QSettings::UserScope,
-                         QCoreApplication::organizationName(),
-                         QStringLiteral("zapret2applet"));
+        const QString currentApplicationName = QCoreApplication::applicationName();
+        QCoreApplication::setApplicationName(QStringLiteral("zapret2applet"));
+        QSettings legacy;
+        QCoreApplication::setApplicationName(currentApplicationName);
         legacy.clear();
         legacy.setValue(QStringLiteral("appearance/theme"), QStringLiteral("dark"));
         legacy.setValue(QStringLiteral("appearance/language"), QStringLiteral("ru"));
@@ -58,9 +59,10 @@ private slots:
         current.setValue(QStringLiteral("migration/zapret2control-v1"), true);
         current.sync();
 
-        QSettings legacy(QSettings::IniFormat, QSettings::UserScope,
-                         QCoreApplication::organizationName(),
-                         QStringLiteral("zapret2applet"));
+        const QString currentApplicationName = QCoreApplication::applicationName();
+        QCoreApplication::setApplicationName(QStringLiteral("zapret2applet"));
+        QSettings legacy;
+        QCoreApplication::setApplicationName(currentApplicationName);
         legacy.setValue(QStringLiteral("appearance/theme"), QStringLiteral("dark"));
         legacy.sync();
 
@@ -75,9 +77,10 @@ private slots:
         current.setValue(QStringLiteral("appearance/theme"), QStringLiteral("light"));
         current.sync();
 
-        QSettings legacy(QSettings::IniFormat, QSettings::UserScope,
-                         QCoreApplication::organizationName(),
-                         QStringLiteral("zapret2applet"));
+        const QString currentApplicationName = QCoreApplication::applicationName();
+        QCoreApplication::setApplicationName(QStringLiteral("zapret2applet"));
+        QSettings legacy;
+        QCoreApplication::setApplicationName(currentApplicationName);
         legacy.setValue(QStringLiteral("appearance/theme"), QStringLiteral("dark"));
         legacy.sync();
 

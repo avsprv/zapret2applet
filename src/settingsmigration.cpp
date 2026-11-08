@@ -26,10 +26,10 @@ bool SettingsMigration::migrateLegacyProfile()
         return current.status() == QSettings::NoError;
     }
 
-    QSettings legacy(QSettings::defaultFormat(),
-                     QSettings::UserScope,
-                     QCoreApplication::organizationName(),
-                     QLatin1String(kLegacyApplicationName));
+    const QString currentApplicationName = QCoreApplication::applicationName();
+    QCoreApplication::setApplicationName(QLatin1String(kLegacyApplicationName));
+    QSettings legacy;
+    QCoreApplication::setApplicationName(currentApplicationName);
     legacy.sync();
     if (legacy.status() != QSettings::NoError)
         return false;
