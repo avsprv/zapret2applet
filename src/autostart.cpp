@@ -88,7 +88,7 @@ bool Autostart::isEnabled()
     const QString directory = QStandardPaths::writableLocation(QStandardPaths::GenericConfigLocation)
         + QStringLiteral("/autostart");
     migrateLegacyEntry(directory, QCoreApplication::applicationFilePath());
-    return QFile::exists(desktopPath());
+    return QFileInfo(desktopPath()).isFile();
 }
 
 bool Autostart::setEnabled(bool enabled)
