@@ -259,6 +259,7 @@ public:
         : QDBusAbstractAdaptor(item)
         , m_item(item)
     {
+        setAutoRelaySignals(true);
     }
 
     QString category() const { return m_item->category(); }
