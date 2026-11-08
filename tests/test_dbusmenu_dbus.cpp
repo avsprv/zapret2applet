@@ -387,5 +387,5 @@ private slots:
     }
 };
 
-QTEST_GUILESS_MAIN(TestDBusMenuOverSessionBus)
+QTEST_MAIN(TestDBusMenuOverSessionBus)
 #include "test_dbusmenu_dbus.moc"
