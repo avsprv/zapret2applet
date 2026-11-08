@@ -114,7 +114,7 @@ Kirigami.ScrollablePage {
 
         Controls.TextArea {
             Layout.fillWidth: true
-            Layout.preferredHeight: 280
+            Layout.preferredHeight: Kirigami.Units.gridUnit * 16
             readOnly: true
             text: page.updateController.logText
             wrapMode: TextEdit.NoWrap
