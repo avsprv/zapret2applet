@@ -5,7 +5,7 @@ import org.kde.kirigami as Kirigami
 
 Kirigami.ScrollablePage {
     id: page
-    required property var page.logsController
+    required property var logsController
 
     title: qsTr("Мониторинг")
 

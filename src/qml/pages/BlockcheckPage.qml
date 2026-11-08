@@ -6,7 +6,7 @@ import org.kde.kirigami as Kirigami
 
 Kirigami.ScrollablePage {
     id: page
-    required property var page.blockcheckController
+    required property var blockcheckController
     title: qsTr("Подбор стратегий")
 
     Connections {

@@ -5,8 +5,8 @@ import org.kde.kirigami as Kirigami
 
 Kirigami.ScrollablePage {
     id: page
-    required property var page.settingsManager
-    required property var page.autostartController
+    required property var settingsManager
+    required property var autostartController
     title: qsTr("Настройки")
 
     ColumnLayout {

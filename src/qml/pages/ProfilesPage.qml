@@ -5,7 +5,7 @@ import org.kde.kirigami as Kirigami
 
 Kirigami.ScrollablePage {
     id: page
-    required property var page.profileController
+    required property var profileController
     title: qsTr("Профили")
     ColumnLayout {
         width: parent.width

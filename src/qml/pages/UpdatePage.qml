@@ -5,7 +5,7 @@ import org.kde.kirigami as Kirigami
 
 Kirigami.ScrollablePage {
     id: page
-    required property var page.updateController
+    required property var updateController
     title: qsTr("Обновления")
 
     Kirigami.Dialog {

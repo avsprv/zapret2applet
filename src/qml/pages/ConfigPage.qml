@@ -5,7 +5,7 @@ import org.kde.kirigami as Kirigami
 
 Kirigami.ScrollablePage {
     id: page
-    required property var page.configController
+    required property var configController
     title: qsTr("Конфигурация")
 
     ColumnLayout {
