@@ -143,7 +143,7 @@ jobs:
         run: |
           set -eu
           mkdir -p "$RUNNER_TEMP/zapret2applet-source"
-          git -C legacy-source archive --prefix=zapret2applet-0.4.0/ v0.4.0 \
+          git -C legacy-source archive --prefix=zapret2applet-0.4.0/ e531add824768176129ffe59344277056080d75b \
             | tar -x -C "$RUNNER_TEMP/zapret2applet-source"
           mkdir -p "$RUNNER_TEMP/zapret2applet-source/zapret2applet-0.4.0/third_party"
           cp -a legacy-source/third_party/zapret2 \
