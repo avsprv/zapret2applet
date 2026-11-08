@@ -23,6 +23,7 @@ BuildRequires:  systemd-rpm-macros
 # test dependencies for the privileged helper
 BuildRequires:  curl
 BuildRequires:  tar
+BuildRequires:  dbus-daemon
 Requires:       polkit
 Requires:       curl
 Requires:       python3
