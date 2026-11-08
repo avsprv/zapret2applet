@@ -61,13 +61,20 @@ private slots:
     {
         QTemporaryDir directory;
         QVERIFY(directory.isValid());
-        QStandardPaths::setPath(QStandardPaths::GenericConfigLocation, directory.path());
+        const bool hadConfigHome = qEnvironmentVariableIsSet("XDG_CONFIG_HOME");
+        const QByteArray previousConfigHome = qgetenv("XDG_CONFIG_HOME");
+        qputenv("XDG_CONFIG_HOME", directory.path().toLocal8Bit());
 
         const QString autostartDirectory = directory.filePath(QStringLiteral("autostart"));
         QVERIFY(QDir().mkpath(autostartDirectory));
         QVERIFY(QDir().mkdir(QDir(autostartDirectory).filePath(QStringLiteral("zapret2control.desktop"))));
 
         QVERIFY(!Autostart::isEnabled());
+
+        if (hadConfigHome)
+            qputenv("XDG_CONFIG_HOME", previousConfigHome);
+        else
+            qunsetenv("XDG_CONFIG_HOME");
     }
 
     void doesNotOverwriteExistingNewEntry()
