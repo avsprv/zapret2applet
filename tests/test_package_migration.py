@@ -26,6 +26,7 @@ def main() -> None:
         assert unit in spec, f"RPM upgrade script does not migrate {unit}"
 
     assert "deb-systemd-invoke stop" in preinst
+    assert "systemctl stop" not in preinst
     assert "deb-systemd-helper disable" in preinst
     assert "systemctl daemon-reload" in postinst
     assert "%pretrans" in spec
