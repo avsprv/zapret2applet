@@ -90,6 +90,7 @@ appstream-util validate-relax --nonet %{buildroot}%{_datadir}/metainfo/org.avspr
 %license LICENSE NOTICE.md
 %doc README.md
 %{_bindir}/zapret2control
+%{_mandir}/man1/zapret2control.1*
 %{_libexecdir}/zapret2control/zapret2control-helper
 %{_datadir}/zapret2control/*.py
 %{_unitdir}/zapret2control-blockcheck.service
