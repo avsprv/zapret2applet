@@ -28,6 +28,32 @@ private slots:
         QVERIFY(!file.exists());
     }
 
+    void migratesManagedLegacyEntry()
+    {
+        QTemporaryDir directory;
+        QVERIFY(directory.isValid());
+        const QString legacyPath = directory.filePath(QStringLiteral("zapret2applet.desktop"));
+        QFile legacy(legacyPath);
+        QVERIFY(legacy.open(QIODevice::WriteOnly | QIODevice::Text));
+        legacy.write("[Desktop Entry]\\n"
+                     "Type=Application\\n"
+                     "Name=zapret2applet\\n"
+                     "Exec=\\\"/usr/bin/zapret2applet\\\"\\n"
+                     "Icon=zapret2applet\\n"
+                     "X-Zapret2Applet-Managed=true\\n");
+        legacy.close();
+
+        AutostartController controller(nullptr, directory.path(), QStringLiteral("/usr/bin/zapret2control"));
+        const QString newPath = directory.filePath(QStringLiteral("zapret2control.desktop"));
+        QFile migrated(newPath);
+        QVERIFY(migrated.open(QIODevice::ReadOnly));
+        const QByteArray content = migrated.readAll();
+        QVERIFY(content.contains("Exec=\\\"/usr/bin/zapret2control\\\""));
+        QVERIFY(content.contains("X-Zapret2Control-Managed=true"));
+        QVERIFY(!QFile::exists(legacyPath));
+        QVERIFY(controller.enabled());
+    }
+
     void handlesDesktopExecSpecialCharacters()
     {
         QTemporaryDir directory;

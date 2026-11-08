@@ -61,6 +61,40 @@ AutostartController::AutostartController(QObject *parent, const QString &autosta
           : autostartDirectory)
     , m_executablePath(executablePath.isEmpty() ? QCoreApplication::applicationFilePath() : executablePath)
 {
+    const QString legacyPath = QDir(m_autostartDirectory).filePath(QStringLiteral("zapret2applet.desktop"));
+    const QFileInfo legacyInfo(legacyPath);
+    const QFileInfo newInfo(entryPath());
+    if (!legacyInfo.exists() || legacyInfo.isSymLink() || !legacyInfo.isFile()
+        || newInfo.exists() || newInfo.isSymLink())
+        return;
+
+    QString type, marker, exec;
+    const QString legacyExecutable = QDir(QFileInfo(m_executablePath).absolutePath())
+        .filePath(QStringLiteral("zapret2applet"));
+    if (!readDesktopEntryValue(legacyPath, QStringLiteral("Type"), &type)
+        || !readDesktopEntryValue(legacyPath, QStringLiteral("X-Zapret2Applet-Managed"), &marker)
+        || !readDesktopEntryValue(legacyPath, QStringLiteral("Exec"), &exec)
+        || type != QLatin1String("Application")
+        || marker != QLatin1String("true")
+        || exec != escapeDesktopExecArgument(legacyExecutable))
+        return;
+
+    QSaveFile migrated(entryPath());
+    if (!migrated.open(QIODevice::WriteOnly | QIODevice::Text))
+        return;
+    const QByteArray data = QStringLiteral(
+        "[Desktop Entry]\\n"
+        "Type=Application\\n"
+        "Name=Zapret2 Control\\n"
+        "Comment=Network Control for Linux\\n"
+        "Exec=%1\\n"
+        "Icon=zapret2control\\n"
+        "Terminal=false\\n"
+        "X-GNOME-Autostart-enabled=true\\n"
+        "X-Zapret2Control-Managed=true\\n").arg(expectedExec()).toUtf8();
+    if (migrated.write(data) != data.size() || !migrated.commit())
+        return;
+    QFile::remove(legacyPath);
 }
 
 bool AutostartController::enabled() const { return isManagedEntry(); }
