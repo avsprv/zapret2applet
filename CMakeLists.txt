@@ -112,6 +112,8 @@ target_compile_options(zapret2applet PRIVATE -Wall -Wextra)
 # or packaged yet; it is built in CI while features are migrated incrementally.
 qt_add_executable(zapret2applet-qml-preview
     src/qml/main.cpp
+    src/settingsmigration.cpp
+    src/settingsmigration.h
     src/qml/applicationcontroller.cpp
     src/qml/applicationcontroller.h
     src/qml/settingsmanager.cpp
