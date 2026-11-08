@@ -239,6 +239,16 @@ private:
     bool m_failed = false;
 };
 
+TrayController::~TrayController()
+{
+    if (!m_exported)
+        return;
+
+    m_bus.unregisterObject(QString::fromLatin1(itemPath));
+    m_bus.unregisterObject(QString::fromLatin1(menuPath));
+    m_bus.unregisterService(m_serviceName);
+}
+
 TrayController::TrayController(QObject *parent)
     : QObject(parent)
     , m_bus(QDBusConnection::sessionBus())
