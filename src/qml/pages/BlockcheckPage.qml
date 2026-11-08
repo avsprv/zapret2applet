@@ -1,3 +1,5 @@
+pragma ComponentBehavior: Bound
+
 import QtQuick
 import QtQuick.Controls as Controls
 import QtQuick.Layouts
@@ -149,6 +151,8 @@ Kirigami.ScrollablePage {
         Repeater {
             model: page.blockcheckController.results
             delegate: Controls.ItemDelegate {
+                required property var modelData
+                required property int index
                 Layout.fillWidth: true
                 text: modelData.label
                 onClicked: page.blockcheckController.copyStrategy(index)
