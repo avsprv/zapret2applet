@@ -42,6 +42,22 @@ public slots:
     }
 };
 
+class PropertiesChangedReceiver final : public QObject
+{
+    Q_OBJECT
+
+public:
+    QList<QVariantMap> changes;
+
+public slots:
+    void propertiesChanged(const QString &interfaceName, const QVariantMap &changedProperties,
+                           const QStringList &)
+    {
+        if (interfaceName == QLatin1String("org.freedesktop.StatusNotifierItem"))
+            changes.append(changedProperties);
+    }
+};
+
 class TestDBusMenuOverSessionBus final : public QObject
 {
     Q_OBJECT
@@ -272,6 +288,11 @@ private slots:
                                   QStringLiteral("org.freedesktop.StatusNotifierItem"),
                                   QStringLiteral("NewStatus"), &statusSignals,
                                   SLOT(statusChanged(QString))));
+            PropertiesChangedReceiver propertyChanges;
+            QVERIFY(m_bus.connect(itemService, QStringLiteral("/StatusNotifierItem"),
+                                  QStringLiteral("org.freedesktop.DBus.Properties"),
+                                  QStringLiteral("PropertiesChanged"), &propertyChanges,
+                                  SLOT(propertiesChanged(QString,QVariantMap,QStringList))));
 
             QTRY_COMPARE(readStatus(), QStringLiteral("Active"));
             controller.setServiceState(QStringLiteral("Не удалось запустить"), QStringLiteral("failed"),
@@ -279,6 +300,10 @@ private slots:
             // Check the protocol notification independently before reading the property.
             QTRY_COMPARE(statusSignals.statuses.size(), 1);
             QCOMPARE(statusSignals.statuses.constLast(), QStringLiteral("NeedsAttention"));
+            QTRY_VERIFY(!propertyChanges.changes.isEmpty());
+            QVERIFY(propertyChanges.changes.constLast().contains(QStringLiteral("Status")));
+            QCOMPARE(propertyChanges.changes.constLast().value(QStringLiteral("Status")).toString(),
+                     QStringLiteral("NeedsAttention"));
             QTRY_COMPARE(readStatus(), QStringLiteral("NeedsAttention"));
 
             controller.setServiceState(QStringLiteral("Остановлен"), QStringLiteral("inactive"),
