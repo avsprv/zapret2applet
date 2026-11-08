@@ -21,10 +21,10 @@ Kirigami.ApplicationWindow {
     required property var updateController
 
     title: qsTr("Zapret2 Control")
-    width: 980
-    height: 680
-    minimumWidth: 640
-    minimumHeight: 480
+    width: Kirigami.Units.gridUnit * 54
+    height: Kirigami.Units.gridUnit * 38
+    minimumWidth: Kirigami.Units.gridUnit * 36
+    minimumHeight: Kirigami.Units.gridUnit * 27
     pageStack.initialPage: dashboardPage
 
     onClosing: function(close) {
@@ -141,8 +141,8 @@ Kirigami.ApplicationWindow {
                             Item { Layout.fillWidth: true }
 
                             Rectangle {
-                                Layout.preferredWidth: 12
-                                Layout.preferredHeight: 12
+                                Layout.preferredWidth: Kirigami.Units.smallSpacing * 3
+                                Layout.preferredHeight: Kirigami.Units.smallSpacing * 3
                                 radius: width / 2
                                 color: root.appController.serviceStateCode === "inactive" ? Kirigami.Theme.neutralTextColor
                                      : root.appController.serviceStateCode === "failed" ? Kirigami.Theme.negativeTextColor
