@@ -272,6 +272,7 @@ if(BUILD_TESTING)
     target_link_libraries(test_dbusmenu_dbus PRIVATE Qt6::Test Qt6::Core Qt6::Gui Qt6::DBus)
     add_test(NAME dbusmenu_session_bus
              COMMAND ${DBUS_RUN_SESSION_EXECUTABLE} -- $<TARGET_FILE:test_dbusmenu_dbus>)
+    set_tests_properties(dbusmenu_session_bus PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen")
 
     qt_add_executable(test_i18n tests/test_i18n.cpp)
     target_link_libraries(test_i18n PRIVATE Qt6::Test zapret2applet_i18n)
