@@ -20,6 +20,14 @@ recovery marker remains. End-to-end runtime validation on a systemd host is stil
 pending; the installed production Widgets application continues to use its legacy
 Blockcheck path.
 
+## Compatibility storage during the application rename
+
+The application rename intentionally keeps Blockcheck state and runtime locations at
+`/var/lib/zapret2applet/blockcheck/` and `/run/zapret2applet/blockcheck/`.
+These are compatibility storage paths, not current product identifiers. Do not rename
+them without a locked and verified state migration: an in-flight job or pending
+recovery marker must survive package replacement and reboot.
+
 ## Problem
 
 The current GUI controller verifies, stops, and restarts `zapret2.service` around a
