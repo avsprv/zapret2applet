@@ -10,7 +10,7 @@ jobs:
     steps:
       - name: Install deps
         run: dnf install -y git cmake ninja-build gcc-c++ extra-cmake-modules kf6-kirigami-devel qt6-qtbase-devel qt6-qtdeclarative-devel qt6-qttools-devel appstream desktop-file-utils util-linux-core dbus-daemon
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
           submodules: recursive
       - name: Validate application metadata
