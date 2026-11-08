@@ -92,7 +92,7 @@ Kirigami.ApplicationWindow {
         id: dashboardPage
 
         Kirigami.ScrollablePage {
-            title: qsTr("Статус")
+            title: qsTr("Обзор")
             actions: [
                 Kirigami.Action {
                     text: qsTr("Обновить")
@@ -152,7 +152,10 @@ Kirigami.ApplicationWindow {
                             enabled: !appController.operationsBusy
                         }
 
-                        RowLayout {
+                        Flow {
+                            Layout.fillWidth: true
+                            spacing: Kirigami.Units.smallSpacing
+
                             Controls.Button {
                                 text: qsTr("Запустить")
                                 icon.name: "media-playback-start"
@@ -167,14 +170,57 @@ Kirigami.ApplicationWindow {
                                 onClicked: appController.stopService()
                             }
 
-                            Item { Layout.fillWidth: true }
-
                             Controls.Button {
-                                text: qsTr("Проверить")
+                                text: qsTr("Обновить состояние")
                                 icon.name: "view-refresh"
                                 enabled: !appController.operationsBusy
                                 onClicked: appController.refresh()
                             }
+                        }
+                    }
+                }
+
+                Controls.Frame {
+                    Layout.fillWidth: true
+
+                    ColumnLayout {
+                        anchors.fill: parent
+                        spacing: Kirigami.Units.smallSpacing
+
+                        Kirigami.Heading {
+                            level: 2
+                            text: qsTr("Версия zapret2")
+                        }
+
+                        RowLayout {
+                            Layout.fillWidth: true
+
+                            Controls.Label {
+                                text: qsTr("Установленная версия")
+                                opacity: 0.75
+                            }
+
+                            Item { Layout.fillWidth: true }
+
+                            Controls.Label {
+                                text: updateController.installedVersion
+                                font.weight: Font.DemiBold
+                            }
+                        }
+
+                        Controls.Label {
+                            Layout.fillWidth: true
+                            text: updateController.installed
+                                  ? qsTr("Проверить наличие новых версий можно в разделе «Обновления».")
+                                  : qsTr("zapret2 пока не установлен. Перейдите в раздел «Обновления», чтобы выполнить установку.")
+                            wrapMode: Text.WordWrap
+                            opacity: 0.75
+                        }
+
+                        Controls.Button {
+                            text: qsTr("Открыть обновления")
+                            icon.name: "system-software-update"
+                            onClicked: root.pageStack.push(updatePageComponent)
                         }
                     }
                 }
@@ -190,7 +236,7 @@ Kirigami.ApplicationWindow {
                     Layout.fillWidth: true
                     visible: true
                     type: Kirigami.MessageType.Information
-                    text: qsTr("Предварительный интерфейс на QML и Kirigami. Он проходит поэтапную проверку; основная версия приложения пока использует стабильный интерфейс.")
+                    text: qsTr("QML-интерфейс находится в стадии поэтапной миграции. Для повседневного использования пока доступна стабильная версия приложения.")
                 }
             }
         }
