@@ -10,8 +10,8 @@ namespace {
 QString escapeDesktopExecArgument(QString value)
 {
     value.replace(QLatin1Char('%'), QStringLiteral("%%"));
-    value.replace(QLatin1Char('\\'), QStringLiteral("\\\\"));
-    value.replace(QLatin1Char('"'), QStringLiteral("\\\""));
+    value.replace(QLatin1Char('\\'), QStringLiteral("\\"));
+    value.replace(QLatin1Char('"'), QStringLiteral("\""));
     value.replace(QLatin1Char(0x60), QString(QLatin1Char('\\')) + QLatin1Char(0x60));
     value.replace(QLatin1Char('$'), QStringLiteral("\\$"));
     return QLatin1Char('"') + value + QLatin1Char('"');
@@ -83,15 +83,15 @@ AutostartController::AutostartController(QObject *parent, const QString &autosta
     if (!migrated.open(QIODevice::WriteOnly | QIODevice::Text))
         return;
     const QByteArray data = QStringLiteral(
-        "[Desktop Entry]\\n"
-        "Type=Application\\n"
-        "Name=Zapret2 Control\\n"
-        "Comment=Network Control for Linux\\n"
-        "Exec=%1\\n"
-        "Icon=zapret2control\\n"
-        "Terminal=false\\n"
-        "X-GNOME-Autostart-enabled=true\\n"
-        "X-Zapret2Control-Managed=true\\n").arg(expectedExec()).toUtf8();
+        "[Desktop Entry]\n"
+        "Type=Application\n"
+        "Name=Zapret2 Control\n"
+        "Comment=Network Control for Linux\n"
+        "Exec=%1\n"
+        "Icon=zapret2control\n"
+        "Terminal=false\n"
+        "X-GNOME-Autostart-enabled=true\n"
+        "X-Zapret2Control-Managed=true\n").arg(expectedExec()).toUtf8();
     if (migrated.write(data) != data.size() || !migrated.commit())
         return;
     QFile::remove(legacyPath);
