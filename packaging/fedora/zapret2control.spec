@@ -95,7 +95,7 @@ appstream-util validate-relax --nonet %{buildroot}%{_datadir}/metainfo/org.avspr
 - Expand helper validation and regression test coverage
 
 * Fri Nov 06 2026 avsprv <avsprv@users.noreply.github.com> - 0.3.0-1
-- Project renamed to zapret2control (binary, polkit actions, helper, translations)
+- Project renamed to zapret2applet (binary, polkit actions, helper, translations)
 - Install and update zapret2 from the latest GitHub release (sha256 verified)
 - Qt 6.8 LTS is now the minimum; English localization
 * Tue Nov 03 2026 avsprv - 0.2.0-1

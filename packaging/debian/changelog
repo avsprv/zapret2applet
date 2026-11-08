@@ -1,15 +1,24 @@
 zapret2control (0.5.0) unstable; urgency=medium
 
-  * Rename the application to Zapret2 Control and migrate user settings.\n  * Preserve legacy runtime state while moving application identifiers.\n  * Add safe configuration and profile management with validation and backups.
+  * Rename the application, executable, helper, desktop, Polkit and systemd identifiers.
+  * Migrate existing QSettings profiles and managed XDG autostart entries.
+  * Preserve legacy Blockcheck recovery state during package transition.
+  * Retain the previous package name as a transition alias.
+
+ -- avsprv <avsprv@users.noreply.github.com>  Sun, 08 Nov 2026 09:00:00 +0300
+
+zapret2applet (0.4.0) unstable; urgency=medium
+
+  * Add safe configuration and profile management with validation and backups.
   * Add user hostlist editing and read-only access to generated IP lists.
   * Add a read-only systemd journal monitor for zapret2.service.
   * Expand helper validation and regression test coverage.
 
- -- avsprv <avsprv@users.noreply.github.com>  Sun, 08 Nov 2026 09:00:00 +0300
+ -- avsprv <avsprv@users.noreply.github.com>  Sat, 07 Nov 2026 09:00:00 +0300
 
-zapret2control (0.3.0) unstable; urgency=medium
+zapret2applet (0.3.0) unstable; urgency=medium
 
-  * Project renamed to zapret2control.
+  * Project renamed to zapret2applet.
   * Install and update zapret2 from the latest GitHub release.
   * Qt 6.8 LTS minimum, English localization.
 
