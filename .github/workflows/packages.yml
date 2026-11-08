@@ -102,6 +102,12 @@ jobs:
       - uses: actions/checkout@v4
         with:
           submodules: recursive
+      - name: Checkout previous package
+        uses: actions/checkout@v4
+        with:
+          ref: v0.4.0
+          path: legacy-source
+          submodules: recursive
       - name: Prepare RPM build tree
         run: |
           git config --global --add safe.directory "$GITHUB_WORKSPACE"
