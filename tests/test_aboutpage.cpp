@@ -17,7 +17,7 @@ private slots:
 
         const QString html = details->toHtml();
         QVERIFY(html.contains(QString::fromLatin1(QZAPRET_VERSION)));
-        QVERIFY(html.contains(QStringLiteral("https://github.com/avsprv/zapret2applet")));
+        QVERIFY(html.contains(QStringLiteral("https://github.com/avsprv/zapret2control")));
         QVERIFY(html.contains(QStringLiteral("https://github.com/bol-van/zapret2")));
         QVERIFY(html.contains(QStringLiteral("NOTICE.md")));
     }

@@ -8,7 +8,7 @@
 #include "zapretbackend.h"
 
 // Управляет апстримным юнитом zapret2.service.
-// Чтение статуса — без привилегий; start/stop/enable/disable — через zapret2applet-helper (polkit).
+// Чтение статуса — без привилегий; start/stop/enable/disable — через zapret2control-helper (polkit).
 class SystemdBackend : public ZapretBackend
 {
     Q_OBJECT

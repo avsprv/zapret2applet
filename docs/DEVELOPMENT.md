@@ -2,9 +2,9 @@
 
 ## Принципы
 
-- GUI работает **без root**. Привилегированные действия выполняет `zapret2applet-helper`
-  (`/usr/libexec/zapret2applet/`) через `pkexec` и polkit-действия `org.zapret2applet.helper` и
-  `org.zapret2applet.update` (второе спрашивает пароль каждый раз, без `auth_admin_keep`).
+- GUI работает **без root**. Привилегированные действия выполняет `zapret2control-helper`
+  (`/usr/libexec/zapret2control/`) через `pkexec` и polkit-действия `org.zapret2control.helper` и
+  `org.zapret2control.update` (второе спрашивает пароль каждый раз, без `auth_admin_keep`).
 - Хелпер принимает только фиксированный набор команд (`unit start|stop|enable|disable`, `blockcheck`,
   `blockcheck-cancel`, `update`), строго валидирует аргументы, запускает blockcheck2 с чистым окружением,
   а обновление скачивает только по HTTPS и сверяет `sha256sum.txt` релиза.
@@ -25,7 +25,7 @@ src/backend/          адаптер к zapret2 (systemd), blockcheck2, пров
 i18n/                 переводы (.ts)
 data/                 .desktop и шаблон polkit-политики
 tests/                QtTest и shell-тесты хелпера
-packaging/helper/     zapret2applet-helper — привилегированная часть
+packaging/helper/     zapret2control-helper — привилегированная часть
 packaging/fedora/     spec для RPM
 packaging/debian/     файлы для DEB (для сборки линкуются в debian/, см. packaging/README.md)
 third_party/zapret2/  апстрим, submodule
@@ -38,21 +38,21 @@ ctest --test-dir build --output-on-failure
 # парсер blockcheck, переводы, сравнение версий, валидация и обновление в хелпере
 ```
 
-Без установки хелпер находится по `../packaging/helper/zapret2applet-helper`; путь можно переопределить
+Без установки хелпер находится по `../packaging/helper/zapret2control-helper`; путь можно переопределить
 переменной окружения `QZAPRET_HELPER`.
 
 ## Переводы
 
-Исходные строки в коде — русские (`tr("…")`), английский перевод лежит в `i18n/zapret2applet_en.ts` и
+Исходные строки в коде — русские (`tr("…")`), английский перевод лежит в `i18n/zapret2control_en.ts` и
 вшивается в бинарник. Для остальных языков без собственного перевода показывается английский. После правки строк:
 
 ```bash
 cmake --build build --target update_translations   # lupdate: обновит .ts
-# дописать переводы в i18n/zapret2applet_en.ts (Qt Linguist или любой редактор), затем:
+# дописать переводы в i18n/zapret2control_en.ts (Qt Linguist или любой редактор), затем:
 ctest --test-dir build -R i18n                      # нет пустых и незавершённых, плейсхолдеры %1 совпадают
 ```
 
-Новый язык: добавить `i18n/zapret2applet_<код>.ts` в `qt_add_translations()` в `CMakeLists.txt`.
+Новый язык: добавить `i18n/zapret2control_<код>.ts` в `qt_add_translations()` в `CMakeLists.txt`.
 
 ## Обновление апстрима
 

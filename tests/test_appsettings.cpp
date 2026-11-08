@@ -16,7 +16,7 @@ private slots:
     void initTestCase()
     {
         QVERIFY(m_configDir.isValid());
-        QCoreApplication::setOrganizationName(QStringLiteral("zapret2applet-tests"));
+        QCoreApplication::setOrganizationName(QStringLiteral("zapret2control-tests"));
         QCoreApplication::setApplicationName(QStringLiteral("settings"));
         QSettings::setDefaultFormat(QSettings::IniFormat);
         QSettings::setPath(QSettings::IniFormat, QSettings::UserScope, m_configDir.path());

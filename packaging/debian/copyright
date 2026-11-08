@@ -1,6 +1,6 @@
 Format: https://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
-Upstream-Name: zapret2applet
-Source: https://github.com/avsprv/zapret2applet
+Upstream-Name: zapret2control
+Source: https://github.com/avsprv/zapret2control
 
 Files: *
 Copyright: 2026 avsprv
