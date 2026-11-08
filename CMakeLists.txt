@@ -266,9 +266,10 @@ if(BUILD_TESTING)
     add_test(NAME dbusmenu COMMAND test_dbusmenu)
 
     qt_add_executable(test_dbusmenu_dbus tests/test_dbusmenu_dbus.cpp
-        src/qml/dbusmenu.cpp src/qml/dbusmenu.h)
+        src/qml/dbusmenu.cpp src/qml/dbusmenu.h
+        src/qml/traycontroller.cpp src/qml/traycontroller.h)
     target_include_directories(test_dbusmenu_dbus PRIVATE src src/qml)
-    target_link_libraries(test_dbusmenu_dbus PRIVATE Qt6::Test Qt6::Core Qt6::DBus)
+    target_link_libraries(test_dbusmenu_dbus PRIVATE Qt6::Test Qt6::Core Qt6::Gui Qt6::DBus)
     add_test(NAME dbusmenu_session_bus
              COMMAND ${DBUS_RUN_SESSION_EXECUTABLE} -- $<TARGET_FILE:test_dbusmenu_dbus>)
 
