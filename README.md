@@ -1,4 +1,4 @@
-# zapret2applet
+# zapret2control
 
 **Графический интерфейс для управления установленной службой [zapret2](https://github.com/bol-van/zapret2) в Linux.**
 
