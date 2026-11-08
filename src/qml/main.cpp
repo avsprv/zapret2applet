@@ -87,6 +87,7 @@ int main(int argc, char *argv[])
 
     const auto updateTrayState = [&] {
         trayController.setServiceState(controller.serviceState(),
+                                       controller.serviceStateCode(),
                                        controller.serviceActive(),
                                        controller.operationsBusy());
     };
