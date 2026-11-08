@@ -48,7 +48,7 @@ Kirigami.ApplicationWindow {
     globalDrawer: Kirigami.GlobalDrawer {
         title: qsTr("Zapret2 Control")
         titleIcon: "zapret2control"
-        isMenu: true
+        isMenu: false
         // Keep primary navigation visible on desktop, but use an overlay on narrow windows.
         modal: root.width < Kirigami.Units.gridUnit * 50
 
