@@ -77,6 +77,7 @@ appstream-util validate-relax --nonet %{buildroot}%{_datadir}/metainfo/org.avspr
 %{_datadir}/applications/zapret2applet.desktop
 %{_datadir}/metainfo/org.avsprv.zapret2applet.metainfo.xml
 %{_datadir}/icons/hicolor/scalable/apps/zapret2applet.svg
+%{_datadir}/icons/hicolor/symbolic/apps/zapret2applet-tray-symbolic.svg
 
 %changelog
 * Sat Nov 07 2026 avsprv <avsprv@users.noreply.github.com> - 0.4.0-1
