@@ -65,7 +65,7 @@ def main() -> None:
         # script copy differs only in the two absolute systemd unit paths.
         unit_dir = temp_path / "systemd" / "system"
         unit_dir.mkdir(parents=True)
-        (unit_dir / LEGACY_UNITS[0]).write_text("[Unit]\n", encoding="utf-8")
+        (unit_dir / LEGACY_UNITS[0]).write_text("[Unit]", encoding="utf-8")
         test_preinst = temp_path / "preinst"
         test_script = preinst.replace(
             '"/usr/lib/systemd/system/$1"',
@@ -113,7 +113,7 @@ def main() -> None:
         rpm_pretrans = spec.split("%pretrans\n", 1)[1].split("\n%posttrans", 1)[0]
         rpm_unit_dir = temp_path / "rpm-systemd" / "system"
         rpm_unit_dir.mkdir(parents=True)
-        (rpm_unit_dir / LEGACY_UNITS[0]).write_text("[Unit]\n", encoding="utf-8")
+        (rpm_unit_dir / LEGACY_UNITS[0]).write_text("[Unit]", encoding="utf-8")
         rpm_runtime_dir = temp_path / "rpm-run" / "systemd" / "system"
         rpm_runtime_dir.mkdir(parents=True)
         rpm_script = rpm_pretrans.replace(
@@ -128,10 +128,10 @@ def main() -> None:
         )
         systemctl = bin_dir / "systemctl"
         systemctl.write_text(
-            "#!/bin/sh\n"
-            "printf '%s\n' \"$*\" >> \"$CALL_LOG\"\n"
-            "if [ \"$FAIL_STOP\" = 1 ] && [ \"$1\" = stop ]; then exit 1; fi\n"
-            "exit 0\n",
+            "#!/bin/sh" + chr(10)
+            + 'echo "$*" >> "$CALL_LOG"' + chr(10)
+            + 'if [ "$FAIL_STOP" = 1 ] && [ "$1" = stop ]; then exit 1; fi' + chr(10)
+            + "exit 0" + chr(10),
             encoding="utf-8",
         )
         systemctl.chmod(0o755)
