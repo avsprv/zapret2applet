@@ -143,6 +143,36 @@ TrayImageList renderTrayPixmaps(const QColor &indicator)
         result.append(renderTrayPixmap(size, indicator).constFirst());
     return result;
 }
+
+TrayImageList renderIndicatorPixmaps(const QColor &indicator)
+{
+    TrayImageList result;
+    for (const int size : {16, 22, 24, 32, 48}) {
+        QImage image(size, size, QImage::Format_ARGB32);
+        image.fill(Qt::transparent);
+        QPainter painter(&image);
+        painter.setRenderHint(QPainter::Antialiasing, true);
+        const qreal scale = size / 32.0;
+        painter.setPen(QPen(QColor(QStringLiteral("#232629")), 1.0 * scale));
+        painter.setBrush(indicator);
+        painter.drawEllipse(QPointF(25.5 * scale, 6.5 * scale), 4.0 * scale, 4.0 * scale);
+        painter.end();
+
+        QByteArray bytes;
+        bytes.reserve(size * size * 4);
+        for (int y = 0; y < size; ++y) {
+            for (int x = 0; x < size; ++x) {
+                const QRgb pixel = image.pixel(x, y);
+                bytes.append(static_cast<char>(qAlpha(pixel)));
+                bytes.append(static_cast<char>(qRed(pixel)));
+                bytes.append(static_cast<char>(qGreen(pixel)));
+                bytes.append(static_cast<char>(qBlue(pixel)));
+            }
+        }
+        result.append({size, size, bytes});
+    }
+    return result;
+}
 } // namespace
 
 class StatusNotifierItem final : public QObject
@@ -168,11 +198,11 @@ public:
     TrayImageList iconPixmap() const { return renderTrayPixmaps(QColor{}); }
     TrayImageList overlayIconPixmap() const
     {
-        return m_inactive ? renderTrayPixmaps(QColor(QStringLiteral("#fdbc4b"))) : TrayImageList{};
+        return m_inactive ? renderIndicatorPixmaps(QColor(QStringLiteral("#fdbc4b"))) : TrayImageList{};
     }
     TrayImageList attentionIconPixmap() const
     {
-        return m_failed ? renderTrayPixmaps(QColor(QStringLiteral("#da4453"))) : TrayImageList{};
+        return m_failed ? renderIndicatorPixmaps(QColor(QStringLiteral("#da4453"))) : TrayImageList{};
     }
     QString overlayIconName() const { return {}; }
     QString attentionIconName() const { return {}; }
