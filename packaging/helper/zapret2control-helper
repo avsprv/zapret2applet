@@ -411,11 +411,13 @@ unit)
         *) die "bad unit action" ;;
     esac
     module_dir=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd) || die "cannot locate helper modules"
+    if [ ! -f "$module_dir/blockcheck_admission.py" ]; then module_dir=/usr/share/zapret2control; fi
     exec /usr/bin/python3 "$module_dir/blockcheck_admission.py" unit "$2"
     ;;
 blockcheck-submit)
     shift
     module_dir=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd) || die "cannot locate helper modules"
+    if [ ! -f "$module_dir/blockcheck_admission.py" ]; then module_dir=/usr/share/zapret2control; fi
     exec /usr/bin/python3 "$module_dir/blockcheck_submit.py" "$@"
     ;;
 blockcheck-job-cancel)
@@ -454,21 +456,25 @@ blockcheck-job-logs)
 blockcheck-recovery-probe)
     [ "$#" -eq 1 ] || die "usage: blockcheck-recovery-probe"
     module_dir=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd) || die "cannot locate helper modules"
+    if [ ! -f "$module_dir/blockcheck_admission.py" ]; then module_dir=/usr/share/zapret2control; fi
     exec /usr/bin/python3 "$module_dir/blockcheck_probe.py"
     ;;
 blockcheck-job-status)
     [ "$#" -eq 2 ] || die "usage: blockcheck-job-status OPERATION_UUID"
     module_dir=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd) || die "cannot locate helper modules"
+    if [ ! -f "$module_dir/blockcheck_admission.py" ]; then module_dir=/usr/share/zapret2control; fi
     exec /usr/bin/python3 "$module_dir/blockcheck_status.py" "$2"
     ;;
 blockcheck-worker)
     [ "$#" -eq 1 ] || die "usage: blockcheck-worker"
     module_dir=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd) || die "cannot locate helper modules"
+    if [ ! -f "$module_dir/blockcheck_admission.py" ]; then module_dir=/usr/share/zapret2control; fi
     exec /usr/bin/python3 "$module_dir/blockcheck_worker.py"
     ;;
 blockcheck-recover)
     [ "$#" -eq 1 ] || die "usage: blockcheck-recover"
     module_dir=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd) || die "cannot locate helper modules"
+    if [ ! -f "$module_dir/blockcheck_admission.py" ]; then module_dir=/usr/share/zapret2control; fi
     exec /usr/bin/python3 "$module_dir/blockcheck_recovery.py"
     ;;
 blockcheck)
@@ -554,6 +560,7 @@ blockcheck-cancel)
 install)
     [ "$#" -eq 2 ] || die "usage: install vX.Y.Z"
     module_dir=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd) || die "cannot locate helper modules"
+    if [ ! -f "$module_dir/blockcheck_admission.py" ]; then module_dir=/usr/share/zapret2control; fi
     exec /usr/bin/python3 "$module_dir/blockcheck_admission.py" install "$2"
     ;;
 install-locked)
@@ -678,6 +685,7 @@ install-locked)
 update)
     [ "$#" -eq 2 ] || die "usage: update vX.Y.Z"
     module_dir=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd) || die "cannot locate helper modules"
+    if [ ! -f "$module_dir/blockcheck_admission.py" ]; then module_dir=/usr/share/zapret2control; fi
     exec /usr/bin/python3 "$module_dir/blockcheck_admission.py" update "$2"
     ;;
 update-locked)
