@@ -23,11 +23,11 @@ jobs:
             extra-cmake-modules libkirigami-dev qt6-declarative-dev \
             git ninja-build qt6-base-dev qt6-tools-dev qt6-l10n-tools \
             desktop-file-utils lintian dbus-daemon
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
           submodules: recursive
       - name: Checkout previous package
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           ref: v0.4.0
           path: legacy-source
@@ -99,7 +99,7 @@ jobs:
           test ! -e /usr/bin/zapret2control
           test ! -e "$helper"
           test ! -e "$policy"
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v6
         with:
           name: zapret2control-deb
           path: dist/*.deb
@@ -116,11 +116,11 @@ jobs:
           dnf install -y ca-certificates cmake curl desktop-file-utils gcc-c++ git \
             extra-cmake-modules kf6-kirigami-devel qt6-qtbase-devel \
             qt6-qtdeclarative-devel qt6-qttools-devel rpm-build rpmlint systemd-rpm-macros tar dbus-daemon
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
           submodules: recursive
       - name: Checkout previous package
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           ref: v0.4.0
           path: legacy-source
@@ -235,7 +235,7 @@ jobs:
           test ! -e /usr/bin/zapret2control
           test ! -e "$helper"
           test ! -e "$policy"
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v6
         with:
           name: zapret2control-rpm
           path: dist/*.rpm
