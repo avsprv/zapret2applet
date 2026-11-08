@@ -304,11 +304,11 @@
     <message><source>zapret2 — отдельный upstream-компонент; он не входит в состав приложения.</source><translation>zapret2 is a separate upstream component; it is not included with the application.</translation></message>
     <message><source>systemd и Polkit используются для системной интеграции и авторизации операций.</source><translation>systemd and Polkit are used for system integration and operation authorization.</translation></message>
     <message><source>Лицензии</source><translation>Licenses</translation></message>
-    <message><source>Код zapret2applet распространяется по лицензии MIT. Лицензии сторонних компонентов сохраняют собственную область действия. Подробности приведены в NOTICE и в документации upstream.</source><translation>zapret2applet code is distributed under the MIT License. Third-party components retain their own applicable licenses. See NOTICE and the upstream documentation for details.</translation></message>
+    <message><source>Код zapret2control распространяется по лицензии MIT. Лицензии сторонних компонентов сохраняют собственную область действия. Подробности приведены в NOTICE и в документации upstream.</source><translation>zapret2control code is distributed under the MIT License. Third-party components retain their own applicable licenses. See NOTICE and the upstream documentation for details.</translation></message>
     <message><source>Проект и документация</source><translation>Project and documentation</translation></message>
-    <message><source>zapret2applet — независимый проект и не связан с автором или сопровождающими upstream-проекта zapret2.</source><translation>zapret2applet is an independent project and is not affiliated with the zapret2 upstream author or maintainers.</translation></message>
+    <message><source>zapret2control — независимый проект и не связан с автором или сопровождающими upstream-проекта zapret2.</source><translation>zapret2control is an independent project and is not affiliated with the zapret2 upstream author or maintainers.</translation></message>
     <message><source>Qt 6 — графическая платформа приложения.</source><translation>Qt 6 — the application's graphical platform.</translation></message>
-    <message><source>Репозиторий zapret2applet</source><translation>zapret2applet repository</translation></message>
+    <message><source>Репозиторий zapret2control</source><translation>zapret2control repository</translation></message>
     <message><source>Документация приложения</source><translation>Application documentation</translation></message>
     <message><source>Релизы приложения</source><translation>Application releases</translation></message>
     <message><source>Сообщить об ошибке</source><translation>Report an issue</translation></message>
@@ -390,13 +390,13 @@
     </message>
     <message>
         <location filename="../src/mainwindow.cpp" line="71"/>
-        <source>Запускать zapret2applet при входе в сеанс (в трей)</source>
-        <translation>Start zapret2applet at login (in the tray)</translation>
+        <source>Запускать zapret2control при входе в сеанс (в трей)</source>
+        <translation>Start zapret2control at login (in the tray)</translation>
     </message>
     <message>
         <location filename="../src/mainwindow.cpp" line="80"/>
-        <source>Не удалось изменить автозапуск zapret2applet.</source>
-        <translation>Could not change zapret2applet autostart.</translation>
+        <source>Не удалось изменить автозапуск zapret2control.</source>
+        <translation>Could not change zapret2control autostart.</translation>
     </message>
     <message>
         <location filename="../src/mainwindow.cpp" line="112"/>
@@ -446,8 +446,8 @@
     </message>
     <message>
         <location filename="../src/mainwindow.cpp" line="152"/>
-        <source>zapret2applet: %1</source>
-        <translation>zapret2applet: %1</translation>
+        <source>zapret2control: %1</source>
+        <translation>zapret2control: %1</translation>
     </message>
     <message>
         <location filename="../src/mainwindow.cpp" line="179"/>
@@ -666,13 +666,13 @@
     </message>
     <message>
         <location filename="../src/mainwindow.cpp" line="71"/>
-        <source>Запускать zapret2applet при входе в сеанс (в трей)</source>
-        <translation>Start zapret2applet at login (in the tray)</translation>
+        <source>Запускать zapret2control при входе в сеанс (в трей)</source>
+        <translation>Start zapret2control at login (in the tray)</translation>
     </message>
     <message>
         <location filename="../src/mainwindow.cpp" line="80"/>
-        <source>Не удалось изменить автозапуск zapret2applet.</source>
-        <translation>Could not change zapret2applet autostart.</translation>
+        <source>Не удалось изменить автозапуск zapret2control.</source>
+        <translation>Could not change zapret2control autostart.</translation>
     </message>
     <message>
         <location filename="../src/mainwindow.cpp" line="112"/>
@@ -722,8 +722,8 @@
     </message>
     <message>
         <location filename="../src/mainwindow.cpp" line="152"/>
-        <source>zapret2applet: %1</source>
-        <translation>zapret2applet: %1</translation>
+        <source>zapret2control: %1</source>
+        <translation>zapret2control: %1</translation>
     </message>
     <message>
         <location filename="../src/mainwindow.cpp" line="179"/>
@@ -939,7 +939,7 @@
     <message><source>Язык интерфейса:</source><translation>Interface language:</translation></message>
     <message><source>Тема оформления:</source><translation>Appearance:</translation></message>
     <message><source>Ошибка</source><translation>Error</translation></message>
-    <message><source>Не удалось изменить автозапуск zapret2applet.</source><translation>Could not change zapret2applet autostart.</translation></message>
+    <message><source>Не удалось изменить автозапуск zapret2control.</source><translation>Could not change zapret2control autostart.</translation></message>
   </context>
   <context>
     <name>MainWindow</name>
@@ -1152,8 +1152,8 @@
         </message>
     <message>
             <location filename="../src/updatepage.cpp" line="170"/>
-            <source>zapret2 не установлен: zapret2applet обновляет только существующую установку.</source>
-            <translation>zapret2 is not installed: zapret2applet only updates an existing installation.</translation>
+            <source>zapret2 не установлен: zapret2control обновляет только существующую установку.</source>
+            <translation>zapret2 is not installed: zapret2control only updates an existing installation.</translation>
         </message>
     <message>
             <location filename="../src/updatepage.cpp" line="172"/>
@@ -1246,7 +1246,7 @@
   </context>
   <context>
     <name>Main</name>
-    <message><source>zapret2applet</source><translation>zapret2applet</translation></message>
+    <message><source>zapret2control</source><translation>zapret2control</translation></message>
     <message><source>Статус</source><translation>Status</translation></message>
     <message><source>Конфигурация</source><translation>Configuration</translation></message>
     <message><source>Профили</source><translation>Profiles</translation></message>

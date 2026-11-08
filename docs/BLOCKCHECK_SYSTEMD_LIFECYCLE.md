@@ -36,11 +36,11 @@ restoration.
 
 Use two systemd units:
 
-- `zapret2applet-blockcheck.service`: one-shot diagnostic job. Its main process runs
+- `zapret2control-blockcheck.service`: one-shot diagnostic job. Its main process runs
   the validated Blockcheck worker. Its `ExecStopPost=` invokes an idempotent recovery
   command after normal exit, failure, timeout, or forced termination while systemd is
   operational.
-- `zapret2applet-blockcheck-recovery.service`: one-shot boot recovery job, enabled
+- `zapret2control-blockcheck-recovery.service`: one-shot boot recovery job, enabled
   for `multi-user.target`. It processes a pending marker and starts
   `zapret2.service` only when the marker records that the service was active before
   Blockcheck.
@@ -58,7 +58,7 @@ The recovery unit is enabled as a boot fallback. It must not start Blockcheck or
 zapret service state when no valid recovery marker exists.
 ## State and invariants
 
-Persist state under `/var/lib/zapret2applet/blockcheck/`, owned by root, directory mode
+Persist state under `/var/lib/zapret2control/blockcheck/`, owned by root, directory mode
 `0700`, state file mode `0600`. The state is durable across reboot; `/run` is not
 suitable for this purpose.
 
@@ -93,8 +93,8 @@ Required invariants:
 
 1. GUI validates the options and invokes a narrow privileged submit command through
    the existing Polkit boundary. The submit command validates all options again, writes
-   a bounded options record atomically into a root-owned `/run/zapret2applet/`
-   directory, then queues `systemctl start --no-block zapret2applet-blockcheck.service`.
+   a bounded options record atomically into a root-owned `/run/zapret2control/`
+   directory, then queues `systemctl start --no-block zapret2control-blockcheck.service`.
    It must reject a second submission while the unit or a recovery operation is active.
 2. The static worker unit invokes a dedicated helper worker command. The worker securely
    opens and validates the staged options record while holding the persistent lifecycle
@@ -146,7 +146,7 @@ Replace direct service stop/start orchestration with a systemd job client:
 - observe unit state with asynchronous polling and read the unit journal through a
   narrowly allowlisted helper operation; do not block the GUI thread;
 - request cancellation by asking the helper to stop only
-  `zapret2applet-blockcheck.service`;
+  `zapret2control-blockcheck.service`;
 - keep the busy state until systemd confirms the job is finished and recovery has been
   verified;
 - surface a distinct recovery-pending/error state when the marker remains, and offer a retry
