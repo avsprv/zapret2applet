@@ -107,6 +107,7 @@ target_compile_definitions(zapret2control PRIVATE
     QZAPRET_VERSION="${PROJECT_VERSION}"
     QZAPRET_HELPER_PATH="${QZAPRET_HELPER}")
 target_compile_options(zapret2control PRIVATE -Wall -Wextra)
+target_link_options(zapret2control PRIVATE -Wl,-z,now)
 
 # Parallel Kirigami application shell. This target is deliberately not installed
 # or packaged yet; it is built in CI while features are migrated incrementally.
