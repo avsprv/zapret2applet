@@ -39,19 +39,19 @@ AboutPage::AboutPage(QWidget *parent)
         "<li>systemd и Polkit — системная интеграция и авторизация</li>"
         "</ul>"
         "<h3>Лицензии</h3>"
-        "<p>Код zapret2control распространяется по лицензии MIT. Лицензии "
+        "<p>Код Zapret2 Control распространяется по лицензии MIT. Лицензии "
         "сторонних компонентов сохраняют собственную область действия. "
         "Для zapret2 и дополнительных уведомлений см. upstream и NOTICE.</p>"
         "<h3>Проект и документация</h3>"
         "<ul>"
-        "<li><a href=\"https://github.com/avsprv/zapret2control\">Репозиторий zapret2control</a></li>"
+        "<li><a href=\"https://github.com/avsprv/zapret2control\">Репозиторий Zapret2 Control</a></li>"
         "<li><a href=\"https://github.com/avsprv/zapret2control/blob/main/README.md\">Документация приложения</a></li>"
         "<li><a href=\"https://github.com/avsprv/zapret2control/releases\">Релизы приложения</a></li>"
         "<li><a href=\"https://github.com/avsprv/zapret2control/issues\">Сообщить об ошибке</a></li>"
         "<li><a href=\"https://github.com/avsprv/zapret2control/blob/main/NOTICE.md\">Уведомления о сторонних компонентах</a></li>"
         "<li><a href=\"https://github.com/bol-van/zapret2\">Upstream-проект zapret2</a></li>"
         "</ul>"
-        "<p><i>zapret2control — независимый проект, не связанный с автором "
+        "<p><i>Zapret2 Control — независимый проект, не связанный с автором "
         "или сопровождающими upstream zapret2.</i></p>")
         .arg(QString::fromLatin1(QZAPRET_VERSION).toHtmlEscaped(),
              QString::fromLatin1(qVersion()).toHtmlEscaped()));

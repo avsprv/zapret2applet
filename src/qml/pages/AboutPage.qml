@@ -61,7 +61,7 @@ Kirigami.ScrollablePage {
         Controls.Label {
             Layout.fillWidth: true
             wrapMode: Text.WordWrap
-            text: qsTr("Код zapret2control распространяется по лицензии MIT. Лицензии сторонних компонентов сохраняют собственную область действия. Подробности приведены в NOTICE и в документации upstream.")
+            text: qsTr("Код Zapret2 Control распространяется по лицензии MIT. Лицензии сторонних компонентов сохраняют собственную область действия. Подробности приведены в NOTICE и в документации upstream.")
         }
 
         Kirigami.UrlButton {
@@ -78,7 +78,7 @@ Kirigami.ScrollablePage {
 
         Kirigami.UrlButton {
             Layout.fillWidth: true
-            text: qsTr("Репозиторий zapret2control")
+            text: qsTr("Репозиторий Zapret2 Control")
             url: "https://github.com/avsprv/zapret2control"
         }
 
@@ -115,7 +115,7 @@ Kirigami.ScrollablePage {
         Kirigami.InlineMessage {
             Layout.fillWidth: true
             type: Kirigami.MessageType.Information
-            text: qsTr("zapret2control — независимый проект и не связан с автором или сопровождающими upstream-проекта zapret2.")
+            text: qsTr("Zapret2 Control — независимый проект и не связан с автором или сопровождающими upstream-проекта zapret2.")
         }
     }
 }
