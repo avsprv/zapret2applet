@@ -66,7 +66,6 @@ private slots:
         QSettings legacy;
         QCoreApplication::setApplicationName(currentApplicationName);
         legacy.setValue(QStringLiteral("appearance/theme"), QStringLiteral("dark"));
-        legacy.setValue(QStringLiteral("appearance/language"), QStringLiteral("ru"));
         legacy.sync();
 
         QVERIFY(SettingsMigration::migrateLegacyProfile());
@@ -85,6 +84,7 @@ private slots:
         QSettings legacy;
         QCoreApplication::setApplicationName(currentApplicationName);
         legacy.setValue(QStringLiteral("appearance/theme"), QStringLiteral("dark"));
+        legacy.setValue(QStringLiteral("appearance/language"), QStringLiteral("ru"));
         legacy.sync();
 
         QVERIFY(SettingsMigration::migrateLegacyProfile());
