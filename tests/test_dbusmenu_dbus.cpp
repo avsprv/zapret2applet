@@ -173,6 +173,7 @@ private slots:
         QVERIFY(m_bus.objectRegisteredAt(QStringLiteral("/Menu")) == m_menu);
         m_bus.unregisterObject(QStringLiteral("/Menu"));
         QVERIFY(m_bus.objectRegisteredAt(QStringLiteral("/Menu")) == nullptr);
+        QString itemService;
         {
         TrayController controller;
         QVERIFY(!controller.watcherAvailable());
@@ -188,7 +189,7 @@ private slots:
         QTRY_VERIFY(controller.watcherAvailable());
         QTRY_VERIFY(controller.registered());
         QCOMPARE(watcher.registeredItems.size(), 1);
-        const QString itemService = watcher.registeredItems.constFirst();
+        itemService = watcher.registeredItems.constFirst();
         QVERIFY(itemService.startsWith(QStringLiteral("org.freedesktop.StatusNotifierItem-")));
 
         const auto introspect = [this, &itemService](const QString &path) {
@@ -233,6 +234,13 @@ private slots:
         m_bus.unregisterService(QString::fromLatin1(watcherService));
         m_bus.unregisterObject(QString::fromLatin1(watcherPath));
         }
+
+        QVERIFY(m_bus.objectRegisteredAt(QStringLiteral("/StatusNotifierItem")) == nullptr);
+        QVERIFY(m_bus.objectRegisteredAt(QStringLiteral("/Menu")) == nullptr);
+        const QDBusReply<bool> serviceRegistered =
+            m_bus.interface()->isServiceRegistered(itemService);
+        QVERIFY2(serviceRegistered.isValid(), qPrintable(serviceRegistered.error().message()));
+        QVERIFY(!serviceRegistered.value());
 
         const auto flags = QDBusConnection::ExportAllSlots
                            | QDBusConnection::ExportAllSignals
