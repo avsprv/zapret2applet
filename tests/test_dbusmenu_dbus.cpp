@@ -283,6 +283,16 @@ private slots:
                 const QDBusReply<QDBusVariant> reply = m_bus.call(request);
                 return reply.isValid() ? reply.value().variant().toString() : QString{};
             };
+            const auto readAllStatus = [this, &itemService]() {
+                QDBusMessage request = QDBusMessage::createMethodCall(
+                    itemService, QStringLiteral("/StatusNotifierItem"),
+                    QStringLiteral("org.freedesktop.DBus.Properties"), QStringLiteral("GetAll"));
+                request << QStringLiteral("org.freedesktop.StatusNotifierItem");
+                const QDBusReply<QVariantMap> reply = m_bus.call(request);
+                return reply.isValid()
+                    ? reply.value().value(QStringLiteral("Status")).toString()
+                    : QString{};
+            };
             StatusSignalReceiver statusSignals;
             QVERIFY(m_bus.connect(itemService, QStringLiteral("/StatusNotifierItem"),
                                   QStringLiteral("org.freedesktop.StatusNotifierItem"),
@@ -305,6 +315,7 @@ private slots:
             QCOMPARE(propertyChanges.changes.constLast().value(QStringLiteral("Status")).toString(),
                      QStringLiteral("NeedsAttention"));
             QTRY_COMPARE(readStatus(), QStringLiteral("NeedsAttention"));
+            QTRY_COMPARE(readAllStatus(), QStringLiteral("NeedsAttention"));
 
             controller.setServiceState(QStringLiteral("Остановлен"), QStringLiteral("inactive"),
                                        false, false);
