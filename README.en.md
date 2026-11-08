@@ -161,7 +161,7 @@ When launched from the build directory, the authorization dialog may not include
 
 Manual instructions are available in [packaging/README.md](packaging/README.md).
 
-GitHub Actions builds packages for Debian 13 and Fedora on pushes to main and pull requests targeting main. The resulting files are available as workflow artifacts in [package build runs](https://github.com/avsprv/zapret2control/actions/workflows/packages.yml). Artifacts are intended for build verification; use packages attached to [Releases](https://github.com/avsprv/zapret2control/releases) for normal installation.
+GitHub Actions builds packages for Debian 13 and Fedora on pushes to branches configured in the workflow and on pull requests targeting main. The resulting files are available as workflow artifacts in [package build runs](https://github.com/avsprv/zapret2control/actions/workflows/packages.yml). Artifacts are intended for build verification; use packages attached to [Releases](https://github.com/avsprv/zapret2control/releases) for normal installation.
 
 ## Development and testing
 
