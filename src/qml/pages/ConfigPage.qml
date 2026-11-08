@@ -51,7 +51,7 @@ Kirigami.ScrollablePage {
         Controls.TextArea {
             Layout.fillWidth: true
             Layout.fillHeight: true
-            Layout.minimumHeight: 360
+            Layout.minimumHeight: Kirigami.Units.gridUnit * 20
             enabled: page.configController.loaded && !page.configController.busy
             text: page.configController.configText
             Accessible.name: qsTr("Содержимое файла конфигурации")
