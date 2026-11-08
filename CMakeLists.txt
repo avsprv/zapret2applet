@@ -202,7 +202,7 @@ install(FILES
         packaging/helper/blockcheck_status.py
         packaging/helper/blockcheck_probe.py
         packaging/helper/blockcheck_admission.py
-        DESTINATION ${CMAKE_INSTALL_LIBEXECDIR}/zapret2control)
+        DESTINATION ${CMAKE_INSTALL_DATADIR}/zapret2control)
 install(FILES ${CMAKE_BINARY_DIR}/org.zapret2control.policy
         DESTINATION ${CMAKE_INSTALL_DATADIR}/polkit-1/actions)
 install(FILES
