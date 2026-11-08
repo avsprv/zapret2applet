@@ -141,8 +141,8 @@ Kirigami.ApplicationWindow {
                             Item { Layout.fillWidth: true }
 
                             Rectangle {
-                                width: 12
-                                height: 12
+                                Layout.preferredWidth: 12
+                                Layout.preferredHeight: 12
                                 radius: width / 2
                                 color: root.appController.serviceStateCode === "inactive" ? "#d79921"
                                      : root.appController.serviceStateCode === "failed" ? Kirigami.Theme.negativeTextColor
