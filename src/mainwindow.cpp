@@ -77,8 +77,8 @@ MainWindow::MainWindow(QWidget *parent)
     , m_backend(new SystemdBackend(this))
     , m_poll(new QTimer(this))
 {
-    setWindowTitle(QStringLiteral("zapret2applet"));
-    setWindowIcon(QIcon::fromTheme(QStringLiteral("zapret2applet")));
+    setWindowTitle(QStringLiteral("Zapret2 Control"));
+    setWindowIcon(QIcon::fromTheme(QStringLiteral("Zapret2 Control")));
     resize(760, 640);
 
     auto *appMenu = menuBar()->addMenu(tr("Приложение"));
@@ -121,13 +121,13 @@ MainWindow::MainWindow(QWidget *parent)
     buildTray();
     connect(m_blockcheck, &BlockcheckPage::scanFinished, this, [this](int found, bool canceled) {
         if (m_tray && !isVisible() && !canceled)
-            m_tray->showMessage(QStringLiteral("zapret2applet"),
+            m_tray->showMessage(QStringLiteral("Zapret2 Control"),
                                 tr("Подбор завершён, найдено стратегий: %1").arg(found));
     });
 
     connect(m_update, &UpdatePage::updateAvailable, this, [this](const QString &tag) {
         if (m_tray && !isVisible())
-            m_tray->showMessage(QStringLiteral("zapret2applet"), tr("Доступна новая версия zapret2: %1").arg(tag));
+            m_tray->showMessage(QStringLiteral("Zapret2 Control"), tr("Доступна новая версия zapret2: %1").arg(tag));
     });
 
     m_poll->setInterval(3000);
@@ -185,7 +185,7 @@ void MainWindow::buildTray()
     updateTrayIcon(ZapretBackend::State::Unknown);
     connect(QGuiApplication::styleHints(), &QStyleHints::colorSchemeChanged,
             this, [this](Qt::ColorScheme) { updateTrayIcon(m_trayState); });
-    m_tray->setToolTip(QStringLiteral("zapret2applet"));
+    m_tray->setToolTip(QStringLiteral("Zapret2 Control"));
 
     auto *menu = new QMenu(this);
     auto *show = menu->addAction(tr("Показать / скрыть окно"));
@@ -234,7 +234,7 @@ void MainWindow::onStateChanged(ZapretBackend::State state)
 
     if (m_tray) {
         updateTrayIcon(state);
-        m_tray->setToolTip(tr("zapret2applet: %1").arg(text));
+        m_tray->setToolTip(tr("zapret2control: %1").arg(text));
         m_trayStart->setEnabled(!active && !locked);
         m_trayStop->setEnabled(active && !locked);
     }

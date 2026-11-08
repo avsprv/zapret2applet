@@ -7,7 +7,7 @@ import "pages"
 Kirigami.ApplicationWindow {
     id: root
 
-    title: qsTr("zapret2applet")
+    title: qsTr("Zapret2 Control")
     width: 980
     height: 680
     minimumWidth: 640
@@ -33,8 +33,8 @@ Kirigami.ApplicationWindow {
     }
 
     globalDrawer: Kirigami.GlobalDrawer {
-        title: qsTr("zapret2applet")
-        titleIcon: "zapret2applet"
+        title: qsTr("Zapret2 Control")
+        titleIcon: "zapret2control"
         isMenu: true
         // Keep primary navigation visible on desktop, but use an overlay on narrow windows.
         modal: root.width < Kirigami.Units.gridUnit * 50

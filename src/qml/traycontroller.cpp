@@ -160,11 +160,11 @@ public:
     }
 
     QString category() const { return QStringLiteral("ApplicationStatus"); }
-    QString id() const { return QStringLiteral("zapret2applet"); }
+    QString id() const { return QStringLiteral("zapret2control"); }
     QString title() const { return QCoreApplication::applicationName(); }
     uint windowId() const { return 0; }
     QString status() const { return m_failed ? QStringLiteral("NeedsAttention") : QStringLiteral("Active"); }
-    QString iconName() const { return QStringLiteral("zapret2applet-tray-symbolic"); }
+    QString iconName() const { return QStringLiteral("zapret2control-tray-symbolic"); }
     TrayImageList iconPixmap() const { return renderTrayPixmaps(QColor{}); }
     TrayImageList overlayIconPixmap() const
     {

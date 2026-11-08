@@ -13,7 +13,7 @@ Kirigami.ScrollablePage {
         Kirigami.Heading {
             Layout.fillWidth: true
             level: 1
-            text: qsTr("zapret2applet")
+            text: qsTr("Zapret2 Control")
         }
 
         Controls.Label {
@@ -61,13 +61,13 @@ Kirigami.ScrollablePage {
         Controls.Label {
             Layout.fillWidth: true
             wrapMode: Text.WordWrap
-            text: qsTr("Код zapret2applet распространяется по лицензии MIT. Лицензии сторонних компонентов сохраняют собственную область действия. Подробности приведены в NOTICE и в документации upstream.")
+            text: qsTr("Код zapret2control распространяется по лицензии MIT. Лицензии сторонних компонентов сохраняют собственную область действия. Подробности приведены в NOTICE и в документации upstream.")
         }
 
         Kirigami.UrlButton {
             Layout.fillWidth: true
             text: qsTr("Лицензия приложения (MIT)")
-            url: "https://github.com/avsprv/zapret2applet/blob/main/LICENSE"
+            url: "https://github.com/avsprv/zapret2control/blob/main/LICENSE"
         }
 
         Kirigami.Heading {
@@ -78,32 +78,32 @@ Kirigami.ScrollablePage {
 
         Kirigami.UrlButton {
             Layout.fillWidth: true
-            text: qsTr("Репозиторий zapret2applet")
-            url: "https://github.com/avsprv/zapret2applet"
+            text: qsTr("Репозиторий zapret2control")
+            url: "https://github.com/avsprv/zapret2control"
         }
 
         Kirigami.UrlButton {
             Layout.fillWidth: true
             text: qsTr("Документация приложения")
-            url: "https://github.com/avsprv/zapret2applet/blob/main/README.md"
+            url: "https://github.com/avsprv/zapret2control/blob/main/README.md"
         }
 
         Kirigami.UrlButton {
             Layout.fillWidth: true
             text: qsTr("Релизы приложения")
-            url: "https://github.com/avsprv/zapret2applet/releases"
+            url: "https://github.com/avsprv/zapret2control/releases"
         }
 
         Kirigami.UrlButton {
             Layout.fillWidth: true
             text: qsTr("Сообщить об ошибке")
-            url: "https://github.com/avsprv/zapret2applet/issues"
+            url: "https://github.com/avsprv/zapret2control/issues"
         }
 
         Kirigami.UrlButton {
             Layout.fillWidth: true
             text: qsTr("Уведомления о сторонних компонентах")
-            url: "https://github.com/avsprv/zapret2applet/blob/main/NOTICE.md"
+            url: "https://github.com/avsprv/zapret2control/blob/main/NOTICE.md"
         }
 
         Kirigami.UrlButton {
@@ -115,7 +115,7 @@ Kirigami.ScrollablePage {
         Kirigami.InlineMessage {
             Layout.fillWidth: true
             type: Kirigami.MessageType.Information
-            text: qsTr("zapret2applet — независимый проект и не связан с автором или сопровождающими upstream-проекта zapret2.")
+            text: qsTr("zapret2control — независимый проект и не связан с автором или сопровождающими upstream-проекта zapret2.")
         }
     }
 }
