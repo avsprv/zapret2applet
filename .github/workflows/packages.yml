@@ -74,7 +74,7 @@ jobs:
           test -f /usr/lib/systemd/system/zapret2control-blockcheck.service
           test -f /usr/lib/systemd/system/zapret2control-blockcheck-recovery.service
           test -f /usr/share/zapret2control/blockcheck_admission.py
-          rpm -ql zapret2control | grep -Eq "^/usr/share/man/man1/zapret2control\\.1(\\.gz)?$"
+          dpkg-query -L zapret2control | grep -Eq "^/usr/share/man/man1/zapret2control\\.1(\\.gz)?$"
           DEBIAN_FRONTEND=noninteractive apt-get purge -y zapret2control
           ! dpkg-query -W zapret2control >/dev/null 2>&1
           test ! -e /usr/bin/zapret2control
@@ -105,7 +105,7 @@ jobs:
           test -f /usr/lib/systemd/system/zapret2control-blockcheck.service
           test -f /usr/lib/systemd/system/zapret2control-blockcheck-recovery.service
           test -f /usr/share/zapret2control/blockcheck_admission.py
-          rpm -ql zapret2control | grep -Eq "^/usr/share/man/man1/zapret2control\\.1(\\.gz)?$"
+          dpkg-query -L zapret2control | grep -Eq "^/usr/share/man/man1/zapret2control\\.1(\\.gz)?$"
 
           DEBIAN_FRONTEND=noninteractive apt-get purge -y zapret2control
           ! dpkg-query -W zapret2control >/dev/null 2>&1
