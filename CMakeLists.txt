@@ -210,6 +210,8 @@ install(FILES data/org.avsprv.zapret2applet.metainfo.xml
         DESTINATION ${CMAKE_INSTALL_DATADIR}/metainfo)
 install(FILES data/icons/hicolor/scalable/apps/zapret2applet.svg
         DESTINATION ${CMAKE_INSTALL_DATADIR}/icons/hicolor/scalable/apps)
+install(FILES data/icons/hicolor/symbolic/apps/zapret2applet-tray-symbolic.svg
+        DESTINATION ${CMAKE_INSTALL_DATADIR}/icons/hicolor/symbolic/apps)
 
 if(BUILD_TESTING)
     find_package(Qt6 ${QZAPRET_QT_MIN} REQUIRED COMPONENTS Test)
