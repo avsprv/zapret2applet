@@ -16,6 +16,7 @@ class TrayController final : public QObject
 
 public:
     explicit TrayController(QObject *parent = nullptr);
+    ~TrayController() override;
 
     void setServiceState(const QString &state, const QString &stateCode, bool active, bool busy);
 
