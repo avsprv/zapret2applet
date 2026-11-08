@@ -170,8 +170,9 @@ private slots:
         constexpr auto watcherService = "org.freedesktop.StatusNotifierWatcher";
         constexpr auto watcherPath = "/StatusNotifierWatcher";
 
-        QVERIFY2(m_bus.unregisterObject(QStringLiteral("/Menu")),
-                 qPrintable(m_bus.lastError().message()));
+        QVERIFY(m_bus.objectRegisteredAt(QStringLiteral("/Menu")) == m_menu);
+        m_bus.unregisterObject(QStringLiteral("/Menu"));
+        QVERIFY(m_bus.objectRegisteredAt(QStringLiteral("/Menu")) == nullptr);
         {
         TrayController controller;
         QVERIFY(!controller.watcherAvailable());
