@@ -28,6 +28,20 @@ public slots:
     }
 };
 
+class StatusSignalReceiver final : public QObject
+{
+    Q_OBJECT
+
+public:
+    QStringList statuses;
+
+public slots:
+    void statusChanged(const QString &status)
+    {
+        statuses.append(status);
+    }
+};
+
 class TestDBusMenuOverSessionBus final : public QObject
 {
     Q_OBJECT
@@ -240,16 +254,46 @@ private slots:
             QVERIFY(item.isValid());
             QCOMPARE(item.property("Category").toString(), QStringLiteral("ApplicationStatus"));
             QCOMPARE(item.property("Id").toString(), QStringLiteral("zapret2applet"));
-            QTRY_COMPARE(item.property("Status").toString(), QStringLiteral("Active"));
+
+            // Read the property through the D-Bus Properties interface. QDBusInterface's
+            // property cache is signal-driven and is not a reliable source for a fresh
+            // synchronous read of a remote property.
+            const auto readStatus = [this, &itemService]() {
+                QDBusMessage request = QDBusMessage::createMethodCall(
+                    itemService, QStringLiteral("/StatusNotifierItem"),
+                    QStringLiteral("org.freedesktop.DBus.Properties"), QStringLiteral("Get"));
+                request << QStringLiteral("org.freedesktop.StatusNotifierItem")
+                        << QStringLiteral("Status");
+                const QDBusReply<QDBusVariant> reply = m_bus.call(request);
+                return reply.isValid() ? reply.value().variant().toString() : QString{};
+            };
+            StatusSignalReceiver statusSignals;
+            QVERIFY(m_bus.connect(itemService, QStringLiteral("/StatusNotifierItem"),
+                                  QStringLiteral("org.freedesktop.StatusNotifierItem"),
+                                  QStringLiteral("NewStatus"), &statusSignals,
+                                  SLOT(statusChanged(QString))));
+
+            QTRY_COMPARE(readStatus(), QStringLiteral("Active"));
             controller.setServiceState(QStringLiteral("Не удалось запустить"), QStringLiteral("failed"),
                                        false, false);
-            QTRY_COMPARE(item.property("Status").toString(), QStringLiteral("NeedsAttention"));
+            QTRY_COMPARE(readStatus(), QStringLiteral("NeedsAttention"));
+            QTRY_COMPARE(statusSignals.statuses.size(), 1);
+            QCOMPARE(statusSignals.statuses.constLast(), QStringLiteral("NeedsAttention"));
+
             controller.setServiceState(QStringLiteral("Остановлен"), QStringLiteral("inactive"),
                                        false, false);
-            QTRY_COMPARE(item.property("Status").toString(), QStringLiteral("NeedsAttention"));
+            QTRY_COMPARE(readStatus(), QStringLiteral("NeedsAttention"));
+            QCOMPARE(statusSignals.statuses.size(), 1);
+
             controller.setServiceState(QStringLiteral("Работает"), QStringLiteral("active"),
                                        true, false);
-            QTRY_COMPARE(item.property("Status").toString(), QStringLiteral("Active"));
+            QTRY_COMPARE(readStatus(), QStringLiteral("Active"));
+            QTRY_COMPARE(statusSignals.statuses.size(), 2);
+            QCOMPARE(statusSignals.statuses.constLast(), QStringLiteral("Active"));
+            m_bus.disconnect(itemService, QStringLiteral("/StatusNotifierItem"),
+                             QStringLiteral("org.freedesktop.StatusNotifierItem"),
+                             QStringLiteral("NewStatus"), &statusSignals,
+                             SLOT(statusChanged(QString)));
 
             const QDBusMessage menuReply = introspect(QStringLiteral("/Menu"));
             QCOMPARE(menuReply.type(), QDBusMessage::ReplyMessage);
