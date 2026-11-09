@@ -223,7 +223,7 @@ host's real `zapret2.service`.
 - worker SIGTERM: recovery runs after upstream cleanup;
 - worker SIGKILL: systemd post-stop recovery runs;
 - GUI exits while the systemd job continues: recovery still runs;
-- power-loss simulation: leave marker, then boot recovery restores the service;
+- power-loss simulation: leave marker, then boot recovery restores the service. The current VM E2E validates marker retention after a failed restore and explicitly starts the boot recovery unit in the same VM; it does not reboot the VM or simulate an actual power loss;
 - recovery start failure: marker remains and the error is observable;
 - malformed, symlinked, hard-linked, wrong-owner, and wrong-mode state files fail closed;
 - concurrent submit/cancel/recovery operations serialize through `queue.lock` without
