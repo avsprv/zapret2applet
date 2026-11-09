@@ -90,6 +90,7 @@ void BlockcheckRunner::cancel()
             return;
         m_cancelProc = nullptr;
         if (exitStatus != QProcess::NormalExit || exitCode != 0) {
+            m_cancelRequested = false;
             const QString detail = exitStatus == QProcess::NormalExit
                 ? tr("код %1").arg(exitCode) : tr("процесс завершился аварийно");
             emit logLine(tr("Не удалось подтвердить отправку запроса отмены Blockcheck (%1). Диагностика может продолжиться.").arg(detail));
@@ -102,6 +103,7 @@ void BlockcheckRunner::cancel()
             return;
         const QString reason = proc->errorString();
         m_cancelProc = nullptr;
+        m_cancelRequested = false;
         emit logLine(tr("Не удалось запустить helper отмены Blockcheck: %1. Диагностика может продолжиться.").arg(reason));
         proc->deleteLater();
     });
