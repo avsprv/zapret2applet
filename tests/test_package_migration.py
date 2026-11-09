@@ -172,6 +172,13 @@ def main() -> None:
         assert old_state.is_dir() and new_state.is_symlink()
         new_state.unlink()
 
+        # The legacy parent must be root-owned and private before moving state.
+        old_parent.chmod(0o755)
+        unsafe_parent = subprocess.run([str(migration_preinst), "upgrade"], env=env)
+        assert unsafe_parent.returncode != 0, "Unsafe legacy state parent was accepted"
+        assert old_state.is_dir()
+        old_parent.chmod(0o700)
+
         # A failed stop must abort the upgrade and must not disable the unit.
         failing_bin = temp_path / "failing-bin"
         failing_bin.mkdir()
@@ -262,6 +269,13 @@ def main() -> None:
         assert rpm_dangling_new.returncode != 0, "RPM accepted dangling destination state symlink"
         assert rpm_old_state.is_dir() and rpm_new_state.is_symlink()
         rpm_new_state.unlink()
+
+        # RPM migration must reject a legacy parent with permissive permissions.
+        rpm_old_parent.chmod(0o755)
+        rpm_unsafe_parent = subprocess.run(["/bin/sh", "-c", rpm_script], env=rpm_env)
+        assert rpm_unsafe_parent.returncode != 0, "RPM accepted unsafe legacy state parent"
+        assert rpm_old_state.is_dir()
+        rpm_old_parent.chmod(0o700)
 
         # A failed RPM stop must abort before attempting to disable the unit.
         rpm_env["FAIL_STOP"] = "1"
