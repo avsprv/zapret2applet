@@ -73,6 +73,16 @@ class CancelTests(unittest.TestCase):
         with self.state.locked():
             self.assertEqual(self.staged.read_locked(self.operation_b), BlockcheckOptions())
 
+    def test_marker_publication_during_worker_start_remains_uuid_bound(self):
+        self.stage(self.operation_a)
+        snapshots = iter([
+            None,
+            {"version": 1, "operation_id": self.operation_a, "service_was_active": True},
+        ])
+        self.state.read_marker_snapshot = lambda: next(snapshots)
+        self.assertTrue(cancel_operation(self.state, self.staged, self.operation_a))
+        self.assertIn(f"stop --no-block {WORKER_UNIT}", self.calls_text())
+
     def test_conflicting_marker_and_staged_ids_fail_closed(self):
         self.marker(self.operation_a)
         with self.state.locked():
