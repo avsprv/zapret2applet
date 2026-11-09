@@ -546,16 +546,24 @@ blockcheck-cancel)
     [ -e "$LOCKFILE" ] && secure_runtime_file "$LOCKFILE" || { echo "zapret2control-helper: blockcheck is not running" >&2; exit 0; }
     exec 9>"$LOCKFILE"
     flock -n 9 && { echo "zapret2control-helper: blockcheck is not running" >&2; exit 0; }
-    pid=$(bc_pid) || { echo "zapret2control-helper: blockcheck is not running" >&2; exit 0; }
+    target_pid=$(bc_pid) || { echo "zapret2control-helper: blockcheck is not running" >&2; exit 0; }
+    target_start_time=$(proc_start_time "$target_pid") || exit 0
     # SIGINT: обработчик blockcheck2.sh печатает "terminating..." и чистит правила/процессы.
     # Если процесс стартовал с игнорируемым SIGINT, через ~3 с шлём SIGTERM (обработчик
     # sigsilent делает ту же очистку). SIGKILL не используем: он оставил бы правила nft.
-    kill -INT "$pid" 2>/dev/null || exit 0
+    # Повторно проверяем именно исходный PID и start time: новая сессия Blockcheck
+    # не должна получить отложенный SIGTERM после завершения предыдущей.
+    kill -INT "$target_pid" 2>/dev/null || exit 0
     for _ in 1 2 3; do
         sleep 1
-        bc_pid >/dev/null || exit 0
+        current_start_time=$(proc_start_time "$target_pid") || exit 0
+        [ "$current_start_time" = "$target_start_time" ] || exit 0
+        tr '\0' ' ' < "/proc/$target_pid/cmdline" 2>/dev/null | grep -q 'blockcheck2\.sh' || exit 0
     done
-    kill -TERM "$pid" 2>/dev/null || true
+    current_start_time=$(proc_start_time "$target_pid") || exit 0
+    [ "$current_start_time" = "$target_start_time" ] || exit 0
+    tr '\0' ' ' < "/proc/$target_pid/cmdline" 2>/dev/null | grep -q 'blockcheck2\.sh' || exit 0
+    kill -TERM "$target_pid" 2>/dev/null || true
     ;;
 install)
     [ "$#" -eq 2 ] || die "usage: install vX.Y.Z"
