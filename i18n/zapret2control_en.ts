@@ -576,6 +576,14 @@
         <translation>Operation failed (code %1): %2</translation>
     </message>
     <message>
+        <source>Превышено время ожидания ответа systemctl.</source>
+        <translation>Timed out waiting for systemctl.</translation>
+    </message>
+    <message>
+        <source>Превышено время ожидания операции systemd: %1</source>
+        <translation>Timed out waiting for systemd operation: %1</translation>
+    </message>
+    <message>
         <location filename="../src/backend/systemdbackend.cpp" line="66"/>
         <source>Не удалось запустить pkexec/хелпер: %1</source>
         <translation>Could not start pkexec/helper: %1</translation>
