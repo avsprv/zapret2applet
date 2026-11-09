@@ -26,6 +26,7 @@ def main() -> None:
     helper = (ROOT / "packaging/helper/zapret2control-helper").read_text(encoding="utf-8")
     worker_unit = (ROOT / "data/systemd/zapret2control-blockcheck.service.in").read_text(encoding="utf-8")
     worker = (ROOT / "packaging/helper/blockcheck_worker.py").read_text(encoding="utf-8")
+    lifecycle_doc = (ROOT / "docs/BLOCKCHECK_SYSTEMD_LIFECYCLE.md").read_text(encoding="utf-8")
     manpage = ROOT / "data/zapret2control.1"
 
     assert "DESTINATION ${CMAKE_INSTALL_DATADIR}/zapret2control)" in cmake
@@ -33,6 +34,10 @@ def main() -> None:
     assert "%{_datadir}/zapret2control/*.py" in spec
     assert "RuntimeDirectory=zapret2control" in worker_unit
     assert 'StagedOptionsStore(state, "/run/zapret2control/blockcheck")' in worker
+    assert "`/var/lib/zapret2control/blockcheck/`" in lifecycle_doc
+    assert "`/run/zapret2control/blockcheck/`" in lifecycle_doc
+    assert "Persist state under `/var/lib/zapret2applet/blockcheck/`" not in lifecycle_doc
+    assert "into a root-owned `/run/zapret2applet/`" not in lifecycle_doc
     assert "data/zapret2control.1" in cmake
     assert "%{_mandir}/man1/zapret2control.1*" in spec
     assert manpage.is_file()
