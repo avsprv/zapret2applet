@@ -62,6 +62,26 @@ def cancel_operation(state: StateStore, staged: StagedOptionsStore,
                     f"systemd rejected Blockcheck cancellation "
                     f"({result.returncode}): {detail}"
                 )
+
+            # If the request was still staged when cancellation began, wait
+            # for any worker holding the lifecycle lock to finish its startup
+            # transition. Recovery waits for queue.lock, so this cleanup cannot
+            # race marker removal or a replacement submission.
+            if staged_id == operation_id:
+                with state.locked(create=True):
+                    current_marker = state._read_marker()
+                    pending = staged.read_pending_locked(missing_ok=True)
+                    if pending is not None:
+                        if pending[0] != operation_id:
+                            raise CancelError("a different staged operation appeared during cancellation")
+                        if current_marker is None:
+                            staged.discard_locked(operation_id)
+                        elif current_marker["operation_id"] == operation_id:
+                            staged.consume_locked(operation_id)
+                        else:
+                            raise CancelError("recovery marker belongs to a different operation")
+                    elif current_marker is not None and current_marker["operation_id"] != operation_id:
+                        raise CancelError("recovery marker belongs to a different operation")
             return True
     except StateError as exc:
         if isinstance(exc, CancelError):
