@@ -20,6 +20,7 @@ private slots:
     void startupProbeFailureEnablesSafeRecoveryRetry();
     void startupProbeWaitsWhileAnotherJobIsActive();
     void staleStatusAdoptsQueuedOperationWithoutRecovery();
+    void cancelPassesTheCurrentOperationId();
 
 private:
     QTemporaryDir m_temp;
@@ -65,7 +66,12 @@ case "$1" in
   blockcheck-job-logs)
     printf '%s\n' '!!!!! curl_test_https_tls12: working strategy found for ipv4 example.org : nfqws2 --dpi-desync=fake !!!!!'
     ;;
-  blockcheck-job-cancel|blockcheck-recover)
+  blockcheck-job-cancel)
+    [ "$#" -eq 2 ] || exit 2
+    printf '%s\\n' "$2" > "$QZAPRET_TEST_CANCEL_ID_FILE"
+    printf '%s\\n' 'cancelled'
+    ;;
+  blockcheck-recover)
     exit 0
     ;;
   *)
@@ -230,6 +236,25 @@ void BlockcheckJobControllerTest::staleStatusAdoptsQueuedOperationWithoutRecover
     QTRY_VERIFY_WITH_TIMEOUT(!controller.busy(),5000);
     QVERIFY(!controller.recoveryRequired());
     QCOMPARE(controller.statusSeverity(),QStringLiteral("Success"));
+}
+
+
+void BlockcheckJobControllerTest::cancelPassesTheCurrentOperationId()
+{
+    const QString idFile=m_temp.filePath(QStringLiteral("cancel-operation-id"));
+    qputenv("QZAPRET_TEST_CANCEL_ID_FILE",idFile.toUtf8());
+    BlockcheckJobController controller;
+    QTRY_VERIFY_WITH_TIMEOUT(!controller.busy(),5000);
+    controller.start();
+    controller.confirmStop(true);
+    QTRY_VERIFY_WITH_TIMEOUT(controller.status().contains(QStringLiteral("Задание принято")),5000);
+    controller.cancel();
+    QTRY_VERIFY_WITH_TIMEOUT(QFile::exists(idFile),5000);
+    QFile file(idFile);
+    QVERIFY(file.open(QIODevice::ReadOnly|QIODevice::Text));
+    QCOMPARE(QString::fromUtf8(file.readAll()).trimmed(),
+             QStringLiteral("123e4567-e89b-42d3-a456-426614174000"));
+    qunsetenv("QZAPRET_TEST_CANCEL_ID_FILE");
 }
 
 QTEST_GUILESS_MAIN(BlockcheckJobControllerTest)
