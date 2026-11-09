@@ -392,6 +392,8 @@ void BlockcheckJobController::processLogs(const QByteArray &output)
 
 void BlockcheckJobController::finish(bool success,bool canceled)
 {
+    if(canceled&&!m_cancelOperationId.isEmpty()&&m_operationId!=m_cancelOperationId)
+        canceled=false;
     m_pollTimer->stop();m_terminalPhase.clear();if(!m_recoveryRequired)m_operationId.clear();m_task=ProcessTask::None;
     setBusy(false);
     if(canceled)setStatus(tr("Подбор отменён."),StatusType::Warning);
@@ -419,6 +421,9 @@ void BlockcheckJobController::cancel()
         // earlier asynchronous cancellation must never retarget itself.
         if(m_cancelOperationId!=m_operationId){
             m_cancelOperationId=m_operationId;
+            m_cancelDispatched=false;
+        } else if(m_task!=ProcessTask::Cancel) {
+            // An explicit second click retries the same UUID-bound request.
             m_cancelDispatched=false;
         }
         if(m_task==ProcessTask::None&&!m_cancelDispatched){
