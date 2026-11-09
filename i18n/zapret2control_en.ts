@@ -969,7 +969,11 @@
     <message><source>Сворачивать приложение в системный трей при закрытии окна</source><translation>Minimize to the system tray when closing the window</translation></message>
     <message><source>Изменение применяется сразу. Системный режим следует настройкам рабочего стола; принудительная схема зависит от поддержки платформы.</source><translation>Changes are applied immediately. System mode follows desktop settings; forcing a color scheme depends on platform support.</translation></message>
     <message><source>Параметры сохраняются в прежние ключи QSettings. Изменения темы и языка применяются сразу.</source><translation>Settings are stored using the existing QSettings keys. Theme and language changes are applied immediately.</translation></message>
-  </context>
+      <message>
+        <source>Системный трей недоступен. Сворачивание окна в трей включится после регистрации StatusNotifierItem.</source>
+        <translation>The system tray is unavailable. Minimize-to-tray will become available after the StatusNotifierItem is registered.</translation>
+    </message>
+</context>
   <context>
     <name>ProfilesPage</name>
     <message><source>Аргументы профиля</source><translation>Profile arguments</translation></message>
@@ -1266,7 +1270,15 @@
     <message><source>Это первый этап миграции на QML и Kirigami. Остальные разделы будут переноситься поэтапно; текущая версия приложения пока сохраняет прежний интерфейс.</source><translation>This is the first stage of the QML and Kirigami migration. Other sections will be migrated incrementally; the current production version still uses the existing interface.</translation></message>
     <message><source>Этот раздел будет перенесён на QML на следующем этапе миграции.</source><translation>This section will be migrated to QML in a later stage.</translation></message>
     <message><source>Предварительный интерфейс на QML и Kirigami. Он проходит поэтапную проверку; основная версия приложения пока использует стабильный интерфейс.</source><translation>Preview interface built with QML and Kirigami. It is being validated incrementally; the stable interface remains the production application.</translation></message>
-  </context>
+      <message>
+        <source>Нельзя завершить приложение</source>
+        <translation>Cannot close the application</translation>
+    </message>
+    <message>
+        <source>Дождитесь завершения текущей операции или восстановления zapret2. Принудительное завершение может повредить установленную систему.</source>
+        <translation>Wait for the current operation or zapret2 recovery to finish. Forcing the application to quit may damage the installed system.</translation>
+    </message>
+</context>
   
   <context>
     <name>ZapretUpdater</name>
@@ -1704,6 +1716,197 @@
     <message>
         <source>Восстановление zapret2 не подтверждено. Управление службой и обновление заблокированы. Проверьте журнал; после устранения причины можно повторить восстановление.</source>
         <translation>zapret2 recovery has not been confirmed. Service controls and updates are disabled. Inspect the journal; after resolving the cause, you can retry recovery.</translation>
+    </message>
+</context>
+<context>
+    <name>ApplicationController</name>
+    <message>
+        <source>Работает</source>
+        <translation>Running</translation>
+    </message>
+    <message>
+        <source>Остановлен</source>
+        <translation>Stopped</translation>
+    </message>
+    <message>
+        <source>Ошибка</source>
+        <translation>Error</translation>
+    </message>
+    <message>
+        <source>Неизвестно</source>
+        <translation>Unknown</translation>
+    </message>
+</context>
+<context>
+    <name>ConfigController</name>
+    <message>
+        <source>Операция не выполнена (код %1).</source>
+        <translation>Operation failed (exit code %1).</translation>
+    </message>
+    <message>
+        <source>Файл конфигурации содержит некорректную последовательность UTF-8; чтение отменено во избежание потери данных.</source>
+        <translation>The configuration file contains an invalid UTF-8 sequence; reading was canceled to prevent data loss.</translation>
+    </message>
+    <message>
+        <source>Конфигурация загружена. Перед сохранением будет проверен синтаксис и создана резервная копия.</source>
+        <translation>Configuration loaded. Syntax will be checked and a backup will be created before saving.</translation>
+    </message>
+    <message>
+        <source>Не удалось запустить привилегированный helper: %1</source>
+        <translation>Could not start the privileged helper: %1</translation>
+    </message>
+    <message>
+        <source>Чтение /opt/zapret2/config…</source>
+        <translation>Reading /opt/zapret2/config…</translation>
+    </message>
+    <message>
+        <source>Конфигурация превышает ограничение 1 MiB.</source>
+        <translation>Configuration exceeds the 1 MiB limit.</translation>
+    </message>
+    <message>
+        <source>Не удалось подготовить файл для проверки: %1</source>
+        <translation>Could not prepare the file for validation: %1</translation>
+    </message>
+    <message>
+        <source>Проверка shell-синтаксиса не завершилась.</source>
+        <translation>Shell syntax validation did not complete.</translation>
+    </message>
+    <message>
+        <source>Синтаксис корректен. Файл не исполнялся; системная конфигурация не изменена.</source>
+        <translation>Syntax is valid. The file was not executed; the system configuration was not changed.</translation>
+    </message>
+    <message>
+        <source>Ошибка shell-синтаксиса: %1</source>
+        <translation>Shell syntax error: %1</translation>
+    </message>
+    <message>
+        <source>Сохранение отменено: shell-синтаксис не прошёл проверку.</source>
+        <translation>Save canceled: shell syntax validation failed.</translation>
+    </message>
+    <message>
+        <source>Helper повторно проверит синтаксис и контрольную сумму, создаст резервную копию и атомарно сохранит файл…</source>
+        <translation>The helper will revalidate syntax and checksum, create a backup, and atomically save the file…</translation>
+    </message>
+    <message>
+        <source>Восстановление последней резервной копии…</source>
+        <translation>Restoring the latest backup…</translation>
+    </message>
+</context>
+<context>
+    <name>ProfileController</name>
+    <message>
+        <source>Профиль %1</source>
+        <translation>Profile %1</translation>
+    </message>
+    <message>
+        <source>Профиль должен содержать хотя бы один аргумент.</source>
+        <translation>A profile must contain at least one argument.</translation>
+    </message>
+    <message>
+        <source>Слишком много аргументов.</source>
+        <translation>Too many arguments.</translation>
+    </message>
+    <message>
+        <source>Пустой аргумент или зарезервированный разделитель --new.</source>
+        <translation>Empty argument or reserved separator --new.</translation>
+    </message>
+    <message>
+        <source>Аргумент содержит пробелы или небезопасные shell-символы.</source>
+        <translation>An argument contains whitespace or unsafe shell characters.</translation>
+    </message>
+    <message>
+        <source>Есть несохранённые изменения. Сохраните их или подтвердите отмену.</source>
+        <translation>There are unsaved changes. Save them or confirm discarding them.</translation>
+    </message>
+    <message>
+        <source>Чтение конфигурации…</source>
+        <translation>Reading configuration…</translation>
+    </message>
+    <message>
+        <source>Не удалось прочитать конфигурацию (код %1).</source>
+        <translation>Could not read configuration (exit code %1).</translation>
+    </message>
+    <message>
+        <source>Конфигурация превышает 1 MiB.</source>
+        <translation>Configuration exceeds 1 MiB.</translation>
+    </message>
+    <message>
+        <source>Конфигурация содержит некорректный UTF-8; анализ отменён.</source>
+        <translation>Configuration contains invalid UTF-8; analysis was canceled.</translation>
+    </message>
+    <message>
+        <source>Загружено профилей: %1. Конфигурация не исполнялась.</source>
+        <translation>Loaded %1 profiles. The configuration was not executed.</translation>
+    </message>
+    <message>
+        <source>Не удалось запустить helper: %1</source>
+        <translation>Could not start the helper: %1</translation>
+    </message>
+    <message>
+        <source>Изменения не прошли проверку анализатора.</source>
+        <translation>Changes did not pass analyzer validation.</translation>
+    </message>
+    <message>
+        <source>Профиль добавлен. Изменения ещё не сохранены.</source>
+        <translation>Profile added. Changes have not been saved.</translation>
+    </message>
+    <message>
+        <source>Профиль изменён. Изменения ещё не сохранены.</source>
+        <translation>Profile updated. Changes have not been saved.</translation>
+    </message>
+    <message>
+        <source>Профиль скопирован. Изменения ещё не сохранены.</source>
+        <translation>Profile copied. Changes have not been saved.</translation>
+    </message>
+    <message>
+        <source>Профиль удалён. Изменения ещё не сохранены.</source>
+        <translation>Profile removed. Changes have not been saved.</translation>
+    </message>
+    <message>
+        <source>Проверка и безопасная запись профилей…</source>
+        <translation>Validating and safely saving profiles…</translation>
+    </message>
+    <message>
+        <source>Запись не выполнена (код %1).</source>
+        <translation>Write failed (exit code %1).</translation>
+    </message>
+    <message>
+        <source>Профили сохранены. Резервная копия создана; служба не перезапускалась.</source>
+        <translation>Profiles saved. A backup was created; the service was not restarted.</translation>
+    </message>
+</context>
+<context>
+    <name>DBusMenu</name>
+    <message>
+        <source>Показать / скрыть окно</source>
+        <translation>Show / hide window</translation>
+    </message>
+    <message>
+        <source>Состояние: %1</source>
+        <translation>Status: %1</translation>
+    </message>
+    <message>
+        <source>Запустить zapret2</source>
+        <translation>Start zapret2</translation>
+    </message>
+    <message>
+        <source>Остановить zapret2</source>
+        <translation>Stop zapret2</translation>
+    </message>
+    <message>
+        <source>Настройки</source>
+        <translation>Settings</translation>
+    </message>
+    <message>
+        <source>Выход</source>
+        <translation>Quit</translation>
+    </message>
+</context>
+<context>
+    <name>StatusNotifierItem</name>
+    <message>
+        <source>Управление zapret2</source>
+        <translation>Manage zapret2</translation>
     </message>
 </context>
 </TS>
