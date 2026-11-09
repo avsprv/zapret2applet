@@ -37,7 +37,8 @@ def cancel_operation(state: StateStore, staged: StagedOptionsStore,
                 same_worker_transition = (
                     marker_before is None
                     and marker_after is not None
-                    and staged_id == marker_after["operation_id"]
+                    and marker_after["operation_id"] == operation_id
+                    and staged_id in (None, operation_id)
                 )
                 if not same_worker_transition:
                     raise CancelError("Blockcheck recovery state changed during cancellation")
