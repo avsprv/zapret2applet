@@ -115,7 +115,8 @@ wait_until() {
         fi
         sleep 0.1
     done
-    fail "timed out waiting for $description"
+    printf 'FAIL: timed out waiting for %s\\n' "$description" >&2
+    return 1
 }
 
 worker_is_running() {
