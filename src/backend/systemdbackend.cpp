@@ -92,24 +92,28 @@ void SystemdBackend::refresh()
 
 void SystemdBackend::verifyState()
 {
-    const quint64 generation = ++m_stateQueryGeneration;
-    query(QStringLiteral("is-active"), [this, generation](const QString &out) {
-        const State state = parseUnitState(out);
-        if (generation != m_stateQueryGeneration)
+    const quint64 verificationGeneration = ++m_verificationGeneration;
+    const quint64 stateGeneration = m_stateQueryGeneration;
+    query(QStringLiteral("is-active"), [this, verificationGeneration, stateGeneration](const QString &out) {
+        if (verificationGeneration != m_verificationGeneration)
             return;
-        emit stateChanged(state);
+        const State state = parseUnitState(out);
+        if (stateGeneration == m_stateQueryGeneration)
+            emit stateChanged(state);
         emit stateVerified(state);
     });
 }
 
 void SystemdBackend::verifyState(quint64 requestId)
 {
-    // Invalidate older refresh results while keeping this lifecycle result private.
+    // Invalidate older refresh and lifecycle-verification results.
     ++m_stateQueryGeneration;
+    const quint64 verificationGeneration = ++m_verificationGeneration;
     // Lifecycle verification is private to its requesting operation. Publishing
     // it as stateChanged would let a late response overwrite the application UI.
-    query(QStringLiteral("is-active"), [this, requestId](const QString &out) {
-        emit stateVerifiedForRequest(requestId, parseUnitState(out));
+    query(QStringLiteral("is-active"), [this, requestId, verificationGeneration](const QString &out) {
+        if (verificationGeneration == m_verificationGeneration)
+            emit stateVerifiedForRequest(requestId, parseUnitState(out));
     });
 }
 
@@ -136,6 +140,7 @@ void SystemdBackend::startNextUnitAction()
 
     m_actionInProgress = true;
     ++m_stateQueryGeneration; // invalidate refreshes started before this action
+    ++m_verificationGeneration; // invalidate lifecycle checks started before this action
     const PendingUnitAction pending = m_pendingActions.dequeue();
     const QString action = pending.action;
     const quint64 requestId = pending.requestId;
