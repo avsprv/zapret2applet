@@ -55,11 +55,19 @@ class CancelTests(unittest.TestCase):
         self.stage(self.operation_a)
         self.assertTrue(cancel_operation(self.state, self.staged, self.operation_a))
         self.assertIn(f"stop --no-block {WORKER_UNIT}", self.calls_text())
+        self.assertFalse((self.runtime_dir / "options.json").exists())
 
     def test_matching_recovery_marker_is_cancelled(self):
         self.marker(self.operation_a)
         self.assertTrue(cancel_operation(self.state, self.staged, self.operation_a))
         self.assertIn(f"stop --no-block {WORKER_UNIT}", self.calls_text())
+
+    def test_matching_marker_and_staged_request_are_cleaned_together(self):
+        self.marker(self.operation_a)
+        with self.state.locked():
+            self.staged.stage_locked(self.operation_a, BlockcheckOptions())
+        self.assertTrue(cancel_operation(self.state, self.staged, self.operation_a))
+        self.assertFalse((self.runtime_dir / "options.json").exists())
 
     def test_mismatched_recovery_marker_is_not_cancelled(self):
         self.marker(self.operation_b)
