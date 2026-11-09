@@ -164,6 +164,47 @@ private slots:
         QCOMPARE(done.at(0).at(0).toInt(), -1);
         QCOMPARE(runner.errorCount(), 1);
     }
+
+    void cancelHelperFailureIsReportedWithoutLosingScanState()
+    {
+        QTemporaryDir dir;
+        QVERIFY(dir.isValid());
+        const QString script = dir.filePath(QStringLiteral("fake-helper"));
+        QFile f(script);
+        QVERIFY(f.open(QIODevice::WriteOnly));
+        f.write("#!/bin/sh\\n"
+                "if [ \\"$1\\" = blockcheck-cancel ]; then exit 7; fi\\n"
+                "if [ \\"$1\\" = blockcheck ]; then sleep 1; exit 0; fi\\n"
+                "exit 9\\n");
+        f.close();
+        f.setPermissions(f.permissions() | QFileDevice::ExeUser);
+
+        qputenv("QZAPRET_HELPER", script.toUtf8());
+        qputenv("QZAPRET_NO_PKEXEC", "1");
+
+        BlockcheckRunner runner;
+        QSignalSpy lines(&runner, &BlockcheckRunner::logLine);
+        QSignalSpy done(&runner, &BlockcheckRunner::finished);
+        runner.start({});
+        QTRY_VERIFY_WITH_TIMEOUT(runner.isRunning(), 1000);
+        runner.cancel();
+
+        QTRY_VERIFY_WITH_TIMEOUT(!lines.isEmpty(), 1000);
+        bool reported = false;
+        for (const auto &line : lines) {
+            if (line.at(0).toString().contains(QStringLiteral("Не удалось подтвердить отправку запроса отмены")))
+                reported = true;
+        }
+        QVERIFY(reported);
+        QVERIFY(runner.isRunning());
+        QVERIFY(done.wait(3000));
+        QCOMPARE(done.count(), 1);
+        QCOMPARE(done.at(0).at(0).toInt(), 0);
+        QCOMPARE(done.at(0).at(1).toBool(), false);
+
+        qunsetenv("QZAPRET_HELPER");
+        qunsetenv("QZAPRET_NO_PKEXEC");
+    }
 };
 
 QTEST_MAIN(TestBlockcheck)
