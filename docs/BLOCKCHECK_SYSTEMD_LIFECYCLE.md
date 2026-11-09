@@ -22,13 +22,22 @@ client preserves the original cancellation UUID even if it adopts a successor jo
 End-to-end runtime validation on a systemd host is still pending; the installed
 production Widgets application continues to use its legacy Blockcheck path.
 
-## Compatibility storage during the application rename
+## Runtime and persistent storage paths
 
-The application rename intentionally keeps Blockcheck state and runtime locations at
-`/var/lib/zapret2applet/blockcheck/` and `/run/zapret2applet/blockcheck/`.
-These are compatibility storage paths, not current product identifiers. Do not rename
-them without a locked and verified state migration: an in-flight job or pending
-recovery marker must survive package replacement and reboot.
+The current persistent Blockcheck state directory is
+`/var/lib/zapret2control/blockcheck/`, owned by root with directory mode
+`0700`; the recovery marker is a root-owned regular file with mode `0600`.
+The staged options directory is `/run/zapret2control/blockcheck/`. It is
+volatile and is managed by the `zapret2control` systemd RuntimeDirectory.
+
+Package upgrades migrate the durable state directory from the legacy
+`/var/lib/zapret2applet/blockcheck/` location after stopping the old worker and
+recovery units. The migration preserves the directory contents and fails closed
+if both old and new state directories exist or either path is unsafe. The old
+`/run/zapret2applet/` RuntimeDirectory is not copied: it contains volatile
+staging data and is removed by systemd when the old worker unit is stopped.
+Legacy path strings in package scripts are compatibility inputs only; they are
+not active runtime locations.
 
 ## Problem
 
@@ -68,7 +77,7 @@ The recovery unit is enabled as a boot fallback. It must not start Blockcheck or
 zapret service state when no valid recovery marker exists.
 ## State and invariants
 
-Persist state under `/var/lib/zapret2applet/blockcheck/`, owned by root, directory mode
+Persist state under `/var/lib/zapret2control/blockcheck/`, owned by root, directory mode
 `0700`, state file mode `0600`. The state is durable across reboot; `/run` is not
 suitable for this purpose.
 
@@ -112,7 +121,7 @@ Required invariants:
 
 1. GUI validates the options and invokes a narrow privileged submit command through
    the existing Polkit boundary. The submit command validates all options again, writes
-   a bounded options record atomically into a root-owned `/run/zapret2applet/`
+   a bounded options record atomically into a root-owned `/run/zapret2control/blockcheck/`
    directory, then queues `systemctl start --no-block zapret2control-blockcheck.service`.
    It must reject a second submission while the unit or a recovery operation is active.
 2. The static worker unit invokes a dedicated helper worker command. The worker securely
