@@ -17,6 +17,7 @@ private slots:
     void failedRecoveryKeepsServiceOperationsLocked();
     void pendingRecoveryCanBeRetriedAfterSubmitRejection();
     void startupProbeFindsRecoveryWithoutAnOperationId();
+    void startupProbeFailureEnablesSafeRecoveryRetry();
     void startupProbeWaitsWhileAnotherJobIsActive();
 
 private:
@@ -33,7 +34,10 @@ void BlockcheckJobControllerTest::initTestCase()
     const QByteArray script=R"(#!/bin/sh
 case "$1" in
   blockcheck-recovery-probe)
-    if [ "${QZAPRET_TEST_PROBE_BUSY:-0}" = 1 ]; then
+    if [ "${QZAPRET_TEST_PROBE_FAIL:-0}" = 1 ]; then
+      echo 'probe failed' >&2
+      exit 7
+    elif [ "${QZAPRET_TEST_PROBE_BUSY:-0}" = 1 ]; then
       echo '{"version":1,"state":"busy","reason":"systemd_operation"}'
     elif [ "${QZAPRET_TEST_PROBE_RECOVERY:-0}" = 1 ]; then
       echo '{"version":1,"state":"recovery_required","reason":"durable_marker","operation_id":"123e4567-e89b-42d3-a456-426614174000"}'
@@ -173,6 +177,24 @@ void BlockcheckJobControllerTest::startupProbeFindsRecoveryWithoutAnOperationId(
     controller.retryRecovery();
     QTRY_VERIFY_WITH_TIMEOUT(!controller.busy(),5000);
     QVERIFY(!controller.recoveryRequired());
+}
+
+
+void BlockcheckJobControllerTest::startupProbeFailureEnablesSafeRecoveryRetry()
+{
+    qputenv("QZAPRET_TEST_PROBE_FAIL","1");
+    BlockcheckJobController controller;
+    QTRY_VERIFY_WITH_TIMEOUT(!controller.busy(),5000);
+    QVERIFY(controller.recoveryRequired());
+    QVERIFY(controller.recoveryRetryAvailable());
+    QCOMPARE(controller.statusSeverity(),QStringLiteral("Error"));
+
+    qunsetenv("QZAPRET_TEST_PROBE_FAIL");
+    controller.retryRecovery();
+    QVERIFY(controller.busy());
+    QTRY_VERIFY_WITH_TIMEOUT(!controller.busy(),5000);
+    QVERIFY(!controller.recoveryRequired());
+    QCOMPARE(controller.statusSeverity(),QStringLiteral("Success"));
 }
 
 void BlockcheckJobControllerTest::startupProbeWaitsWhileAnotherJobIsActive()
