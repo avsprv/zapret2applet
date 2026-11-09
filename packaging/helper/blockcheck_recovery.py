@@ -11,8 +11,10 @@ STATE_DIRECTORY = "/var/lib/zapret2applet/blockcheck"
 def main() -> int:
     state = StateStore(STATE_DIRECTORY)
     try:
-        with state.locked(create=True):
-            state.recover_locked()
+        # Serialize marker removal against UUID-bound cancellation and submit.
+        with state.queue_locked(create=True):
+            with state.locked(create=True):
+                state.recover_locked()
     except StateError as exc:
         print(f"zapret2control blockcheck recovery: {exc}", file=sys.stderr)
         return 1
