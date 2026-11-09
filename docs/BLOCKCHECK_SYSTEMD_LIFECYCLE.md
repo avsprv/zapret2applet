@@ -147,6 +147,14 @@ Required invariants:
    `multi-user.target` job. No ordering dependency with `zapret2.service` is introduced;
    the recovery command itself starts and verifies the service when the marker requires it.
 
+Recovery acquires the queue and lifecycle locks in nonblocking mode. If either lock is
+busy, it exits unsuccessfully without removing the marker; the GUI retry path or the
+next boot recovery attempt can retry after the competing operation finishes. The worker
+unit's `TimeoutStopSec=180` covers the recovery helper's bounded `systemctl start`
+(timeout 120 seconds), state verification (timeout 30 seconds), and process overhead.
+This avoids systemd killing `ExecStopPost=` before its own service-start timeout expires.
+
+
 8. Service management, clean installation, and upstream updates enter the same persistent
    lifecycle lock through `blockcheck_admission.py`. The lock is held across the complete
    `systemctl start/stop/enable/disable zapret2.service` action and across the full
