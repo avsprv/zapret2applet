@@ -126,6 +126,7 @@ private slots:
     void correlatedVerificationDoesNotPublishGlobalState();
     void ordinaryVerificationPublishesGlobalState();
     void newerVerificationSupersedesOlderVerification();
+    void refreshDoesNotInvalidateLifecycleVerification();
     void newerRefreshSupersedesOlderStateQuery();
     void newerRefreshSupersedesOlderBootQuery();
     void stateQueryTimeoutProducesUnknown();
@@ -225,6 +226,22 @@ void SystemdBackendTest::newerVerificationSupersedesOlderVerification()
     QTest::qWait(200);
     QCOMPARE(verified.count(), 1);
     QCOMPARE(globalState.count(), 1);
+}
+
+void SystemdBackendTest::refreshDoesNotInvalidateLifecycleVerification()
+{
+    TestSystemdBackend backend;
+    backend.delayFirstStateQuery = true;
+    QSignalSpy globalState(&backend, &ZapretBackend::stateChanged);
+    QSignalSpy verified(&backend, &ZapretBackend::stateVerified);
+
+    backend.verifyState();
+    backend.refresh();
+
+    QTRY_COMPARE_WITH_TIMEOUT(verified.count(), 1, 3000);
+    QCOMPARE(verified.at(0).at(0).value<ZapretBackend::State>(), ZapretBackend::State::Inactive);
+    QTRY_COMPARE_WITH_TIMEOUT(globalState.count(), 1, 3000);
+    QCOMPARE(globalState.at(0).at(0).value<ZapretBackend::State>(), ZapretBackend::State::Active);
 }
 
 void SystemdBackendTest::newerRefreshSupersedesOlderStateQuery()
