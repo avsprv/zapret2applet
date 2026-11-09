@@ -127,8 +127,8 @@ private slots:
     void ordinaryVerificationPublishesGlobalState();
     void newerVerificationSupersedesOlderVerification();
     void refreshDoesNotInvalidateLifecycleVerification();
-    void newerRefreshSupersedesOlderStateQuery();
-    void newerRefreshSupersedesOlderBootQuery();
+    void refreshDoesNotLaunchOverlappingStateQuery();
+    void refreshDoesNotLaunchOverlappingBootQuery();
     void refreshCoalescesWhileQueriesAreRunning();
     void stateQueryTimeoutProducesUnknown();
     void continuesAfterTimedOutAction();
@@ -245,7 +245,7 @@ void SystemdBackendTest::refreshDoesNotInvalidateLifecycleVerification()
     QCOMPARE(globalState.at(0).at(0).value<ZapretBackend::State>(), ZapretBackend::State::Active);
 }
 
-void SystemdBackendTest::newerRefreshSupersedesOlderStateQuery()
+void SystemdBackendTest::refreshDoesNotLaunchOverlappingStateQuery()
 {
     TestSystemdBackend backend;
     backend.delayFirstStateQuery = true;
@@ -255,12 +255,13 @@ void SystemdBackendTest::newerRefreshSupersedesOlderStateQuery()
     backend.refresh();
 
     QTRY_COMPARE_WITH_TIMEOUT(globalState.count(), 1, 3000);
-    QCOMPARE(globalState.at(0).at(0).value<ZapretBackend::State>(), ZapretBackend::State::Active);
+    QCOMPARE(globalState.at(0).at(0).value<ZapretBackend::State>(), ZapretBackend::State::Inactive);
+    QCOMPARE(backend.activeQueryCount, 1);
     QTest::qWait(200);
     QCOMPARE(globalState.count(), 1);
 }
 
-void SystemdBackendTest::newerRefreshSupersedesOlderBootQuery()
+void SystemdBackendTest::refreshDoesNotLaunchOverlappingBootQuery()
 {
     TestSystemdBackend backend;
     backend.delayFirstBootQuery = true;
@@ -270,7 +271,8 @@ void SystemdBackendTest::newerRefreshSupersedesOlderBootQuery()
     backend.refresh();
 
     QTRY_COMPARE_WITH_TIMEOUT(bootState.count(), 1, 3000);
-    QCOMPARE(bootState.at(0).at(0).toBool(), false);
+    QCOMPARE(bootState.at(0).at(0).toBool(), true);
+    QCOMPARE(backend.bootQueryCount, 1);
     QTest::qWait(200);
     QCOMPARE(bootState.count(), 1);
 }
