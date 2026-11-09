@@ -31,3 +31,14 @@ jobs:
         run: cmake --build build --target zapret2control-qml-preview_qmllint
       - name: Test
         run: ctest --test-dir build --output-on-failure
+
+  systemd-e2e:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - name: Verify systemd VM
+        run: |
+          test "$(ps -p 1 -o comm= | tr -d '[:space:]')" = systemd
+          systemctl --version
+      - name: Run real Blockcheck lifecycle integration tests
+        run: sudo bash tests/test_systemd_lifecycle.sh "$GITHUB_WORKSPACE"
