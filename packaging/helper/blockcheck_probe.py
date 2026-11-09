@@ -11,8 +11,8 @@ from blockcheck_status import (
     RECOVERY_UNIT, WORKER_UNIT, JobStatusError, _unit_properties,
 )
 
-STATE_DIRECTORY = "/var/lib/zapret2applet/blockcheck"
-RUNTIME_DIRECTORY = "/run/zapret2applet/blockcheck"
+STATE_DIRECTORY = "/var/lib/zapret2control/blockcheck"
+RUNTIME_DIRECTORY = "/run/zapret2control/blockcheck"
 
 
 class ProbeError(StateError):
