@@ -198,7 +198,18 @@ start_upstream
 stage_request
 start_worker
 systemctl kill --kill-who=all --signal=SIGKILL zapret2control-blockcheck.service
-wait_until "SIGKILL ExecStopPost restoring service" upstream_is_active
+if ! wait_until "SIGKILL ExecStopPost restoring service" upstream_is_active; then
+    echo "=== systemd unit state ===" >&2
+    systemctl status zapret2control-blockcheck.service zapret2.service --no-pager >&2 || true
+    echo "=== worker journal ===" >&2
+    journalctl --unit=zapret2control-blockcheck.service --no-pager --output=cat -n 80 >&2 || true
+    echo "=== upstream journal ===" >&2
+    journalctl --unit=zapret2.service --no-pager --output=cat -n 80 >&2 || true
+    echo "=== persistent recovery state ===" >&2
+    ls -la "$STATE_DIR" >&2 || true
+    cat "$STATE_DIR/state.json" >&2 || true
+    fail "SIGKILL recovery did not restore zapret2.service"
+fi
 wait_until "SIGKILL recovery marker removal" marker_absent
 echo "ok: SIGKILL triggers ExecStopPost and restores the service"
 
