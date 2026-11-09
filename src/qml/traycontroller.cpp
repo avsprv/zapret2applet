@@ -210,7 +210,7 @@ public:
     QString attentionMovieName() const { return {}; }
     TrayToolTip toolTip() const
     {
-        return {iconName(), {}, title(), QStringLiteral("Управление zapret2")};
+        return {iconName(), {}, title(), tr("Управление zapret2")};
     }
     bool itemIsMenu() const { return false; }
 
