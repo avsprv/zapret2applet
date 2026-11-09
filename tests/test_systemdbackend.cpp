@@ -129,6 +129,7 @@ private slots:
     void refreshDoesNotInvalidateLifecycleVerification();
     void newerRefreshSupersedesOlderStateQuery();
     void newerRefreshSupersedesOlderBootQuery();
+    void refreshCoalescesWhileQueriesAreRunning();
     void stateQueryTimeoutProducesUnknown();
     void continuesAfterTimedOutAction();
     void correlatedVerificationInvalidatesOlderRefresh();
@@ -272,6 +273,27 @@ void SystemdBackendTest::newerRefreshSupersedesOlderBootQuery()
     QCOMPARE(bootState.at(0).at(0).toBool(), false);
     QTest::qWait(200);
     QCOMPARE(bootState.count(), 1);
+}
+
+void SystemdBackendTest::refreshCoalescesWhileQueriesAreRunning()
+{
+    TestSystemdBackend backend;
+    backend.delayFirstStateQuery = true;
+    backend.delayFirstBootQuery = true;
+    QSignalSpy globalState(&backend, &ZapretBackend::stateChanged);
+    QSignalSpy bootState(&backend, &ZapretBackend::bootEnabledChanged);
+
+    backend.refresh();
+    backend.refresh();
+    backend.refresh();
+
+    QTRY_COMPARE_WITH_TIMEOUT(globalState.count(), 1, 3000);
+    QTRY_COMPARE_WITH_TIMEOUT(bootState.count(), 1, 3000);
+    QCOMPARE(backend.activeQueryCount, 1);
+    QCOMPARE(backend.bootQueryCount, 1);
+    QTest::qWait(200);
+    QCOMPARE(backend.activeQueryCount, 1);
+    QCOMPARE(backend.bootQueryCount, 1);
 }
 
 void SystemdBackendTest::stateQueryTimeoutProducesUnknown()
