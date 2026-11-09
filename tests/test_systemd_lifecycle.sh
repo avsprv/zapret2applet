@@ -35,6 +35,7 @@ cleanup() {
     systemctl stop zapret2control-blockcheck.service zapret2control-blockcheck-recovery.service zapret2.service >/dev/null 2>&1
     systemctl disable zapret2control-blockcheck-recovery.service >/dev/null 2>&1
     rm -f "$WORKER_DROPIN" "$WORKER_UNIT" "$RECOVERY_UNIT" "$UPSTREAM_UNIT"
+    rmdir /etc/systemd/system/zapret2control-blockcheck.service.d 2>/dev/null
     rm -f /etc/systemd/system/multi-user.target.wants/zapret2control-blockcheck-recovery.service
     rm -f /usr/local/libexec/zapret2control-e2e-worker /usr/local/libexec/zapret2control-e2e-upstream
     rm -rf "$STATE_DIR" "$RUNTIME_DIR" "$E2E_DIR" "$HELPER_DIR" "$MODULE_DIR"
@@ -138,6 +139,11 @@ marker_absent() {
     [[ ! -e "$STATE_DIR/state.json" ]]
 }
 
+recovery_failure_logged() {
+    journalctl --unit=zapret2control-blockcheck.service --no-pager --output=cat \\
+        | grep -q "zapret2control blockcheck recovery:"
+}
+
 start_upstream() {
     systemctl reset-failed zapret2.service >/dev/null 2>&1 || true
     systemctl start zapret2.service
@@ -145,6 +151,7 @@ start_upstream() {
 }
 
 start_worker() {
+    systemctl reset-failed zapret2control-blockcheck.service >/dev/null 2>&1 || true
     systemctl start --no-block zapret2control-blockcheck.service
     wait_until "worker start and upstream stop" worker_is_running
     wait_until "worker stopping the fixture service" bash -c '! systemctl is-active --quiet zapret2.service'
@@ -176,6 +183,7 @@ prepare_marker active
 touch "$E2E_DIR/fail-start"
 start_worker
 systemctl stop zapret2control-blockcheck.service >/dev/null 2>&1 || true
+wait_until "failed ExecStopPost recovery result" recovery_failure_logged
 wait_until "failed recovery marker retention" marker_exists
 if systemctl is-active --quiet zapret2.service; then
     fail "fixture service unexpectedly became active while startup failure was enabled"
