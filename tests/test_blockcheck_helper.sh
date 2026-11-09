@@ -149,6 +149,19 @@ env QZAPRET_TEST_BASE="$W/base" QZAPRET_TEST_RUNDIR="$W/runtime-private" \
     "$H" blockcheck --domains example.org > "$W/second-output" 2>&1 &
 runner_pid=$!
 second_pid=$runner_pid
+# Wait until the new helper has atomically published its own PID/start-time pair.
+attempt=0
+while [ "$attempt" -lt 50 ]; do
+    if grep -q "^$second_pid " "$W/runtime-private/blockcheck.pid" 2>/dev/null; then
+        break
+    fi
+    sleep 0.1
+    attempt=$((attempt + 1))
+done
+grep -q "^$second_pid " "$W/runtime-private/blockcheck.pid" 2>/dev/null || {
+    echo "FAIL: second Blockcheck process did not publish its PID"
+    exit 1
+}
 wait "$cancel_pid"
 cancel_pid=
 
