@@ -54,6 +54,48 @@ private slots:
     }
 
     // Весь конвейер QProcess -> построчный разбор -> сигналы, с поддельным хелпером без pkexec.
+
+    void runnerRejectsReentrantStartWhileFinishing()
+    {
+        QTemporaryDir dir;
+        QVERIFY(dir.isValid());
+        const QString script = dir.filePath(QStringLiteral("fake-helper"));
+        const QString counter = dir.filePath(QStringLiteral("invocations"));
+        QFile f(script);
+        QVERIFY(f.open(QIODevice::WriteOnly));
+        const QByteArray scriptContent = QStringLiteral(
+            "#!/bin/sh\\nprintf x >> '%1'\\necho diagnostic\\nexit 0\\n")
+                .arg(counter).toUtf8();
+        f.write(scriptContent);
+        f.close();
+        f.setPermissions(f.permissions() | QFileDevice::ExeUser);
+
+        qputenv("QZAPRET_HELPER", script.toUtf8());
+        qputenv("QZAPRET_NO_PKEXEC", "1");
+
+        BlockcheckRunner runner;
+        QSignalSpy done(&runner, &BlockcheckRunner::finished);
+        bool reentrantAttempted = false;
+        connect(&runner, &BlockcheckRunner::logLine, &runner, [&] {
+            if (reentrantAttempted)
+                return;
+            reentrantAttempted = true;
+            runner.start({});
+        });
+
+        runner.start({});
+        QTRY_COMPARE_WITH_TIMEOUT(done.count(), 1, 5000);
+        QTest::qWait(100);
+        QVERIFY(reentrantAttempted);
+        QFile invocations(counter);
+        QVERIFY(invocations.open(QIODevice::ReadOnly));
+        QCOMPARE(invocations.readAll(), QByteArray("x"));
+        QVERIFY(!runner.isRunning());
+
+        qunsetenv("QZAPRET_HELPER");
+        qunsetenv("QZAPRET_NO_PKEXEC");
+    }
+
     void runnerPipeline()
     {
         QTemporaryDir dir;
