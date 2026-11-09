@@ -14,6 +14,7 @@ import uuid
 
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parents[1] / "packaging" / "helper"))
 from blockcheck_state import StateError, StateStore
+from blockcheck_recovery import recover
 
 class StateTests(unittest.TestCase):
     def setUp(self):
@@ -279,6 +280,23 @@ class StateTests(unittest.TestCase):
         thread.join()
         unlocker.join()
         self.assertGreaterEqual(elapsed, 0.20)
+
+
+    def test_recovery_fails_fast_when_queue_lock_is_busy(self):
+        self.prepare(True)
+        with self.store.queue_locked():
+            with self.assertRaisesRegex(StateError, "another Blockcheck queue operation is active"):
+                recover(self.store)
+        self.assertTrue((self.state / "state.json").exists())
+        self.assertTrue(self.active.exists())
+
+    def test_recovery_fails_fast_when_lifecycle_lock_is_busy(self):
+        self.prepare(True)
+        with self.store.locked():
+            with self.assertRaisesRegex(StateError, "another Blockcheck lifecycle operation is active"):
+                recover(self.store)
+        self.assertTrue((self.state / "state.json").exists())
+        self.assertTrue(self.active.exists())
 
 if __name__ == "__main__":
     unittest.main(verbosity=2)
