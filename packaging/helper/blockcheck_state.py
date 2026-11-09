@@ -110,6 +110,8 @@ class StateStore:
         Lock ordering is queue lock -> lifecycle lock. The worker deliberately
         does not hold the queue lock while running the upstream diagnostic.
         """
+        if getattr(self._thread_state, "dir_fd", None) is not None:
+            raise StateError("queue lock must be acquired before the lifecycle lock")
         if getattr(self._thread_state, "queue_dir_fd", None) is not None:
             raise StateError("nested queue locks are not supported")
         dir_fd = self._open_directory(create=create)
