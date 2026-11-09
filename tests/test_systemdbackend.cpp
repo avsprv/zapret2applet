@@ -31,7 +31,7 @@ protected:
     int processTimeoutMs(bool privileged) const override
     {
         Q_UNUSED(privileged);
-        return shortTimeouts ? 500 : SystemdBackend::processTimeoutMs(privileged);
+        return shortTimeouts ? 100 : SystemdBackend::processTimeoutMs(privileged);
     }
 
     void startProcess(QProcess *process, const QString &program,
@@ -49,7 +49,7 @@ protected:
             if (delayNextAction) {
                 delayNextAction = false;
                 process->start(QStringLiteral("/bin/sh"),
-                               {QStringLiteral("-c"), QStringLiteral("exec sleep 10")});
+                               {QStringLiteral("-c"), QStringLiteral("exec sleep 0.4")});
                 return;
             }
             connect(process, &QProcess::errorOccurred, this,
@@ -261,6 +261,11 @@ void SystemdBackendTest::continuesAfterTimedOutAction()
 
     backend.stop();
     backend.start();
+
+    QTRY_COMPARE_WITH_TIMEOUT(backend.actions.size(), 1, 1000);
+    QTest::qWait(150);
+    QCOMPARE(backend.actions.size(), 1);
+    QCOMPARE(finished.count(), 0);
 
     QTRY_COMPARE_WITH_TIMEOUT(finished.count(), 2, 3000);
     QVERIFY(!finished.at(0).at(2).toBool());
