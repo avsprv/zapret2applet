@@ -319,18 +319,37 @@ void BlockcheckJobController::processStatus(const QByteArray &output)
     if(phase==QLatin1String("recovery_pending")){setStatus(tr("Восстановление службы ещё не подтверждено; задание остаётся активным."),StatusType::Warning);return;}
     if(phase==QLatin1String("recovery_failed")){m_terminalPhase=phase;setStatus(tr("Ошибка восстановления службы. Маркер восстановления сохранён."),StatusType::Error);m_pollTimer->stop();launch(ProcessTask::Logs,{QStringLiteral("blockcheck-job-logs"),QStringLiteral("500"),QString::number(m_startedAtSecs)});return;}
     if(phase==QLatin1String("stale")){
-        const QString recoveryOperationId=object.value(QStringLiteral("recovery_operation_id")).toString();
         static const QRegularExpression uuidRe(
             QStringLiteral("^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"));
-        if(uuidRe.match(recoveryOperationId).hasMatch()){
-            m_operationId=recoveryOperationId;
-            m_startedAtSecs=QDateTime::currentSecsSinceEpoch();
-            emit recoveryRequiredChanged();
-            emit recoveryRetryAvailableChanged();
+        if(object.value(QStringLiteral("recovery_marker")).toBool()){
+            const QString recoveryOperationId=object.value(QStringLiteral("recovery_operation_id")).toString();
+            if(uuidRe.match(recoveryOperationId).hasMatch()){
+                m_operationId=recoveryOperationId;
+                m_startedAtSecs=QDateTime::currentSecsSinceEpoch();
+                setRecoveryRequired(true);
+                m_terminalPhase=phase;
+                m_pollTimer->stop();
+                setStatus(tr("Идентификатор задания устарел; обнаружено незавершённое восстановление. Журнал другой операции не будет прочитан."),StatusType::Error);
+                finish(false);
+                return;
+            }
+        } else if(object.value(QStringLiteral("staged_options")).toBool()){
+            const QString stagedOperationId=object.value(QStringLiteral("staged_operation_id")).toString();
+            if(uuidRe.match(stagedOperationId).hasMatch()){
+                // A different request is queued, not awaiting recovery. Adopt its
+                // UUID and continue polling without exposing the recovery action.
+                m_operationId=stagedOperationId;
+                m_startedAtSecs=QDateTime::currentSecsSinceEpoch();
+                setRecoveryRequired(false);
+                m_terminalPhase.clear();
+                setStatus(tr("Обнаружено другое задание Blockcheck в очереди; отслеживание продолжено."),StatusType::Warning);
+                return;
+            }
         }
+        setRecoveryRequired(true);
         m_terminalPhase=phase;
         m_pollTimer->stop();
-        setStatus(tr("Идентификатор задания устарел; журнал другой операции не будет прочитан."),StatusType::Error);
+        setStatus(tr("Идентификатор задания устарел; состояние новой операции не удалось проверить. Операции заблокированы."),StatusType::Error);
         finish(false);
         return;
     }
