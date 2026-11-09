@@ -79,15 +79,33 @@ ZapretBackend::State parseUnitState(const QString &out)
 
 void SystemdBackend::refresh()
 {
+    // Coalesce periodic refreshes while either systemctl query is still running.
+    if (m_refreshInProgress)
+        return;
+
+    m_refreshInProgress = true;
+    m_refreshQueriesPending = 2;
     const quint64 generation = ++m_stateQueryGeneration;
     query(QStringLiteral("is-active"), [this, generation](const QString &out) {
         if (generation == m_stateQueryGeneration)
             emit stateChanged(parseUnitState(out));
+        finishRefreshQuery();
     });
     query(QStringLiteral("is-enabled"), [this, generation](const QString &out) {
         if (generation == m_stateQueryGeneration)
             emit bootEnabledChanged(out == QLatin1String("enabled"));
+        finishRefreshQuery();
     });
+}
+
+void SystemdBackend::finishRefreshQuery()
+{
+    if (!m_refreshInProgress || m_refreshQueriesPending <= 0)
+        return;
+
+    --m_refreshQueriesPending;
+    if (m_refreshQueriesPending == 0)
+        m_refreshInProgress = false;
 }
 
 void SystemdBackend::verifyState()
