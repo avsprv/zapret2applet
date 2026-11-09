@@ -3,6 +3,7 @@
 
 import os
 from pathlib import Path
+import shutil
 import subprocess
 import tempfile
 
@@ -151,7 +152,6 @@ def main() -> None:
         assert old_state.is_dir() and (new_parent / "blockcheck").is_dir()
 
         # Dangling symlinks must not be mistaken for absent state paths.
-        import shutil
         shutil.rmtree(old_state)
         old_state.symlink_to(old_parent / "missing-target")
         dangling_old = subprocess.run([str(migration_preinst), "upgrade"], env=env)
@@ -240,6 +240,23 @@ def main() -> None:
         ], rpm_calls
         assert (rpm_new_parent / "blockcheck" / "state.json").read_text(encoding="ascii") == '{"version":2}\n'
         assert not rpm_old_state.exists()
+
+        # RPM migration must also reject dangling legacy and destination symlinks.
+        rpm_old_parent.mkdir(parents=True, exist_ok=True)
+        rpm_old_state.symlink_to(rpm_old_parent / "missing-target")
+        rpm_dangling_old = subprocess.run(["/bin/sh", "-c", rpm_script], env=rpm_env)
+        assert rpm_dangling_old.returncode != 0, "RPM accepted dangling legacy state symlink"
+        rpm_old_state.unlink()
+
+        rpm_new_state = rpm_new_parent / "blockcheck"
+        shutil.rmtree(rpm_new_state)
+        rpm_new_state.symlink_to(rpm_new_parent / "missing-target")
+        rpm_old_state.mkdir(parents=True, mode=0o700)
+        rpm_old_state.chmod(0o700)
+        rpm_dangling_new = subprocess.run(["/bin/sh", "-c", rpm_script], env=rpm_env)
+        assert rpm_dangling_new.returncode != 0, "RPM accepted dangling destination state symlink"
+        assert rpm_old_state.is_dir() and rpm_new_state.is_symlink()
+        rpm_new_state.unlink()
 
         # A failed RPM stop must abort before attempting to disable the unit.
         rpm_env["FAIL_STOP"] = "1"
