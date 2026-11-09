@@ -21,6 +21,7 @@ private slots:
     void startupProbeWaitsWhileAnotherJobIsActive();
     void staleStatusAdoptsQueuedOperationWithoutRecovery();
     void cancelPassesTheCurrentOperationId();
+    void delayedCancelDoesNotRetargetAnAdoptedOperation();
 
 private:
     QTemporaryDir m_temp;
@@ -69,7 +70,11 @@ case "$1" in
   blockcheck-job-cancel)
     [ "$#" -eq 2 ] || exit 2
     printf '%s\n' "$2" >> "$QZAPRET_TEST_CANCEL_ID_FILE"
-    printf '%s\n' 'cancelled'
+    if [ "${QZAPRET_TEST_CANCEL_STALE:-0}" = 1 ]; then
+      printf '%s\n' 'stale'
+    else
+      printf '%s\n' 'cancelled'
+    fi
     ;;
   blockcheck-recover)
     exit 0
@@ -257,6 +262,32 @@ void BlockcheckJobControllerTest::cancelPassesTheCurrentOperationId()
     QCOMPARE(requests.size(),1);
     QCOMPARE(requests.constFirst(),QStringLiteral("123e4567-e89b-42d3-a456-426614174000"));
     qunsetenv("QZAPRET_TEST_CANCEL_ID_FILE");
+}
+
+
+void BlockcheckJobControllerTest::delayedCancelDoesNotRetargetAnAdoptedOperation()
+{
+    const QString idFile=m_temp.filePath(QStringLiteral("delayed-cancel-operation-ids"));
+    qputenv("QZAPRET_TEST_CANCEL_ID_FILE",idFile.toUtf8());
+    qputenv("QZAPRET_TEST_CANCEL_STALE","1");
+    qputenv("QZAPRET_TEST_STALE_STAGED","1");
+    BlockcheckJobController controller;
+    QTRY_VERIFY_WITH_TIMEOUT(!controller.busy(),5000);
+    controller.start();
+    controller.confirmStop(true);
+    QTRY_VERIFY_WITH_TIMEOUT(controller.status().contains(QStringLiteral("Задание принято")),5000);
+    controller.cancel();
+    QTRY_VERIFY_WITH_TIMEOUT(
+        controller.status().contains(QStringLiteral("отслеживание продолжено")),5000);
+    QTest::qWait(1200);
+    QFile file(idFile);
+    QVERIFY(file.open(QIODevice::ReadOnly|QIODevice::Text));
+    const QStringList requests=QString::fromUtf8(file.readAll()).split(QLatin1Char('\n'),Qt::SkipEmptyParts);
+    QCOMPARE(requests.size(),1);
+    QCOMPARE(requests.constFirst(),QStringLiteral("123e4567-e89b-42d3-a456-426614174000"));
+    qunsetenv("QZAPRET_TEST_CANCEL_ID_FILE");
+    qunsetenv("QZAPRET_TEST_CANCEL_STALE");
+    qunsetenv("QZAPRET_TEST_STALE_STAGED");
 }
 
 QTEST_GUILESS_MAIN(BlockcheckJobControllerTest)
