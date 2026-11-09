@@ -26,7 +26,7 @@ RUNTIME_DIR=/run/zapret2control
 UPSTREAM_SCRIPT=/opt/zapret2/blockcheck2.sh
 
 # Never overwrite a service, unit, or state directory on the runner.
-for path in "$WORKER_UNIT" "$RECOVERY_UNIT" "$UPSTREAM_UNIT" "$STATE_DIR" "$RUNTIME_DIR" "$HELPER_DIR" "$MODULE_DIR" "$E2E_DIR" /opt/zapret2 "$UPSTREAM_SCRIPT"; do
+for path in "$WORKER_UNIT" "$RECOVERY_UNIT" "$UPSTREAM_UNIT" "$STATE_DIR" "$RUNTIME_DIR" "$HELPER_DIR" "$MODULE_DIR" "$E2E_DIR" /opt/zapret2 "$UPSTREAM_SCRIPT" /usr/local/libexec/zapret2control-e2e-service; do
     [[ ! -e "$path" && ! -L "$path" ]] || fail "refusing to overwrite pre-existing path: $path"
 done
 
@@ -36,7 +36,7 @@ cleanup() {
     systemctl disable zapret2control-blockcheck-recovery.service >/dev/null 2>&1
     rm -f "$WORKER_UNIT" "$RECOVERY_UNIT" "$UPSTREAM_UNIT"
     rm -f /etc/systemd/system/multi-user.target.wants/zapret2control-blockcheck-recovery.service
-    rm -f "$UPSTREAM_SCRIPT"
+    rm -f "$UPSTREAM_SCRIPT" /usr/local/libexec/zapret2control-e2e-service
     rmdir /opt/zapret2 2>/dev/null
     rm -rf "$STATE_DIR" "$RUNTIME_DIR" "$E2E_DIR" "$HELPER_DIR" "$MODULE_DIR"
     rmdir /var/lib/zapret2control 2>/dev/null
@@ -59,7 +59,16 @@ cat > "$UPSTREAM_SCRIPT" <<'SH'
 set -eu
 exec /usr/bin/sleep infinity
 SH
-chmod 0755 "$UPSTREAM_SCRIPT"
+cat > /usr/local/libexec/zapret2control-e2e-service <<'SH'
+#!/bin/sh
+set -eu
+if [ -e /run/zapret2control-e2e/fail-start ]; then
+    echo "intentional E2E service startup failure" >&2
+    exit 42
+fi
+exec /usr/bin/sleep infinity
+SH
+chmod 0755 "$UPSTREAM_SCRIPT" /usr/local/libexec/zapret2control-e2e-service
 
 cat > "$UPSTREAM_UNIT" <<'UNIT'
 [Unit]
@@ -67,7 +76,7 @@ Description=Disposable zapret2control E2E fixture service
 
 [Service]
 Type=simple
-ExecStart=/opt/zapret2/blockcheck2.sh
+ExecStart=/usr/local/libexec/zapret2control-e2e-service
 Restart=no
 UNIT
 
