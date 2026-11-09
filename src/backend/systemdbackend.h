@@ -42,4 +42,5 @@ private:
     QQueue<PendingUnitAction> m_pendingActions;
     bool m_actionInProgress = false;
     quint64 m_stateQueryGeneration = 0;
+    quint64 m_verificationGeneration = 0;
 };
