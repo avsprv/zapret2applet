@@ -172,10 +172,10 @@ private slots:
         const QString script = dir.filePath(QStringLiteral("fake-helper"));
         QFile f(script);
         QVERIFY(f.open(QIODevice::WriteOnly));
-        f.write("#!/bin/sh\\n"
-                "if [ \\"$1\\" = blockcheck-cancel ]; then exit 7; fi\\n"
-                "if [ \\"$1\\" = blockcheck ]; then sleep 1; exit 0; fi\\n"
-                "exit 9\\n");
+        f.write("#!/bin/sh\n"
+                "if [ \"$1\" = blockcheck-cancel ]; then exit 7; fi\n"
+                "if [ \"$1\" = blockcheck ]; then sleep 1; exit 0; fi\n"
+                "exit 9\n");
         f.close();
         f.setPermissions(f.permissions() | QFileDevice::ExeUser);
 
