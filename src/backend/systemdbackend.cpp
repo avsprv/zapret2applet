@@ -168,8 +168,7 @@ void SystemdBackend::startNextUnitAction()
         if (*completed)
             return;
         *timedOut = true;
-        emit errorOccurred(tr("Превышено время ожидания операции systemd: %1").arg(action));
-        proc->kill();
+        emit errorOccurred(tr("Операция systemd выполняется дольше ожидаемого: %1. Ожидается фактическое завершение команды.").arg(action));
     });
     connect(proc, &QProcess::finished, this,
             [this, proc, action, reportResult, completed, timedOut, timeout](int code, QProcess::ExitStatus status) {
