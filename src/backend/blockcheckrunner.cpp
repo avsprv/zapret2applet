@@ -79,9 +79,32 @@ void BlockcheckRunner::cancel()
         return;
     m_cancelRequested = true;
     // Процесс принадлежит root, сигнал ему можно послать только через хелпер.
+    if (m_cancelProc && m_cancelProc->state() != QProcess::NotRunning)
+        return;
+
     auto *proc = new QProcess(this);
-    connect(proc, &QProcess::finished, proc, &QObject::deleteLater);
-    connect(proc, &QProcess::errorOccurred, proc, &QObject::deleteLater);
+    m_cancelProc = proc;
+    connect(proc, &QProcess::finished, this,
+            [this, proc](int exitCode, QProcess::ExitStatus exitStatus) {
+        if (m_cancelProc != proc)
+            return;
+        m_cancelProc = nullptr;
+        if (exitStatus != QProcess::NormalExit || exitCode != 0) {
+            const QString detail = exitStatus == QProcess::NormalExit
+                ? tr("код %1").arg(exitCode) : tr("процесс завершился аварийно");
+            emit logLine(tr("Не удалось подтвердить отправку запроса отмены Blockcheck (%1). Диагностика может продолжиться.").arg(detail));
+        }
+        proc->deleteLater();
+    });
+    connect(proc, &QProcess::errorOccurred, this,
+            [this, proc](QProcess::ProcessError error) {
+        if (error != QProcess::FailedToStart || m_cancelProc != proc)
+            return;
+        const QString reason = proc->errorString();
+        m_cancelProc = nullptr;
+        emit logLine(tr("Не удалось запустить helper отмены Blockcheck: %1. Диагностика может продолжиться.").arg(reason));
+        proc->deleteLater();
+    });
     Helper::start(proc, {QStringLiteral("blockcheck-cancel")});
 }
 
