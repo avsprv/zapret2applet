@@ -335,6 +335,78 @@
     <message><source>Журнал содержит некорректный UTF-8; данные не отображены.</source><translation>The journal contains invalid UTF-8; content was not displayed.</translation></message>
     <message><source>Журнал обновлён: получено %1 байт.</source><translation>Journal refreshed: %1 bytes received.</translation></message>
     <message><source>Не удалось запустить helper: %1</source><translation>Could not start helper: %1</translation></message>
+    <message>
+        <source>Сохранить журнал диагностики</source>
+        <translation>Save diagnostic log</translation>
+    </message>
+    <message>
+        <source>Текстовые файлы (*.txt)</source>
+        <translation>Text files (*.txt)</translation>
+    </message>
+    <message>
+        <source>Все файлы (*)</source>
+        <translation>All files (*)</translation>
+    </message>
+    <message>
+        <source>Параметры диагностики</source>
+        <translation>Diagnostic options</translation>
+    </message>
+    <message>
+        <source>Домены (от 1 до 10, через пробел)</source>
+        <translation>Domains (1 to 10, separated by spaces)</translation>
+    </message>
+    <message>
+        <source>Домены для проверки</source>
+        <translation>Domains to test</translation>
+    </message>
+    <message>
+        <source>IP-протокол</source>
+        <translation>IP protocol</translation>
+    </message>
+    <message>
+        <source>IPv4</source>
+        <translation>IPv4</translation>
+    </message>
+    <message>
+        <source>IPv6</source>
+        <translation>IPv6</translation>
+    </message>
+    <message>
+        <source>IPv4 + IPv6</source>
+        <translation>IPv4 + IPv6</translation>
+    </message>
+    <message>
+        <source>Уровень сканирования</source>
+        <translation>Scan level</translation>
+    </message>
+    <message>
+        <source>Количество повторов</source>
+        <translation>Number of repetitions</translation>
+    </message>
+    <message>
+        <source>Найденные стратегии</source>
+        <translation>Found strategies</translation>
+    </message>
+    <message>
+        <source>Стратегии пока не найдены.</source>
+        <translation>No strategies found yet.</translation>
+    </message>
+    <message>
+        <source>Копировать стратегию: %1</source>
+        <translation>Copy strategy: %1</translation>
+    </message>
+    <message>
+        <source>Журнал диагностики</source>
+        <translation>Diagnostic log</translation>
+    </message>
+    <message>
+        <source>Вывод процесса blockcheck2 в режиме только чтения</source>
+        <translation>Read-only output from the blockcheck2 process</translation>
+    </message>
+    <message>
+        <source>Найденные стратегии являются рекомендациями blockcheck2 и требуют ручной проверки перед применением.</source>
+        <translation>The strategies found are recommendations from blockcheck2 and must be reviewed manually before being applied.</translation>
+    </message>
 </context>
 <context>
     <name>BlockcheckRunner</name>
@@ -583,6 +655,10 @@
     <message><source>Откатить конфигурацию?</source><translation>Restore configuration backup?</translation></message>
     <message><source>Будет восстановлена последняя резервная копия. Текущая конфигурация также будет сохранена в резервную копию.</source><translation>The latest backup will be restored. The current configuration will also be saved as a backup.</translation></message>
 
+    <message>
+        <source>Конфигурация</source>
+        <translation>Configuration</translation>
+    </message>
 </context>
 <context>
     <name>ProfilePage</name>
@@ -973,6 +1049,22 @@
         <source>Системный трей недоступен. Сворачивание окна в трей включится после регистрации StatusNotifierItem.</source>
         <translation>The system tray is unavailable. Minimize-to-tray will become available after the StatusNotifierItem is registered.</translation>
     </message>
+    <message>
+        <source>Запуск приложения</source>
+        <translation>Application startup</translation>
+    </message>
+    <message>
+        <source>Запускать приложение при входе в систему</source>
+        <translation>Start the application when you log in</translation>
+    </message>
+    <message>
+        <source>Поведение окна</source>
+        <translation>Window behavior</translation>
+    </message>
+    <message>
+        <source>Сворачивать окно в системный трей при закрытии</source>
+        <translation>Minimize to the system tray when closing the window</translation>
+    </message>
 </context>
   <context>
     <name>ProfilesPage</name>
@@ -1024,7 +1116,27 @@
     <message><source>Текущий хостлист изменён. Отбросить изменения и переключиться на другой список?</source><translation>The current hostlist has been modified. Discard changes and switch to another list?</translation></message>
     <message><source>Сохранить хостлист</source><translation>Save hostlist</translation></message>
     <message><source>Создать резервную копию и атомарно сохранить %1? Производные IP-списки будут обновлены штатными механизмами zapret2. Служба автоматически не перезапускается.</source><translation>Create a backup and atomically save %1? Derived IP lists will be updated by zapret2's normal mechanisms. The service is not restarted automatically.</translation></message>
-  </context>
+      <message>
+        <source>Не удалось</source>
+        <translation>Failed</translation>
+    </message>
+    <message>
+        <source>Некоррект</source>
+        <translation>Invalid</translation>
+    </message>
+    <message>
+        <source>Файл превышает</source>
+        <translation>File exceeds</translation>
+    </message>
+    <message>
+        <source>Слишком</source>
+        <translation>Too</translation>
+    </message>
+    <message>
+        <source>Строка</source>
+        <translation>Line</translation>
+    </message>
+</context>
   <context>
     <name>ListsController</name>
     <message><source>Файл превышает ограничение 1 MiB.</source><translation>File exceeds the 1 MiB limit.</translation></message>
@@ -1277,6 +1389,38 @@
     <message>
         <source>Дождитесь завершения текущей операции или восстановления zapret2. Принудительное завершение может повредить установленную систему.</source>
         <translation>Wait for the current operation or zapret2 recovery to finish. Forcing the application to quit may damage the installed system.</translation>
+    </message>
+    <message>
+        <source>Обзор</source>
+        <translation>Overview</translation>
+    </message>
+    <message>
+        <source>Обновить состояние</source>
+        <translation>Refresh status</translation>
+    </message>
+    <message>
+        <source>Версия zapret2</source>
+        <translation>zapret2 version</translation>
+    </message>
+    <message>
+        <source>Установленная версия</source>
+        <translation>Installed version</translation>
+    </message>
+    <message>
+        <source>Проверить наличие новых версий можно в разделе «Обновления».</source>
+        <translation>You can check for new versions in the Updates section.</translation>
+    </message>
+    <message>
+        <source>zapret2 пока не установлен. Перейдите в раздел «Обновления», чтобы выполнить установку.</source>
+        <translation>zapret2 is not installed yet. Open the Updates section to install it.</translation>
+    </message>
+    <message>
+        <source>Открыть обновления</source>
+        <translation>Open updates</translation>
+    </message>
+    <message>
+        <source>QML-интерфейс находится в стадии поэтапной миграции. Для повседневного использования пока доступна стабильная версия приложения.</source>
+        <translation>The QML interface is being migrated incrementally. The stable application interface remains available for everyday use.</translation>
     </message>
 </context>
   
@@ -1907,6 +2051,53 @@
     <message>
         <source>Управление zapret2</source>
         <translation>Manage zapret2</translation>
+    </message>
+</context>
+<context>
+    <name>LogsPage</name>
+    <message>
+        <source>Мониторинг</source>
+        <translation>Monitoring</translation>
+    </message>
+    <message>
+        <source>Показывается журнал только фиксированной службы zapret2.service. Чтение выполняется через read-only действие Polkit; журнал не изменяет состояние службы.</source>
+        <translation>Only the journal for the fixed zapret2.service unit is shown. Reading uses a read-only Polkit action and does not change the service state.</translation>
+    </message>
+    <message>
+        <source>Последние 50 строк</source>
+        <translation>Last 50 lines</translation>
+    </message>
+    <message>
+        <source>Последние 100 строк</source>
+        <translation>Last 100 lines</translation>
+    </message>
+    <message>
+        <source>Последние 200 строк</source>
+        <translation>Last 200 lines</translation>
+    </message>
+    <message>
+        <source>Последние 500 строк</source>
+        <translation>Last 500 lines</translation>
+    </message>
+    <message>
+        <source>Количество строк журнала</source>
+        <translation>Number of journal lines</translation>
+    </message>
+    <message>
+        <source>Обновить журнал</source>
+        <translation>Refresh journal</translation>
+    </message>
+    <message>
+        <source>Автообновление каждые 10 секунд</source>
+        <translation>Refresh automatically every 10 seconds</translation>
+    </message>
+    <message>
+        <source>Журнал службы zapret2</source>
+        <translation>zapret2 service journal</translation>
+    </message>
+    <message>
+        <source>Последние записи журнала systemd службы zapret2.service</source>
+        <translation>Recent systemd journal entries for zapret2.service</translation>
     </message>
 </context>
 </TS>
