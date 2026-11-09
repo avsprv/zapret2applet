@@ -421,8 +421,14 @@ blockcheck-submit)
     exec /usr/bin/python3 "$module_dir/blockcheck_submit.py" "$@"
     ;;
 blockcheck-job-cancel)
-    [ "$#" -eq 1 ] || die "usage: blockcheck-job-cancel"
-    exec systemctl stop --no-block zapret2control-blockcheck.service
+    [ "$#" -eq 2 ] || die "usage: blockcheck-job-cancel OPERATION_UUID"
+    case "$2" in
+        ????????-????-????-????-????????????) ;;
+        *) die "invalid Blockcheck operation UUID" ;;
+    esac
+    module_dir=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd) || die "cannot locate helper modules"
+    if [ ! -f "$module_dir/blockcheck_cancel.py" ]; then module_dir=/usr/share/zapret2control; fi
+    exec /usr/bin/python3 "$module_dir/blockcheck_cancel.py" "$2"
     ;;
 blockcheck-job-logs)
     [ "$#" -eq 3 ] || die "usage: blockcheck-job-logs {50|100|200|500} START_EPOCH"
