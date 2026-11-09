@@ -284,7 +284,8 @@ class StateTests(unittest.TestCase):
 
     def test_recovery_fails_fast_when_queue_lock_is_busy(self):
         self.prepare(True)
-        with self.store.queue_locked():
+        contender = StateStore(self.state, str(self.fake))
+        with contender.queue_locked():
             with self.assertRaisesRegex(StateError, "another Blockcheck queue operation is active"):
                 recover(self.store)
         self.assertTrue((self.state / "state.json").exists())
@@ -292,7 +293,8 @@ class StateTests(unittest.TestCase):
 
     def test_recovery_fails_fast_when_lifecycle_lock_is_busy(self):
         self.prepare(True)
-        with self.store.locked():
+        contender = StateStore(self.state, str(self.fake))
+        with contender.locked():
             with self.assertRaisesRegex(StateError, "another Blockcheck lifecycle operation is active"):
                 recover(self.store)
         self.assertTrue((self.state / "state.json").exists())
