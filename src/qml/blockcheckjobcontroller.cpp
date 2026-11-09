@@ -190,7 +190,14 @@ void BlockcheckJobController::handleProcessFinished(QProcess *process,int exitCo
     if(task==ProcessTask::Probe){ processProbe(m_stdout); return; }
     if(exitStatus!=QProcess::NormalExit||exitCode!=0){
         appendLog(error.isEmpty()?tr("Helper завершился с кодом %1.").arg(exitCode):error);
-        if(task==ProcessTask::Recovery){
+        if(task==ProcessTask::Probe){
+            m_pollTimer->stop();
+            m_probePending=false;
+            setRecoveryRequired(true);
+            setBusy(false);
+            setStatus(tr("Не удалось проверить состояние восстановления Blockcheck. Операции заблокированы."),StatusType::Error);
+        }
+        else if(task==ProcessTask::Recovery){
             setBusy(false);
             setStatus(tr("Не удалось повторить восстановление службы. Маркер сохранён."),StatusType::Error);
         }
