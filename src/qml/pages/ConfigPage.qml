@@ -1,5 +1,6 @@
 import QtQuick
 import QtQuick.Controls as Controls
+import QtQuick.Dialogs
 import QtQuick.Layouts
 import org.kde.kirigami as Kirigami
 
@@ -7,6 +8,15 @@ Kirigami.ScrollablePage {
     id: page
     required property var configController
     title: qsTr("Конфигурация")
+
+    FileDialog {
+        id: exportDialog
+        title: qsTr("Экспортировать копию…")
+        fileMode: FileDialog.SaveFile
+        nameFilters: [qsTr("Конфигурация zapret2 (*.conf)"), qsTr("Все файлы (*)")]
+        defaultSuffix: "conf"
+        onAccepted: page.configController.exportConfig(selectedFile)
+    }
 
     ColumnLayout {
         width: parent.width
@@ -45,6 +55,12 @@ Kirigami.ScrollablePage {
                 icon.name: "edit-undo"
                 enabled: page.configController.loaded && !page.configController.busy
                 onClicked: rollbackConfirmation.open()
+            }
+            Controls.Button {
+                text: qsTr("Экспортировать копию…")
+                icon.name: "document-save-as"
+                enabled: page.configController.loaded && !page.configController.busy
+                onClicked: exportDialog.open()
             }
         }
 
