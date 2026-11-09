@@ -144,7 +144,8 @@ def main() -> None:
 
         # Ambiguous dual state must stop the upgrade rather than discard either copy.
         old_state.mkdir(parents=True, mode=0o700)
-        (new_parent / "blockcheck").mkdir(mode=0o700)
+        # The destination directory already exists from the successful move.
+        # Recreate only the legacy copy to simulate an ambiguous dual-state upgrade.
         ambiguous = subprocess.run([str(migration_preinst), "upgrade"], env=env)
         assert ambiguous.returncode != 0
         assert old_state.is_dir() and (new_parent / "blockcheck").is_dir()
