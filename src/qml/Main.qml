@@ -29,7 +29,25 @@ Kirigami.ApplicationWindow {
     minimumHeight: Kirigami.Units.gridUnit * 27
     pageStack.initialPage: dashboardPage
 
+    Kirigami.Dialog {
+        id: quitBlockedDialog
+        title: qsTr("Нельзя завершить приложение")
+        standardButtons: Controls.Dialog.Ok
+
+        Controls.Label {
+            Layout.fillWidth: true
+            wrapMode: Text.WordWrap
+            text: qsTr("Дождитесь завершения текущей операции или восстановления zapret2. Принудительное завершение может повредить установленную систему.")
+        }
+    }
+
     onClosing: function(close) {
+        if (root.appController.operationsBusy) {
+            close.accepted = false
+            root.showWindow()
+            quitBlockedDialog.open()
+            return
+        }
         if (root.settingsManager.closeToTray && root.trayController.registered) {
             close.accepted = false
             hide()
@@ -40,6 +58,22 @@ Kirigami.ApplicationWindow {
         show()
         raise()
         requestActivate()
+    }
+
+    function toggleWindow() {
+        if (visible && visibility !== Window.Minimized)
+            hide()
+        else
+            showWindow()
+    }
+
+    function requestQuit() {
+        if (root.appController.operationsBusy) {
+            showWindow()
+            quitBlockedDialog.open()
+            return
+        }
+        Qt.quit()
     }
 
     function openSettings() {
@@ -272,6 +306,7 @@ Kirigami.ApplicationWindow {
         SettingsPage {
             settingsManager: root.settingsManager
             autostartController: root.autostartController
+            trayController: root.trayController
         }
     }
 

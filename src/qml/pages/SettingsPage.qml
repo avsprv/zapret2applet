@@ -7,6 +7,7 @@ Kirigami.ScrollablePage {
     id: page
     required property var settingsManager
     required property var autostartController
+    required property var trayController
     title: qsTr("Настройки")
 
     ColumnLayout {
@@ -105,7 +106,15 @@ Kirigami.ScrollablePage {
             Layout.fillWidth: true
             text: qsTr("Сворачивать окно в системный трей при закрытии")
             checked: page.settingsManager.closeToTray
+            enabled: page.trayController.registered
             onToggled: page.settingsManager.closeToTray = checked
+        }
+
+        Kirigami.InlineMessage {
+            Layout.fillWidth: true
+            visible: !page.trayController.registered
+            type: Kirigami.MessageType.Information
+            text: qsTr("Системный трей недоступен. Сворачивание окна в трей включится после регистрации StatusNotifierItem.")
         }
 
         Kirigami.Separator {

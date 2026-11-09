@@ -135,12 +135,14 @@ int main(int argc, char *argv[])
 
     QObject *rootWindow = engine.rootObjects().constFirst();
     QObject::connect(&trayController, &TrayController::activateRequested, &app, [rootWindow] {
-        QMetaObject::invokeMethod(rootWindow, "showWindow");
+        QMetaObject::invokeMethod(rootWindow, "toggleWindow");
     });
     QObject::connect(&trayController, &TrayController::settingsRequested, &app, [rootWindow] {
         QMetaObject::invokeMethod(rootWindow, "openSettings");
     });
-    QObject::connect(&trayController, &TrayController::quitRequested, &app, &QCoreApplication::quit);
+    QObject::connect(&trayController, &TrayController::quitRequested, &app, [rootWindow] {
+        QMetaObject::invokeMethod(rootWindow, "requestQuit");
+    });
     QObject::connect(&trayController, &TrayController::watcherAvailableChanged, &app, [rootWindow, &trayController] {
         if (!trayController.watcherAvailable())
             QMetaObject::invokeMethod(rootWindow, "showWindow");

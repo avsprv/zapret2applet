@@ -105,7 +105,7 @@ QVariantMap DBusMenu::propertiesForItem(int id) const
 {
     switch (id) {
     case 1:
-        return {{QStringLiteral("label"), QStringLiteral("Открыть")},
+        return {{QStringLiteral("label"), QStringLiteral("Показать / скрыть окно")},
                 {QStringLiteral("enabled"), true},
                 {QStringLiteral("visible"), true}};
     case 2:
