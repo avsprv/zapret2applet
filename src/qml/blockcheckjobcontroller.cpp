@@ -111,7 +111,7 @@ void BlockcheckJobController::start()
     QStringList domains;
     if(!validateOptions(&domains)){setStatus(tr("Проверьте домены и параметры диагностики."),StatusType::Error);return;}
     m_results.clear();emit resultsChanged();m_logText.clear();emit logTextChanged();
-    m_operationId.clear();m_terminalPhase.clear();m_cancelRequested=false;m_finalLogsPending=false;m_found=0;m_pollTicks=0;
+    m_operationId.clear();m_terminalPhase.clear();m_cancelOperationId.clear();m_cancelRequested=false;m_cancelDispatched=false;m_finalLogsPending=false;m_found=0;m_pollTicks=0;
     setBusy(true);
     setStatus(tr("Диагностика может временно остановить службу zapret2. После завершения systemd попытается восстановить её работу."),StatusType::Information);
     emit confirmationRequired(tr("Запуск диагностики Blockcheck"),tr("Для проверки может потребоваться временная остановка zapret2. Продолжить?"));
@@ -154,9 +154,11 @@ void BlockcheckJobController::launch(ProcessTask task,const QStringList &argumen
         if(m_process!=process)return;
         handleProcessFinished(process,code,state);
         process->deleteLater();
-        if (task != ProcessTask::Cancel && m_cancelRequested && !m_operationId.isEmpty()
-            && m_terminalPhase.isEmpty() && m_task == ProcessTask::None)
-            launch(ProcessTask::Cancel,{QStringLiteral("blockcheck-job-cancel"),m_operationId});
+        if (task != ProcessTask::Cancel && m_cancelRequested && !m_cancelOperationId.isEmpty()
+            && !m_cancelDispatched && m_terminalPhase.isEmpty() && m_task == ProcessTask::None) {
+            m_cancelDispatched=true;
+            launch(ProcessTask::Cancel,{QStringLiteral("blockcheck-job-cancel"),m_cancelOperationId});
+        }
     });
     connect(process,&QProcess::errorOccurred,this,[this,process](QProcess::ProcessError error){
         if(error!=QProcess::FailedToStart||m_process!=process)return;
@@ -231,7 +233,9 @@ void BlockcheckJobController::handleProcessFinished(QProcess *process,int exitCo
         const QString id=QString::fromUtf8(m_stdout).trimmed();
         static const QRegularExpression uuidRe(QStringLiteral("^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"));
         if(!uuidRe.match(id).hasMatch()){appendLog(tr("Helper вернул некорректный идентификатор задания."));finish(false);return;}
-        m_operationId=id;m_pollTicks=0;m_pollTimer->start();setStatus(tr("Задание принято systemd; ожидание запуска worker…"));
+        m_operationId=id;
+        if(m_cancelRequested&&m_cancelOperationId.isEmpty())m_cancelOperationId=id;
+        m_pollTicks=0;m_pollTimer->start();setStatus(tr("Задание принято systemd; ожидание запуска worker…"));
         return;
     }
     if(task==ProcessTask::Status)processStatus(m_stdout);
@@ -403,14 +407,24 @@ void BlockcheckJobController::cancel()
         if(m_task==ProcessTask::None)finish(false,true);
         else if(m_task==ProcessTask::Submit){
             m_cancelRequested=true;
+            m_cancelOperationId.clear();
+            m_cancelDispatched=false;
             setStatus(tr("Отмена будет отправлена после получения идентификатора задания."),StatusType::Warning);
         }
         return;
     }
     if(m_terminalPhase.isEmpty()){
         m_cancelRequested=true;
-        if(m_task==ProcessTask::None)
-            launch(ProcessTask::Cancel,{QStringLiteral("blockcheck-job-cancel"),m_operationId});
+        // A new explicit click may target a newly adopted operation, but an
+        // earlier asynchronous cancellation must never retarget itself.
+        if(m_cancelOperationId!=m_operationId){
+            m_cancelOperationId=m_operationId;
+            m_cancelDispatched=false;
+        }
+        if(m_task==ProcessTask::None&&!m_cancelDispatched){
+            m_cancelDispatched=true;
+            launch(ProcessTask::Cancel,{QStringLiteral("blockcheck-job-cancel"),m_cancelOperationId});
+        }
     }
 }
 
