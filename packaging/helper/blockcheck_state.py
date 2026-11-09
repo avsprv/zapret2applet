@@ -223,9 +223,12 @@ class StateStore:
     def read_marker_snapshot(self) -> dict | None:
         """Read the atomically replaced marker without taking the lifecycle lock.
 
-        This is for status reporting only. Marker contents are validated exactly as
-        in the locked path; callers must not make lifecycle decisions from this
-        snapshot or modify service state based on it.
+        Marker contents are validated exactly as in the locked path. Status probes
+        may use this as a read-only observation. UUID-bound cancellation may also
+        use it only while holding queue.lock, bracketing the staged UUID snapshot
+        with two marker snapshots, and accepting only the worker's same-UUID
+        marker-publication transition. A standalone snapshot must never authorize
+        service changes or cancellation.
         """
         dir_fd = self._open_directory(create=False)
         try:
