@@ -174,7 +174,7 @@ private slots:
         QVERIFY(f.open(QIODevice::WriteOnly));
         f.write("#!/bin/sh\n"
                 "if [ \"$1\" = blockcheck-cancel ]; then exit 7; fi\n"
-                "if [ \"$1\" = blockcheck ]; then sleep 1; exit 0; fi\n"
+                "if [ \"$1\" = blockcheck ]; then sleep 5; exit 0; fi\n"
                 "exit 9\n");
         f.close();
         f.setPermissions(f.permissions() | QFileDevice::ExeUser);
@@ -197,7 +197,7 @@ private slots:
         }
         QVERIFY(reported);
         QVERIFY(runner.isRunning());
-        QVERIFY(done.wait(3000));
+        QVERIFY(done.wait(7000));
         QCOMPARE(done.count(), 1);
         QCOMPARE(done.at(0).at(0).toInt(), 0);
         QCOMPARE(done.at(0).at(1).toBool(), false);
