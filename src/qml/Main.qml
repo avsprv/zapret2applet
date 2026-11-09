@@ -134,6 +134,11 @@ Kirigami.ApplicationWindow {
                 text: qsTr("О программе")
                 icon.name: "help-about"
                 onTriggered: root.pageStack.push(aboutPageComponent)
+            },
+            Kirigami.Action {
+                text: qsTr("Выход")
+                icon.name: "application-exit"
+                onTriggered: root.requestQuit()
             }
         ]
     }
