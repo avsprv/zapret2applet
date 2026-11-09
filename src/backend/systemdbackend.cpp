@@ -168,6 +168,8 @@ void SystemdBackend::startNextUnitAction()
     auto *timeout = new QTimer(proc);
     timeout->setSingleShot(true);
     const auto reportResult = [this, action, requestId](bool success) {
+        // Discard lifecycle verification started while the privileged action was running.
+        ++m_verificationGeneration;
         const quint64 generation = ++m_stateQueryGeneration;
         query(QStringLiteral("is-active"), [this, action, success, requestId, generation](const QString &out) {
             const State state = parseUnitState(out);
