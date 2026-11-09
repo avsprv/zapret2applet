@@ -85,7 +85,7 @@ if [ -L "$old_parent" ] || [ -L "$new_parent" ]; then
     echo "zapret2control: refusing symlinked Blockcheck state parent" >&2
     exit 1
 fi
-if [ -e "$old" ]; then
+if [ -e "$old" ] || [ -L "$old" ]; then
     [ -d "$old" ] && [ ! -L "$old" ] || {
         echo "zapret2control: legacy Blockcheck state is not a real directory" >&2
         exit 1
@@ -94,7 +94,7 @@ if [ -e "$old" ]; then
         echo "zapret2control: legacy Blockcheck state has unsafe ownership or permissions" >&2
         exit 1
     }
-    if [ -e "$new" ]; then
+    if [ -e "$new" ] || [ -L "$new" ]; then
         echo "zapret2control: both legacy and current Blockcheck state exist; refusing ambiguous migration" >&2
         exit 1
     fi
