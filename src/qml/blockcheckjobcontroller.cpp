@@ -156,7 +156,7 @@ void BlockcheckJobController::launch(ProcessTask task,const QStringList &argumen
         process->deleteLater();
         if (m_cancelRequested && !m_operationId.isEmpty()
             && m_terminalPhase.isEmpty() && m_task == ProcessTask::None)
-            launch(ProcessTask::Cancel,{QStringLiteral("blockcheck-job-cancel")});
+            launch(ProcessTask::Cancel,{QStringLiteral("blockcheck-job-cancel"),m_operationId});
     });
     connect(process,&QProcess::errorOccurred,this,[this,process](QProcess::ProcessError error){
         if(error!=QProcess::FailedToStart||m_process!=process)return;
@@ -236,7 +236,13 @@ void BlockcheckJobController::handleProcessFinished(QProcess *process,int exitCo
     }
     if(task==ProcessTask::Status)processStatus(m_stdout);
     else if(task==ProcessTask::Logs){processLogs(m_stdout);if(!m_terminalPhase.isEmpty())finish(m_terminalPhase==QLatin1String("completed"),m_cancelRequested&&m_terminalPhase!=QLatin1String("completed"));}
-    else if(task==ProcessTask::Cancel)setStatus(tr("Запрос отмены отправлен. Ожидается завершение worker и восстановление службы."),StatusType::Warning);
+    else if(task==ProcessTask::Cancel){
+        const QString cancelResult=QString::fromUtf8(m_stdout).trimmed();
+        if(cancelResult==QLatin1String("stale"))
+            setStatus(tr("Задание уже завершено или заменено; новое задание не затронуто."),StatusType::Warning);
+        else
+            setStatus(tr("Запрос отмены отправлен. Ожидается завершение worker и восстановление службы."),StatusType::Warning);
+    }
 }
 
 void BlockcheckJobController::poll()
@@ -404,7 +410,7 @@ void BlockcheckJobController::cancel()
     if(m_terminalPhase.isEmpty()){
         m_cancelRequested=true;
         if(m_task==ProcessTask::None)
-            launch(ProcessTask::Cancel,{QStringLiteral("blockcheck-job-cancel")});
+            launch(ProcessTask::Cancel,{QStringLiteral("blockcheck-job-cancel"),m_operationId});
     }
 }
 
