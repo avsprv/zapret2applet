@@ -151,6 +151,7 @@ def main() -> None:
 
         # Ambiguous dual state must stop the upgrade rather than discard either copy.
         old_state.mkdir(parents=True, mode=0o700)
+        old_parent.chmod(0o700)
         # The destination directory already exists from the successful move.
         # Recreate only the legacy copy to simulate an ambiguous dual-state upgrade.
         ambiguous = subprocess.run([str(migration_preinst), "upgrade"], env=env)
@@ -257,6 +258,7 @@ def main() -> None:
 
         # RPM migration must also reject dangling legacy and destination symlinks.
         rpm_old_parent.mkdir(parents=True, exist_ok=True)
+        rpm_old_parent.chmod(0o700)
         rpm_old_state.symlink_to(rpm_old_parent / "missing-target")
         rpm_dangling_old = subprocess.run(["/bin/sh", "-c", rpm_script], env=rpm_env)
         assert rpm_dangling_old.returncode != 0, "RPM accepted dangling legacy state symlink"
