@@ -16,6 +16,15 @@ migrate_blockcheck_state() {
         exit 1
     fi
     if [ -e "$old" ] || [ -L "$old" ]; then
+        [ -d "$old_parent" ] && [ ! -L "$old_parent" ] || {
+            echo "zapret2control: legacy Blockcheck state parent is not a real directory" >&2
+            exit 1
+        }
+        old_parent_meta=$(stat -c '%u %a' "$old_parent")
+        [ "$old_parent_meta" = "0 700" ] || {
+            echo "zapret2control: legacy Blockcheck state parent has unsafe ownership or permissions" >&2
+            exit 1
+        }
         [ -d "$old" ] && [ ! -L "$old" ] || {
             echo "zapret2control: legacy Blockcheck state is not a real directory" >&2
             exit 1
