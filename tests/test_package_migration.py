@@ -150,6 +150,23 @@ def main() -> None:
         assert ambiguous.returncode != 0
         assert old_state.is_dir() and (new_parent / "blockcheck").is_dir()
 
+        # Dangling symlinks must not be mistaken for absent state paths.
+        import shutil
+        shutil.rmtree(old_state)
+        old_state.symlink_to(old_parent / "missing-target")
+        dangling_old = subprocess.run([str(migration_preinst), "upgrade"], env=env)
+        assert dangling_old.returncode != 0, "Dangling legacy state symlink was accepted"
+        old_state.unlink()
+
+        new_state = new_parent / "blockcheck"
+        shutil.rmtree(new_state)
+        new_state.symlink_to(new_parent / "missing-target")
+        old_state.mkdir(parents=True, mode=0o700)
+        dangling_new = subprocess.run([str(migration_preinst), "upgrade"], env=env)
+        assert dangling_new.returncode != 0, "Dangling destination state symlink was accepted"
+        assert old_state.is_dir() and new_state.is_symlink()
+        new_state.unlink()
+
         # A failed stop must abort the upgrade and must not disable the unit.
         failing_bin = temp_path / "failing-bin"
         failing_bin.mkdir()
