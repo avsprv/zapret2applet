@@ -55,11 +55,11 @@ case "$1" in
     ;;
   blockcheck-job-status)
     if [ "${QZAPRET_TEST_STALE_STAGED:-0}" = 1 ]; then
-      printf '{"version":1,"operation_id":"%s","phase":"stale","recovery_marker":false,"staged_options":true,"staged_operation_id":"223e4567-e89b-42d3-a456-426614174001"}\\n' "$2"
+      printf '{"version":1,"operation_id":"%s","phase":"stale","recovery_marker":false,"staged_options":true,"staged_operation_id":"223e4567-e89b-42d3-a456-426614174001"}\n' "$2"
     elif [ "${QZAPRET_TEST_RECOVERY_FAILED:-0}" = 1 ]; then
-      printf '{"version":1,"operation_id":"%s","phase":"recovery_failed","worker":{"ActiveState":"failed","Result":"exit-code"},"recovery":{"ActiveState":"inactive","Result":"success"},"recovery_marker":true,"staged_options":false}\\n' "$2"
+      printf '{"version":1,"operation_id":"%s","phase":"recovery_failed","worker":{"ActiveState":"failed","Result":"exit-code"},"recovery":{"ActiveState":"inactive","Result":"success"},"recovery_marker":true,"staged_options":false}\n' "$2"
     else
-      printf '{"version":1,"operation_id":"%s","phase":"completed","worker":{"ActiveState":"inactive","Result":"success"},"recovery":{"ActiveState":"inactive","Result":"success"},"recovery_marker":false,"staged_options":false}\\n' "$2"
+      printf '{"version":1,"operation_id":"%s","phase":"completed","worker":{"ActiveState":"inactive","Result":"success"},"recovery":{"ActiveState":"inactive","Result":"success"},"recovery_marker":false,"staged_options":false}\n' "$2"
     fi
     ;;
   blockcheck-job-logs)
