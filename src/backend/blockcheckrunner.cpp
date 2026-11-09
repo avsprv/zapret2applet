@@ -26,7 +26,9 @@ bool BlockcheckRunner::isRunning() const
 
 void BlockcheckRunner::start(const Options &o)
 {
-    if (isRunning())
+    // Keep the runner reserved until the finished handler has drained output and
+    // released the previous QProcess. Signals emitted while draining may re-enter start().
+    if (m_proc)
         return;
 
     m_buf.clear();
