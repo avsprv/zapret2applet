@@ -26,6 +26,15 @@ Kirigami.ScrollablePage {
 
     Component.onCompleted: page.listsController.readList(listEntries[selectedIndex].file)
 
+    Connections {
+        target: page.listsController
+        function onContentChanged() {
+            if (editor.text !== page.listsController.content)
+                editor.text = page.listsController.content
+        }
+    }
+
+
     ColumnLayout {
         width: parent.width
         spacing: Kirigami.Units.largeSpacing
