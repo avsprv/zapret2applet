@@ -659,6 +659,8 @@
         <source>Конфигурация</source>
         <translation>Configuration</translation>
     </message>
+    <message><source>Конфигурация zapret2 (*.conf)</source><translation>zapret2 configuration (*.conf)</translation></message>
+    <message><source>Все файлы (*)</source><translation>All files (*)</translation></message>
 </context>
 <context>
     <name>ProfilePage</name>
