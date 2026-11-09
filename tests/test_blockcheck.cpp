@@ -64,7 +64,7 @@ private slots:
         QFile f(script);
         QVERIFY(f.open(QIODevice::WriteOnly));
         const QByteArray scriptContent = QStringLiteral(
-            "#!/bin/sh\\nprintf x >> '%1'\\necho diagnostic\\nexit 0\\n")
+            "#!/bin/sh\nprintf x >> '%1'\necho diagnostic\nexit 0\n")
                 .arg(counter).toUtf8();
         f.write(scriptContent);
         f.close();
