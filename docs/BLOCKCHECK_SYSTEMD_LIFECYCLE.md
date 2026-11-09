@@ -16,9 +16,11 @@ enable/disable and the complete upstream update transaction with Blockcheck subm
 and recovery. Clean installation and updates both hold the same guard for their complete
 transactions. It rejects pending markers, staged jobs, active worker/recovery units, and
 unverifiable systemd state; a failed worker unit is tolerated only when no durable
-recovery marker remains. End-to-end runtime validation on a systemd host is still
-pending; the installed production Widgets application continues to use its legacy
-Blockcheck path.
+recovery marker remains. Submit, UUID-bound cancellation, and recovery share a
+dedicated queue lock; the worker does not hold it during diagnostics, and the QML
+client preserves the original cancellation UUID even if it adopts a successor job.
+End-to-end runtime validation on a systemd host is still pending; the installed
+production Widgets application continues to use its legacy Blockcheck path.
 
 ## Compatibility storage during the application rename
 
