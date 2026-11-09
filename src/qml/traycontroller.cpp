@@ -6,7 +6,6 @@
 #include <QDBusMessage>
 #include <QDBusPendingCallWatcher>
 #include <QDBusPendingReply>
-#include <QDBusPendingReply>
 #include <QDBusServiceWatcher>
 #include <QDBusReply>
 #include <QDBusObjectPath>
