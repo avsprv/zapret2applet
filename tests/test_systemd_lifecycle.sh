@@ -78,7 +78,7 @@ Description=Disposable zapret2control E2E fixture service
 
 [Service]
 Type=notify
-NotifyAccess=main
+NotifyAccess=all
 ExecStart=/usr/local/libexec/zapret2control-e2e-service
 Restart=no
 UNIT
