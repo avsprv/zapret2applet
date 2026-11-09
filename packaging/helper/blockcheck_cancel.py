@@ -32,7 +32,15 @@ def cancel_operation(state: StateStore, staged: StagedOptionsStore,
             staged_id = staged.read_pending_operation_id_snapshot()
             marker_after = state.read_marker_snapshot()
             if marker_before != marker_after:
-                raise CancelError("Blockcheck recovery state changed during cancellation")
+                # The worker may atomically publish its marker while consuming
+                # this same staged UUID. Accept only that forward transition.
+                same_worker_transition = (
+                    marker_before is None
+                    and marker_after is not None
+                    and staged_id == marker_after["operation_id"]
+                )
+                if not same_worker_transition:
+                    raise CancelError("Blockcheck recovery state changed during cancellation")
             marker_id = marker_after["operation_id"] if marker_after else None
             if marker_id and staged_id and marker_id != staged_id:
                 raise CancelError("recovery marker and staged operation IDs disagree")
