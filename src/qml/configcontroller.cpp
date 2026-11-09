@@ -3,6 +3,8 @@
 #include <QCryptographicHash>
 #include <QProcess>
 #include <QTemporaryFile>
+#include <QFileInfo>
+#include <QSaveFile>
 
 #include "backend/helperpath.h"
 
@@ -165,6 +167,34 @@ void ConfigController::save()
     auto *process = new QProcess(this);
     finishProcess(process, QStringLiteral("save"), bytes);
     Helper::start(process, {QStringLiteral("config-write"), expectedHash});
+}
+
+
+bool ConfigController::exportConfig(const QUrl &url)
+{
+    if (!m_loaded) {
+        setStatus(tr("Экспорт доступен после чтения конфигурации."));
+        return false;
+    }
+    if (m_busy)
+        return false;
+    if (!url.isLocalFile()) {
+        setStatus(tr("Не удалось сохранить копию: недопустимый путь к локальному файлу."));
+        return false;
+    }
+
+    const QString path = url.toLocalFile();
+    const QByteArray bytes = m_configText.toUtf8();
+    QSaveFile file(path);
+    if (!file.open(QIODevice::WriteOnly)
+        || file.write(bytes) != bytes.size()
+        || !file.commit()) {
+        setStatus(tr("Не удалось сохранить копию: %1").arg(file.errorString()));
+        return false;
+    }
+
+    setStatus(tr("Копия конфигурации сохранена: %1").arg(QFileInfo(path).fileName()));
+    return true;
 }
 
 void ConfigController::rollback()
