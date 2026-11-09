@@ -62,6 +62,7 @@ SH
 cat > /usr/local/libexec/zapret2control-e2e-service <<'SH'
 #!/bin/sh
 set -eu
+printf 'start\\n' >> /run/zapret2control-e2e/start-attempts
 if [ -e /run/zapret2control-e2e/fail-start ]; then
     echo "intentional E2E service startup failure" >&2
     exit 42
@@ -133,8 +134,8 @@ marker_absent() {
     [[ ! -e "$STATE_DIR/state.json" ]]
 }
 
-recovery_failure_logged() {
-    journalctl --unit=zapret2control-blockcheck.service --no-pager --output=cat | grep -q "zapret2control blockcheck recovery:"
+upstream_start_attempts_at_least_two() {
+    [[ -f "$E2E_DIR/start-attempts" ]] && [[ "$(wc -l < "$E2E_DIR/start-attempts")" -ge 2 ]]
 }
 
 start_upstream() {
@@ -171,12 +172,13 @@ fi
 echo "ok: ExecStopPost preserves the previously inactive service"
 
 # 3. A failed restore leaves the durable marker; the boot recovery unit retries it.
+rm -f "$E2E_DIR/start-attempts"
 start_upstream
 touch "$E2E_DIR/fail-start"
 stage_request
 start_worker
 systemctl stop zapret2control-blockcheck.service >/dev/null 2>&1 || true
-wait_until "failed ExecStopPost recovery result" recovery_failure_logged
+wait_until "ExecStopPost retrying the failed upstream service" upstream_start_attempts_at_least_two
 wait_until "failed recovery marker retention" marker_exists
 if systemctl is-active --quiet zapret2.service; then
     fail "fixture service unexpectedly became active while startup failure was enabled"
