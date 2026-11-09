@@ -86,6 +86,14 @@ if [ -L "$old_parent" ] || [ -L "$new_parent" ]; then
     exit 1
 fi
 if [ -e "$old" ] || [ -L "$old" ]; then
+    [ -d "$old_parent" ] && [ ! -L "$old_parent" ] || {
+        echo "zapret2control: legacy Blockcheck state parent is not a real directory" >&2
+        exit 1
+    }
+    [ "$(stat -c '%u %a' "$old_parent")" = "0 700" ] || {
+        echo "zapret2control: legacy Blockcheck state parent has unsafe ownership or permissions" >&2
+        exit 1
+    }
     [ -d "$old" ] && [ ! -L "$old" ] || {
         echo "zapret2control: legacy Blockcheck state is not a real directory" >&2
         exit 1
