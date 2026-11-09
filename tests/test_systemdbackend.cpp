@@ -31,7 +31,7 @@ protected:
     int processTimeoutMs(bool privileged) const override
     {
         Q_UNUSED(privileged);
-        return shortTimeouts ? 50 : SystemdBackend::processTimeoutMs(privileged);
+        return shortTimeouts ? 500 : SystemdBackend::processTimeoutMs(privileged);
     }
 
     void startProcess(QProcess *process, const QString &program,
