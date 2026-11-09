@@ -5,7 +5,12 @@ H="$1"
 [ -n "$H" ] || { echo "usage: test_blockcheck_helper.sh /path/to/zapret2control-helper"; exit 2; }
 W=$(mktemp -d)
 runner_pid=
+cancel_pid=
 cleanup() {
+    if [ -n "$cancel_pid" ]; then
+        kill "$cancel_pid" 2>/dev/null || true
+        wait "$cancel_pid" 2>/dev/null || true
+    fi
     if [ -n "$runner_pid" ]; then
         env QZAPRET_TEST_BASE="$W/base" QZAPRET_TEST_RUNDIR="$W/runtime-private" \
             "$H" blockcheck-cancel >/dev/null 2>&1 || true
@@ -116,3 +121,36 @@ flock -n "$W/runtime-private/blockcheck.lock" -c true || {
     exit 1
 }
 echo "ok: cancellation releases the runtime lock"
+
+# A delayed SIGTERM must remain bound to the original PID/start-time pair.
+env QZAPRET_TEST_BASE="$W/base" QZAPRET_TEST_RUNDIR="$W/runtime-private" \
+    "$H" blockcheck-cancel > "$W/cancel-output" 2>&1 &
+cancel_pid=$!
+wait "$runner_pid"
+runner_pid=
+
+env QZAPRET_TEST_BASE="$W/base" QZAPRET_TEST_RUNDIR="$W/runtime-private" \
+    "$H" blockcheck --domains example.org > "$W/second-output" 2>&1 &
+runner_pid=$!
+second_pid=$runner_pid
+wait "$cancel_pid"
+cancel_pid=
+
+kill -0 "$second_pid" 2>/dev/null || {
+    echo "FAIL: cancellation of the previous run terminated the new Blockcheck process"
+    cat "$W/second-output"
+    exit 1
+}
+case "$(cat "$W/runtime-private/blockcheck.pid")" in
+    "$second_pid "*) ;;
+    *)
+        echo "FAIL: runtime PID file no longer identifies the second Blockcheck process"
+        exit 1
+        ;;
+esac
+
+env QZAPRET_TEST_BASE="$W/base" QZAPRET_TEST_RUNDIR="$W/runtime-private" \
+    "$H" blockcheck-cancel
+wait "$runner_pid"
+runner_pid=
+echo "ok: delayed cancellation cannot target a subsequent Blockcheck run"
