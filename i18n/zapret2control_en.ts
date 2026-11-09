@@ -584,6 +584,10 @@
         <translation>Timed out waiting for systemd operation: %1</translation>
     </message>
     <message>
+        <source>Операция systemd выполняется дольше ожидаемого: %1. Ожидается фактическое завершение команды.</source>
+        <translation>Systemd operation is taking longer than expected: %1. Waiting for the command to actually finish.</translation>
+    </message>
+    <message>
         <location filename="../src/backend/systemdbackend.cpp" line="66"/>
         <source>Не удалось запустить pkexec/хелпер: %1</source>
         <translation>Could not start pkexec/helper: %1</translation>
