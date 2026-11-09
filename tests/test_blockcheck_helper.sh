@@ -45,6 +45,22 @@ expect_reject() {
     fi
 }
 
+set +e
+cancel_usage=$("$H" blockcheck-job-cancel 2>&1)
+cancel_usage_rc=$?
+cancel_uuid=$("$H" blockcheck-job-cancel invalid-uuid 2>&1)
+cancel_uuid_rc=$?
+set -e
+[ "$cancel_usage_rc" -eq 2 ] && printf '%s' "$cancel_usage" | grep -q 'OPERATION_UUID' || {
+    echo "FAIL: Blockcheck cancellation must require an operation UUID"
+    exit 1
+}
+[ "$cancel_uuid_rc" -eq 2 ] && printf '%s' "$cancel_uuid" | grep -q 'invalid Blockcheck operation UUID' || {
+    echo "FAIL: Blockcheck cancellation must reject malformed UUIDs"
+    exit 1
+}
+echo "ok: Blockcheck cancellation requires a valid UUID"
+
 expect_reject 'runtime directory' QZAPRET_TEST_RUNDIR="$W/runtime-link"
 mkdir "$W/runtime-insecure"
 chmod 755 "$W/runtime-insecure"
