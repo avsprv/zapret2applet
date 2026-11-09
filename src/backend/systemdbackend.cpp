@@ -62,8 +62,9 @@ void SystemdBackend::refresh()
         if (generation == m_stateQueryGeneration)
             emit stateChanged(parseUnitState(out));
     });
-    query(QStringLiteral("is-enabled"), [this](const QString &out) {
-        emit bootEnabledChanged(out == QLatin1String("enabled"));
+    query(QStringLiteral("is-enabled"), [this, generation](const QString &out) {
+        if (generation == m_stateQueryGeneration)
+            emit bootEnabledChanged(out == QLatin1String("enabled"));
     });
 }
 
