@@ -56,6 +56,7 @@ private:
     void handleLine(const QString &line);
 
     QProcess *m_proc = nullptr;
+    QProcess *m_cancelProc = nullptr;
     QByteArray m_buf;
     QSet<QString> m_seenResults;
     int m_errorCount = 0;
