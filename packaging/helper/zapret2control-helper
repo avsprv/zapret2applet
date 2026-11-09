@@ -7,7 +7,7 @@ set -eu
 UNIT=zapret2.service
 BASE=/opt/zapret2
 BACKUP_ROOT=/var/backups/zapret2applet
-RUNDIR=/run/zapret2applet
+RUNDIR=/run/zapret2control
 URLBASE=https://github.com/bol-van/zapret2/releases/download
 PROTO='=https'
 NOSVC=0
