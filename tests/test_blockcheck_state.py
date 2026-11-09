@@ -240,6 +240,13 @@ class StateTests(unittest.TestCase):
         self.assertTrue(finished.is_set())
         self.assertEqual(stat.S_IMODE((self.state / "queue.lock").stat().st_mode), 0o600)
 
+    def test_queue_lock_must_precede_lifecycle_lock(self):
+        self.state.mkdir(mode=0o700)
+        with self.store.locked():
+            with self.assertRaisesRegex(StateError, "queue lock must be acquired before"):
+                with self.store.queue_locked():
+                    pass
+
     def test_queue_lock_symlink_is_rejected(self):
         self.state.mkdir(mode=0o700)
         target = self.root / "outside-queue-lock"
