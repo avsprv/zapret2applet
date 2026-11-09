@@ -5,7 +5,7 @@ import sys
 
 from blockcheck_state import StateError, StateStore
 
-STATE_DIRECTORY = "/var/lib/zapret2applet/blockcheck"
+STATE_DIRECTORY = "/var/lib/zapret2control/blockcheck"
 
 
 def main() -> int:
