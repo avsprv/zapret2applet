@@ -68,8 +68,8 @@ case "$1" in
     ;;
   blockcheck-job-cancel)
     [ "$#" -eq 2 ] || exit 2
-    printf '%s\\n' "$2" > "$QZAPRET_TEST_CANCEL_ID_FILE"
-    printf '%s\\n' 'cancelled'
+    printf '%s\n' "$2" > "$QZAPRET_TEST_CANCEL_ID_FILE"
+    printf '%s\n' 'cancelled'
     ;;
   blockcheck-recover)
     exit 0
