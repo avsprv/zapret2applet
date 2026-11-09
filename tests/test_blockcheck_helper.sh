@@ -124,6 +124,22 @@ echo "ok: cancellation releases the runtime lock"
 
 # A delayed SIGTERM must remain bound to the original PID/start-time pair.
 env QZAPRET_TEST_BASE="$W/base" QZAPRET_TEST_RUNDIR="$W/runtime-private" \
+    "$H" blockcheck --domains example.org > "$W/third-output" 2>&1 &
+runner_pid=$!
+attempt=0
+while [ "$attempt" -lt 5 ]; do
+    if grep -q "^$runner_pid " "$W/runtime-private/blockcheck.pid" 2>/dev/null; then
+        break
+    fi
+    sleep 1
+    attempt=$((attempt + 1))
+done
+grep -q "^$runner_pid " "$W/runtime-private/blockcheck.pid" || {
+    echo "FAIL: third Blockcheck process did not publish its PID"
+    exit 1
+}
+
+env QZAPRET_TEST_BASE="$W/base" QZAPRET_TEST_RUNDIR="$W/runtime-private" \
     "$H" blockcheck-cancel > "$W/cancel-output" 2>&1 &
 cancel_pid=$!
 wait "$runner_pid"
