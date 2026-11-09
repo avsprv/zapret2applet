@@ -105,30 +105,30 @@ QVariantMap DBusMenu::propertiesForItem(int id) const
 {
     switch (id) {
     case 1:
-        return {{QStringLiteral("label"), QStringLiteral("Показать / скрыть окно")},
+        return {{QStringLiteral("label"), tr("Показать / скрыть окно")},
                 {QStringLiteral("enabled"), true},
                 {QStringLiteral("visible"), true}};
     case 2:
-        return {{QStringLiteral("label"), QStringLiteral("Состояние: %1").arg(m_serviceState)},
+        return {{QStringLiteral("label"), tr("Состояние: %1").arg(m_serviceState)},
                 {QStringLiteral("enabled"), false},
                 {QStringLiteral("visible"), true}};
     case 3:
-        return {{QStringLiteral("label"), QStringLiteral("Запустить zapret2")},
+        return {{QStringLiteral("label"), tr("Запустить zapret2")},
                 {QStringLiteral("enabled"), !m_serviceActive && !m_busy},
                 {QStringLiteral("visible"), true}};
     case 4:
-        return {{QStringLiteral("label"), QStringLiteral("Остановить zapret2")},
+        return {{QStringLiteral("label"), tr("Остановить zapret2")},
                 {QStringLiteral("enabled"), m_serviceActive && !m_busy},
                 {QStringLiteral("visible"), true}};
     case 5:
         return {{QStringLiteral("type"), QStringLiteral("separator")},
                 {QStringLiteral("visible"), true}};
     case 6:
-        return {{QStringLiteral("label"), QStringLiteral("Настройки")},
+        return {{QStringLiteral("label"), tr("Настройки")},
                 {QStringLiteral("enabled"), true},
                 {QStringLiteral("visible"), true}};
     case 7:
-        return {{QStringLiteral("label"), QStringLiteral("Выход")},
+        return {{QStringLiteral("label"), tr("Выход")},
                 {QStringLiteral("enabled"), true},
                 {QStringLiteral("visible"), true}};
     default:
