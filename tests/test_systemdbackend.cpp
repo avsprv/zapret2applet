@@ -20,6 +20,8 @@ public:
     int activeQueryCount = 0;
     bool holdPrivilegedProcessOpen = false;
     bool delayFirstStateQuery = false;
+    bool delayFirstBootQuery = false;
+    int bootQueryCount = 0;
     QPointer<QProcess> lastPrivilegedProcess;
 
 protected:
@@ -75,8 +77,16 @@ protected:
                 return;
             }
         }
+        if (arguments.value(0) == QLatin1String("is-enabled")) {
+            ++bootQueryCount;
+            if (bootQueryCount == 1 && delayFirstBootQuery) {
+                process->start(QStringLiteral("/bin/sh"),
+                               {QStringLiteral("-c"), QStringLiteral("sleep 0.15; printf enabled")});
+                return;
+            }
+        }
         const QString output = arguments.value(0) == QLatin1String("is-enabled")
-                                   ? QStringLiteral("enabled")
+                                   ? QStringLiteral("disabled")
                                    : QStringLiteral("active");
         process->start(QStringLiteral("/bin/sh"),
                        {QStringLiteral("-c"), QStringLiteral("printf '%1'").arg(output)});
@@ -95,6 +105,7 @@ private slots:
     void correlatedVerificationDoesNotPublishGlobalState();
     void ordinaryVerificationPublishesGlobalState();
     void newerRefreshSupersedesOlderStateQuery();
+    void newerRefreshSupersedesOlderBootQuery();
     void correlatedVerificationInvalidatesOlderRefresh();
     void destroyingBackendDestroysActiveProcesses();
 };
@@ -186,6 +197,21 @@ void SystemdBackendTest::newerRefreshSupersedesOlderStateQuery()
     QCOMPARE(globalState.at(0).at(0).value<ZapretBackend::State>(), ZapretBackend::State::Active);
     QTest::qWait(200);
     QCOMPARE(globalState.count(), 1);
+}
+
+void SystemdBackendTest::newerRefreshSupersedesOlderBootQuery()
+{
+    TestSystemdBackend backend;
+    backend.delayFirstBootQuery = true;
+    QSignalSpy bootState(&backend, &ZapretBackend::bootEnabledChanged);
+
+    backend.refresh();
+    backend.refresh();
+
+    QTRY_COMPARE_WITH_TIMEOUT(bootState.count(), 1, 3000);
+    QCOMPARE(bootState.at(0).at(0).toBool(), false);
+    QTest::qWait(200);
+    QCOMPARE(bootState.count(), 1);
 }
 
 void SystemdBackendTest::correlatedVerificationInvalidatesOlderRefresh()
