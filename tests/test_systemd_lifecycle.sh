@@ -115,7 +115,7 @@ wait_until() {
         fi
         sleep 0.1
     done
-    printf 'FAIL: timed out waiting for %s\\n' "$description" >&2
+    printf 'FAIL: timed out waiting for %s\n' "$description" >&2
     return 1
 }
 
