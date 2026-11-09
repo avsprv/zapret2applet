@@ -128,7 +128,7 @@ def main() -> None:
         old_state = old_parent / "blockcheck"
         old_state.mkdir(parents=True, mode=0o700)
         old_state.chmod(0o700)
-        (old_state / "state.json").write_text('{"version":1}\\n', encoding="ascii")
+        (old_state / "state.json").write_text('{"version":1}\n', encoding="ascii")
         (old_state / "state.json").chmod(0o600)
         migration_preinst = temp_path / "preinst-state-migration"
         migration_script = test_script.replace(
@@ -139,7 +139,7 @@ def main() -> None:
         migration_preinst.write_text(migration_script, encoding="utf-8")
         migration_preinst.chmod(0o755)
         subprocess.run([str(migration_preinst), "upgrade"], check=True, env=env)
-        assert (new_parent / "blockcheck" / "state.json").read_text(encoding="ascii") == '{"version":1}\\n'
+        assert (new_parent / "blockcheck" / "state.json").read_text(encoding="ascii") == '{"version":1}\n'
         assert not old_state.exists()
 
         # Ambiguous dual state must stop the upgrade rather than discard either copy.
@@ -185,7 +185,7 @@ def main() -> None:
         rpm_old_state = rpm_old_parent / "blockcheck"
         rpm_old_state.mkdir(parents=True, mode=0o700)
         rpm_old_state.chmod(0o700)
-        (rpm_old_state / "state.json").write_text('{"version":2}\\n', encoding="ascii")
+        (rpm_old_state / "state.json").write_text('{"version":2}\n', encoding="ascii")
         (rpm_old_state / "state.json").chmod(0o600)
         rpm_script = rpm_pretrans.replace(
             '"/usr/lib/systemd/system/$unit"',
@@ -220,7 +220,7 @@ def main() -> None:
             "stop " + LEGACY_UNITS[0],
             "disable " + LEGACY_UNITS[0],
         ], rpm_calls
-        assert (rpm_new_parent / "blockcheck" / "state.json").read_text(encoding="ascii") == '{"version":2}\\n'
+        assert (rpm_new_parent / "blockcheck" / "state.json").read_text(encoding="ascii") == '{"version":2}\n'
         assert not rpm_old_state.exists()
 
         # A failed RPM stop must abort before attempting to disable the unit.
