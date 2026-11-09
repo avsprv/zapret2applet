@@ -73,7 +73,8 @@ private slots:
             "[ \"$1\" = lists-write ] || exit 8\n"
             "[ \"$2\" = zapret-hosts-user.txt ] || exit 9\n"
             "cat > \"$QZAPRET_CAPTURE\"\n"
-            "printf 'OK: list updated; backup: test-backup\\n'\n");
+            "printf 'OK: list updated; backup: test-backup\\n'\n"
+            "yes X | head -c 100000\n");
         QVERIFY(!helper.isEmpty());
         const QString capture = directory.filePath(QStringLiteral("captured-list"));
         qputenv("QZAPRET_HELPER", helper.toUtf8());
@@ -88,6 +89,7 @@ private slots:
         controller.saveList();
         QTRY_VERIFY_WITH_TIMEOUT(!controller.busy(), 5000);
         QVERIFY(!controller.dirty());
+        QVERIFY(controller.status().size() <= 64 * 1024);
         QFile saved(capture);
         QVERIFY(saved.open(QIODevice::ReadOnly));
         QCOMPARE(saved.readAll(), QByteArray("valid.example\n192.0.2.1/24\n"));
