@@ -13,10 +13,15 @@ Kirigami.ScrollablePage {
 
     Component.onCompleted: page.logsController.readLogs(page.logsController.lineCount)
     onVisibleChanged: {
-        if (visible && autoRefresh)
-            refreshTimer.start()
-        else
+        if (visible) {
+            page.logsController.readLogs(page.logsController.lineCount)
+            if (autoRefresh)
+                refreshTimer.start()
+            else
+                refreshTimer.stop()
+        } else {
             refreshTimer.stop()
+        }
     }
 
     Timer {
