@@ -19,6 +19,7 @@ private slots:
     void startupProbeFindsRecoveryWithoutAnOperationId();
     void startupProbeFailureEnablesSafeRecoveryRetry();
     void startupProbeWaitsWhileAnotherJobIsActive();
+    void staleStatusAdoptsQueuedOperationWithoutRecovery();
 
 private:
     QTemporaryDir m_temp;
@@ -53,10 +54,12 @@ case "$1" in
     printf '%s\n' '123e4567-e89b-42d3-a456-426614174000'
     ;;
   blockcheck-job-status)
-    if [ "${QZAPRET_TEST_RECOVERY_FAILED:-0}" = 1 ]; then
-      printf '%s\n' '{"version":1,"operation_id":"123e4567-e89b-42d3-a456-426614174000","phase":"recovery_failed","worker":{"ActiveState":"failed","Result":"exit-code"},"recovery":{"ActiveState":"inactive","Result":"success"},"recovery_marker":true,"staged_options":false}'
+    if [ "${QZAPRET_TEST_STALE_STAGED:-0}" = 1 ]; then
+      printf '{"version":1,"operation_id":"%s","phase":"stale","recovery_marker":false,"staged_options":true,"staged_operation_id":"223e4567-e89b-42d3-a456-426614174001"}\\n' "$2"
+    elif [ "${QZAPRET_TEST_RECOVERY_FAILED:-0}" = 1 ]; then
+      printf '{"version":1,"operation_id":"%s","phase":"recovery_failed","worker":{"ActiveState":"failed","Result":"exit-code"},"recovery":{"ActiveState":"inactive","Result":"success"},"recovery_marker":true,"staged_options":false}\\n' "$2"
     else
-      printf '%s\n' '{"version":1,"operation_id":"123e4567-e89b-42d3-a456-426614174000","phase":"completed","worker":{"ActiveState":"inactive","Result":"success"},"recovery":{"ActiveState":"inactive","Result":"success"},"recovery_marker":false,"staged_options":false}'
+      printf '{"version":1,"operation_id":"%s","phase":"completed","worker":{"ActiveState":"inactive","Result":"success"},"recovery":{"ActiveState":"inactive","Result":"success"},"recovery_marker":false,"staged_options":false}\\n' "$2"
     fi
     ;;
   blockcheck-job-logs)
@@ -207,6 +210,26 @@ void BlockcheckJobControllerTest::startupProbeWaitsWhileAnotherJobIsActive()
     qunsetenv("QZAPRET_TEST_PROBE_BUSY");
     QTRY_VERIFY_WITH_TIMEOUT(!controller.busy(),5000);
     QVERIFY(!controller.recoveryRequired());
+}
+
+void BlockcheckJobControllerTest::staleStatusAdoptsQueuedOperationWithoutRecovery()
+{
+    qputenv("QZAPRET_TEST_STALE_STAGED","1");
+    BlockcheckJobController controller;
+    QTRY_VERIFY_WITH_TIMEOUT(!controller.busy(),5000);
+    controller.start();
+    controller.confirmStop(true);
+
+    QTRY_VERIFY_WITH_TIMEOUT(
+        controller.status().contains(QStringLiteral("отслеживание продолжено")),5000);
+    QVERIFY(controller.busy());
+    QVERIFY(!controller.recoveryRequired());
+    QVERIFY(!controller.recoveryRetryAvailable());
+
+    qunsetenv("QZAPRET_TEST_STALE_STAGED");
+    QTRY_VERIFY_WITH_TIMEOUT(!controller.busy(),5000);
+    QVERIFY(!controller.recoveryRequired());
+    QCOMPARE(controller.statusSeverity(),QStringLiteral("Success"));
 }
 
 QTEST_GUILESS_MAIN(BlockcheckJobControllerTest)
