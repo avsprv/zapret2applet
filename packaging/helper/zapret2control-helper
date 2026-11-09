@@ -6,7 +6,8 @@ set -eu
 
 UNIT=zapret2.service
 BASE=/opt/zapret2
-BACKUP_ROOT=/var/backups/zapret2applet
+BACKUP_ROOT=/var/backups/zapret2control
+LEGACY_BACKUP_ROOT=/var/backups/zapret2applet
 RUNDIR=/run/zapret2control
 URLBASE=https://github.com/bol-van/zapret2/releases/download
 PROTO='=https'
@@ -24,7 +25,10 @@ case "$0" in
     *)
         if [ -n "${QZAPRET_TEST_BASE:-}" ]; then BASE=$QZAPRET_TEST_BASE; TEST_MODE=1; SECURE_OWNER=$(id -u); fi
         if [ -n "${QZAPRET_TEST_ENFORCE_SECURITY:-}" ]; then TEST_ENFORCE_SECURITY=1; fi
-        if [ -n "${QZAPRET_TEST_BACKUP_DIR:-}" ]; then BACKUP_ROOT=$QZAPRET_TEST_BACKUP_DIR; fi
+        if [ -n "${QZAPRET_TEST_BACKUP_DIR:-}" ]; then
+            BACKUP_ROOT=$QZAPRET_TEST_BACKUP_DIR
+            LEGACY_BACKUP_ROOT=${QZAPRET_TEST_LEGACY_BACKUP_DIR:-${QZAPRET_TEST_BACKUP_DIR}.legacy}
+        fi
         if [ -n "${QZAPRET_TEST_RUNDIR:-}" ]; then RUNDIR=$QZAPRET_TEST_RUNDIR; fi
         if [ -n "${QZAPRET_TEST_URLBASE:-}" ]; then URLBASE=$QZAPRET_TEST_URLBASE; PROTO='=https,file'; fi
         if [ -n "${QZAPRET_TEST_NO_SERVICE:-}" ]; then NOSVC=1; fi
@@ -127,6 +131,18 @@ prepare_backup_root() {
     if [ "$TEST_MODE" != 1 ]; then
         secure_root_dir /var && secure_root_dir /var/backups || return 1
     fi
+
+    # Preserve existing user backups across the application identifier rename.
+    # Refuse symlinks and ambiguous dual roots rather than guessing which copy wins.
+    if [ "$LEGACY_BACKUP_ROOT" != "$BACKUP_ROOT" ]; then
+        [ ! -L "$LEGACY_BACKUP_ROOT" ] && [ ! -L "$BACKUP_ROOT" ] || return 1
+        if [ -e "$LEGACY_BACKUP_ROOT" ]; then
+            [ -d "$LEGACY_BACKUP_ROOT" ] && secure_private_root_dir "$LEGACY_BACKUP_ROOT" || return 1
+            [ ! -e "$BACKUP_ROOT" ] || return 1
+            mv "$LEGACY_BACKUP_ROOT" "$BACKUP_ROOT" || return 1
+        fi
+    fi
+
     if [ ! -e "$BACKUP_ROOT" ]; then
         mkdir "$BACKUP_ROOT" 2>/dev/null || return 1
         chmod 700 "$BACKUP_ROOT" || return 1
