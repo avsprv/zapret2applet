@@ -68,7 +68,7 @@ case "$1" in
     ;;
   blockcheck-job-cancel)
     [ "$#" -eq 2 ] || exit 2
-    printf '%s\n' "$2" > "$QZAPRET_TEST_CANCEL_ID_FILE"
+    printf '%s\n' "$2" >> "$QZAPRET_TEST_CANCEL_ID_FILE"
     printf '%s\n' 'cancelled'
     ;;
   blockcheck-recover)
@@ -250,10 +250,12 @@ void BlockcheckJobControllerTest::cancelPassesTheCurrentOperationId()
     QTRY_VERIFY_WITH_TIMEOUT(controller.status().contains(QStringLiteral("Задание принято")),5000);
     controller.cancel();
     QTRY_VERIFY_WITH_TIMEOUT(QFile::exists(idFile),5000);
+    QTest::qWait(200);
     QFile file(idFile);
     QVERIFY(file.open(QIODevice::ReadOnly|QIODevice::Text));
-    QCOMPARE(QString::fromUtf8(file.readAll()).trimmed(),
-             QStringLiteral("123e4567-e89b-42d3-a456-426614174000"));
+    const QStringList requests=QString::fromUtf8(file.readAll()).split(QLatin1Char('\n'),Qt::SkipEmptyParts);
+    QCOMPARE(requests.size(),1);
+    QCOMPARE(requests.constFirst(),QStringLiteral("123e4567-e89b-42d3-a456-426614174000"));
     qunsetenv("QZAPRET_TEST_CANCEL_ID_FILE");
 }
 
