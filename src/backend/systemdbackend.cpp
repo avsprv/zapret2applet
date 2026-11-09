@@ -132,8 +132,9 @@ void SystemdBackend::startNextUnitAction()
             m_actionInProgress = false;
             startNextUnitAction();
         });
-        query(QStringLiteral("is-enabled"), [this](const QString &out) {
-            emit bootEnabledChanged(out == QLatin1String("enabled"));
+        query(QStringLiteral("is-enabled"), [this, generation](const QString &out) {
+            if (generation == m_stateQueryGeneration)
+                emit bootEnabledChanged(out == QLatin1String("enabled"));
         });
     };
 
