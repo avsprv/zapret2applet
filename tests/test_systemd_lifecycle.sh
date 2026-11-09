@@ -198,7 +198,7 @@ systemctl stop zapret2.service
 start_upstream
 stage_request
 start_worker
-systemctl kill --kill-who=all --signal=SIGKILL zapret2control-blockcheck.service
+systemctl kill --kill-who=main --signal=SIGKILL zapret2control-blockcheck.service
 if ! wait_until "SIGKILL ExecStopPost restoring service" upstream_is_active; then
     echo "=== systemd unit state ===" >&2
     systemctl status zapret2control-blockcheck.service zapret2.service --no-pager >&2 || true
