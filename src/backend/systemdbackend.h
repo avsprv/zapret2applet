@@ -25,6 +25,7 @@ public:
     void setBootEnabled(bool enabled) override;
 
 protected:
+    virtual int processTimeoutMs(bool privileged) const;
     virtual void startProcess(QProcess *process, const QString &program,
                               const QStringList &arguments, bool privileged);
 
