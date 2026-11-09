@@ -258,6 +258,7 @@ void SystemdBackendTest::continuesAfterTimedOutAction()
     backend.shortTimeouts = true;
     backend.delayNextAction = true;
     QSignalSpy finished(&backend, &ZapretBackend::unitActionFinished);
+    QSignalSpy errors(&backend, &ZapretBackend::errorOccurred);
 
     backend.stop();
     backend.start();
@@ -266,6 +267,7 @@ void SystemdBackendTest::continuesAfterTimedOutAction()
     QTest::qWait(150);
     QCOMPARE(backend.actions.size(), 1);
     QCOMPARE(finished.count(), 0);
+    QCOMPARE(errors.count(), 1);
 
     QTRY_COMPARE_WITH_TIMEOUT(finished.count(), 2, 3000);
     QVERIFY(!finished.at(0).at(2).toBool());
