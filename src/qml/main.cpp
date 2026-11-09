@@ -36,15 +36,17 @@ QLocale localeForLanguage(const QString &language)
 int main(int argc, char *argv[])
 {
     QGuiApplication app(argc, argv);
+    QCoreApplication::setApplicationName(QStringLiteral("zapret2control"));
+    QCoreApplication::setApplicationVersion(QStringLiteral(QZAPRET_VERSION));
+    QGuiApplication::setDesktopFileName(QStringLiteral("zapret2control"));
+
     QCommandLineParser parser;
+    parser.addHelpOption();
+    parser.addVersionOption();
     const QCommandLineOption minimizedOption(QStringLiteral("minimized"));
     parser.addOption(minimizedOption);
     parser.process(app);
     const bool startMinimized = parser.isSet(minimizedOption);
-
-    QCoreApplication::setApplicationName(QStringLiteral("zapret2control"));
-    QCoreApplication::setApplicationVersion(QStringLiteral(QZAPRET_VERSION));
-    QGuiApplication::setDesktopFileName(QStringLiteral("zapret2control"));
     SettingsMigration::migrateLegacyProfile();
 
     ApplicationController controller;
