@@ -9,7 +9,7 @@ jobs:
     container: fedora:latest
     steps:
       - name: Install deps
-        run: dnf install -y git cmake ninja-build gcc-c++ extra-cmake-modules kf6-kirigami-devel qt6-qtbase-devel qt6-qtdeclarative-devel qt6-qttools-devel appstream desktop-file-utils util-linux-core dbus-daemon
+        run: dnf install -y git cmake ninja-build gcc-c++ extra-cmake-modules kf6-kirigami-devel qt6-qtbase-devel qt6-qtdeclarative-devel qt6-qttools-devel appstream desktop-file-utils util-linux-core dbus-daemon systemd
       - uses: actions/checkout@v6
         with:
           submodules: recursive
@@ -21,6 +21,12 @@ jobs:
         run: cmake -S . -B build -G Ninja
       - name: Build
         run: cmake --build build
+      - name: Verify systemd units
+        run: |
+          DESTDIR="$PWD/build/stage" cmake --install build
+          systemd-analyze --root="$PWD/build/stage" verify \
+            zapret2control-blockcheck.service \
+            zapret2control-blockcheck-recovery.service
       - name: Lint QML
         run: cmake --build build --target zapret2control-qml-preview_qmllint
       - name: Test
