@@ -81,6 +81,31 @@ class CancelTests(unittest.TestCase):
             cancel_operation(self.state, self.staged, self.operation_a)
         self.assertEqual(self.calls_text(), "")
 
+    def test_queue_lock_serializes_cancel_against_replacement_submit(self):
+        import threading
+        import time
+        cancel_started = threading.Event()
+        cancel_finished = threading.Event()
+        result = []
+
+        def delayed_cancel():
+            cancel_started.set()
+            result.append(cancel_operation(self.state, self.staged, self.operation_a))
+            cancel_finished.set()
+
+        with self.state.queue_locked(create=True):
+            with self.state.locked(create=True):
+                self.staged.stage_locked(self.operation_b, BlockcheckOptions())
+            thread = threading.Thread(target=delayed_cancel)
+            thread.start()
+            self.assertTrue(cancel_started.wait(2))
+            time.sleep(0.1)
+            self.assertFalse(cancel_finished.is_set())
+        thread.join(2)
+        self.assertTrue(cancel_finished.is_set())
+        self.assertEqual(result, [False])
+        self.assertEqual(self.calls_text(), "")
+
     def test_invalid_uuid_is_rejected_before_systemd(self):
         with self.assertRaises(CancelError):
             cancel_operation(self.state, self.staged, "not-a-uuid")
