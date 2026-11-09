@@ -2100,4 +2100,81 @@
         <translation>Recent systemd journal entries for zapret2.service</translation>
     </message>
 </context>
+<context>
+    <name>AutostartController</name>
+    <message>
+        <source>Файл автозапуска уже существует и не принадлежит приложению.</source>
+        <translation>The autostart entry already exists and is not managed by this application.</translation>
+    </message>
+    <message>
+        <source>Не удалось определить абсолютный путь к приложению.</source>
+        <translation>Could not determine the application's absolute path.</translation>
+    </message>
+    <message>
+        <source>Не удалось создать каталог автозапуска.</source>
+        <translation>Could not create the autostart directory.</translation>
+    </message>
+    <message>
+        <source>Не удалось записать файл автозапуска: %1</source>
+        <translation>Could not write the autostart entry: %1</translation>
+    </message>
+    <message>
+        <source>Не удалось сохранить файл автозапуска: %1</source>
+        <translation>Could not save the autostart entry: %1</translation>
+    </message>
+    <message>
+        <source>Файл автозапуска не принадлежит приложению и не будет удалён.</source>
+        <translation>The autostart entry is not managed by this application and will not be removed.</translation>
+    </message>
+    <message>
+        <source>Не удалось удалить файл автозапуска.</source>
+        <translation>Could not remove the autostart entry.</translation>
+    </message>
+</context>
+<context>
+    <name>BlockcheckController</name>
+    <message>
+        <source>Восстановление службы нельзя прервать. Ожидается подтверждение результата.</source>
+        <translation>Service recovery cannot be interrupted. Waiting for the result to be confirmed.</translation>
+    </message>
+</context>
+<context>
+    <name>LogsController</name>
+    <message>
+        <source>Недопустимое количество строк журнала.</source>
+        <translation>Invalid number of journal lines.</translation>
+    </message>
+    <message>
+        <source>Чтение журнала zapret2.service…</source>
+        <translation>Reading zapret2.service journal…</translation>
+    </message>
+    <message>
+        <source>Полученный журнал превысил допустимый размер; чтение остановлено.</source>
+        <translation>Retrieved journal exceeded the size limit; reading was stopped.</translation>
+    </message>
+    <message>
+        <source>Журнал превышает ограничение 1 MiB; данные не отображены.</source>
+        <translation>Journal exceeds the 1 MiB limit; data was not displayed.</translation>
+    </message>
+    <message>
+        <source>Не удалось прочитать журнал (код %1).</source>
+        <translation>Could not read the journal (exit code %1).</translation>
+    </message>
+    <message>
+        <source>Не удалось прочитать журнал: %1</source>
+        <translation>Could not read the journal: %1</translation>
+    </message>
+    <message>
+        <source>Журнал содержит некорректный UTF-8; данные не отображены.</source>
+        <translation>Journal contains invalid UTF-8; data was not displayed.</translation>
+    </message>
+    <message>
+        <source>Журнал обновлён: получено %1 байт.</source>
+        <translation>Journal refreshed: received %1 bytes.</translation>
+    </message>
+    <message>
+        <source>Не удалось запустить helper: %1</source>
+        <translation>Could not start the helper: %1</translation>
+    </message>
+</context>
 </TS>
