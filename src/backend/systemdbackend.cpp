@@ -1,9 +1,15 @@
 #include "systemdbackend.h"
 
 #include <QProcess>
+#include <QTimer>
 #include <memory>
 
 #include "helperpath.h"
+
+int SystemdBackend::processTimeoutMs(bool privileged) const
+{
+    return privileged ? 120000 : 15000;
+}
 
 void SystemdBackend::startProcess(QProcess *process, const QString &program,
                                    const QStringList &arguments, bool privileged)
@@ -24,22 +30,37 @@ void SystemdBackend::query(const QString &verb, const std::function<void(const Q
 {
     auto *proc = new QProcess(this);
     auto completed = std::make_shared<bool>(false);
-    connect(proc, &QProcess::finished, this, [proc, onResult, completed] {
+    auto *timeout = new QTimer(proc);
+    timeout->setSingleShot(true);
+    connect(timeout, &QTimer::timeout, this, [this, proc, onResult, completed] {
         if (*completed)
             return;
         *completed = true;
+        emit errorOccurred(tr("Превышено время ожидания ответа systemctl."));
+        proc->kill();
+        onResult(QString());
+        proc->deleteLater();
+    });
+    connect(proc, &QProcess::finished, this, [proc, onResult, completed, timeout] {
+        if (*completed)
+            return;
+        *completed = true;
+        timeout->stop();
         onResult(QString::fromUtf8(proc->readAllStandardOutput()).trimmed());
         proc->deleteLater();
     });
-    connect(proc, &QProcess::errorOccurred, this, [this, proc, onResult, completed](QProcess::ProcessError error) {
-        emit errorOccurred(tr("Ошибка systemctl: %1").arg(proc->errorString()));
+    connect(proc, &QProcess::errorOccurred, this,
+            [this, proc, onResult, completed, timeout](QProcess::ProcessError error) {
         if (error != QProcess::FailedToStart || *completed)
             return;
         *completed = true;
+        timeout->stop();
+        emit errorOccurred(tr("Ошибка systemctl: %1").arg(proc->errorString()));
         onResult(QString());
         proc->deleteLater();
     });
     startProcess(proc, QStringLiteral("systemctl"), {verb, m_unit}, false);
+    timeout->start(processTimeoutMs(false));
 }
 
 namespace {
@@ -118,6 +139,8 @@ void SystemdBackend::startNextUnitAction()
     const quint64 requestId = pending.requestId;
     auto *proc = new QProcess(this);
     auto completed = std::make_shared<bool>(false);
+    auto *timeout = new QTimer(proc);
+    timeout->setSingleShot(true);
     const auto reportResult = [this, action, requestId](bool success) {
         const quint64 generation = ++m_stateQueryGeneration;
         query(QStringLiteral("is-active"), [this, action, success, requestId, generation](const QString &out) {
@@ -138,11 +161,22 @@ void SystemdBackend::startNextUnitAction()
         });
     };
 
-    connect(proc, &QProcess::finished, this,
-            [this, proc, action, reportResult, completed](int code, QProcess::ExitStatus status) {
+    connect(timeout, &QTimer::timeout, this,
+            [this, proc, action, reportResult, completed] {
         if (*completed)
             return;
         *completed = true;
+        emit errorOccurred(tr("Превышено время ожидания операции systemd: %1").arg(action));
+        proc->kill();
+        proc->deleteLater();
+        reportResult(false);
+    });
+    connect(proc, &QProcess::finished, this,
+            [this, proc, action, reportResult, completed, timeout](int code, QProcess::ExitStatus status) {
+        if (*completed)
+            return;
+        *completed = true;
+        timeout->stop();
         const bool success = code == 0 && status == QProcess::NormalExit;
         if (!success && !Helper::isAuthDismissed(code)) {
             const QString err = QString::fromUtf8(proc->readAllStandardError()).trimmed();
@@ -152,8 +186,9 @@ void SystemdBackend::startNextUnitAction()
         reportResult(success);
     });
     connect(proc, &QProcess::errorOccurred, this,
-            [this, proc, reportResult, completed](QProcess::ProcessError error) {
+            [this, proc, reportResult, completed, timeout](QProcess::ProcessError error) {
         if (error == QProcess::FailedToStart && !*completed) {
+            timeout->stop();
             emit errorOccurred(tr("Не удалось запустить операцию systemd: %1").arg(proc->errorString()));
             *completed = true;
             proc->deleteLater(); // finished() после FailedToStart не приходит
@@ -161,4 +196,5 @@ void SystemdBackend::startNextUnitAction()
         }
     });
     startProcess(proc, QString(), {QStringLiteral("unit"), action}, true);
+    timeout->start(processTimeoutMs(true));
 }
