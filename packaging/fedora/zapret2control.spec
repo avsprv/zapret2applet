@@ -57,17 +57,56 @@ installed separately.
 
 # Stop and disable legacy units before replacing their helper and unit files.
 %pretrans
-for unit in zapret2applet-blockcheck.service zapret2applet-blockcheck-recovery.service; do
+for unit in \
+    zapret2control-blockcheck.service \
+    zapret2control-blockcheck-recovery.service \
+    zapret2applet-blockcheck.service \
+    zapret2applet-blockcheck-recovery.service
+do
     if [ -e "/usr/lib/systemd/system/$unit" ] || [ -e "/lib/systemd/system/$unit" ]; then
         if [ -d /run/systemd/system ] && command -v systemctl >/dev/null 2>&1; then
             systemctl stop "$unit" || exit 1
         fi
-        if command -v systemctl >/dev/null 2>&1; then
-            systemctl disable "$unit" || exit 1
-        fi
+        case "$unit" in
+            zapret2applet-*)
+                if command -v systemctl >/dev/null 2>&1; then
+                    systemctl disable "$unit" || exit 1
+                fi
+                ;;
+        esac
     fi
 done
 
+old=/var/lib/zapret2applet/blockcheck
+new=/var/lib/zapret2control/blockcheck
+old_parent=/var/lib/zapret2applet
+new_parent=/var/lib/zapret2control
+if [ -L "$old_parent" ] || [ -L "$new_parent" ]; then
+    echo "zapret2control: refusing symlinked Blockcheck state parent" >&2
+    exit 1
+fi
+if [ -e "$old" ]; then
+    [ -d "$old" ] && [ ! -L "$old" ] || {
+        echo "zapret2control: legacy Blockcheck state is not a real directory" >&2
+        exit 1
+    }
+    [ "$(stat -c '%u %a' "$old")" = "0 700" ] || {
+        echo "zapret2control: legacy Blockcheck state has unsafe ownership or permissions" >&2
+        exit 1
+    }
+    if [ -e "$new" ]; then
+        echo "zapret2control: both legacy and current Blockcheck state exist; refusing ambiguous migration" >&2
+        exit 1
+    fi
+    [ -d "$new_parent" ] || mkdir -m 700 "$new_parent"
+    [ -d "$new_parent" ] && [ ! -L "$new_parent" ] && \
+        [ "$(stat -c '%u %a' "$new_parent")" = "0 700" ] || {
+        echo "zapret2control: current Blockcheck state parent is unsafe" >&2
+        exit 1
+    }
+    mv "$old" "$new"
+    rmdir "$old_parent" 2>/dev/null || :
+fi
 %posttrans
 if command -v systemctl >/dev/null 2>&1; then
     systemctl daemon-reload >/dev/null 2>&1 || :
