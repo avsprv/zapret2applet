@@ -108,8 +108,8 @@ private slots:
         QTemporaryDir directory;
         QVERIFY(directory.isValid());
         const QString helper = createHelper(directory,
-            "[ \"$1\" = lists-read ] || exit 8\\n"
-            "printf 'initial.example\\\\n'\\n");
+            "[ \"$1\" = lists-read ] || exit 8\n"
+            "printf 'initial.example\\n'\n");
         QVERIFY(!helper.isEmpty());
 
         const QString missingHelper = directory.filePath(QStringLiteral("missing-helper"));
@@ -125,7 +125,7 @@ private slots:
         qputenv("QZAPRET_HELPER", helper.toUtf8());
         controller.readList(QStringLiteral("zapret-hosts-user.txt"));
         QTRY_VERIFY_WITH_TIMEOUT(controller.loaded(), 5000);
-        controller.setContent(QStringLiteral("changed.example\\n"));
+        controller.setContent(QStringLiteral("changed.example\n"));
         QVERIFY(controller.dirty());
 
         qputenv("QZAPRET_HELPER", missingHelper.toUtf8());
