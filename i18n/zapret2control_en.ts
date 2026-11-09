@@ -1422,6 +1422,10 @@
         <source>QML-интерфейс находится в стадии поэтапной миграции. Для повседневного использования пока доступна стабильная версия приложения.</source>
         <translation>The QML interface is being migrated incrementally. The stable application interface remains available for everyday use.</translation>
     </message>
+    <message>
+        <source>Выход</source>
+        <translation>Quit</translation>
+    </message>
 </context>
   
   <context>
