@@ -67,6 +67,7 @@ if [ -e /run/zapret2control-e2e/fail-start ]; then
     echo "intentional E2E service startup failure" >&2
     exit 42
 fi
+/usr/bin/systemd-notify --ready
 exec /usr/bin/sleep infinity
 SH
 chmod 0755 "$UPSTREAM_SCRIPT" /usr/local/libexec/zapret2control-e2e-service
@@ -76,7 +77,8 @@ cat > "$UPSTREAM_UNIT" <<'UNIT'
 Description=Disposable zapret2control E2E fixture service
 
 [Service]
-Type=simple
+Type=notify
+NotifyAccess=main
 ExecStart=/usr/local/libexec/zapret2control-e2e-service
 Restart=no
 UNIT
