@@ -11,8 +11,8 @@ from blockcheck_state import StateError, StateStore
 
 WORKER_UNIT = "zapret2control-blockcheck.service"
 RECOVERY_UNIT = "zapret2control-blockcheck-recovery.service"
-STATE_DIRECTORY = "/var/lib/zapret2applet/blockcheck"
-RUNTIME_DIRECTORY = "/run/zapret2applet/blockcheck"
+STATE_DIRECTORY = "/var/lib/zapret2control/blockcheck"
+RUNTIME_DIRECTORY = "/run/zapret2control/blockcheck"
 PROPERTIES = ("LoadState", "ActiveState", "SubState", "Result", "ExecMainStatus")
 
 
