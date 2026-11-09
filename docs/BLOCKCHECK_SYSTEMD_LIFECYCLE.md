@@ -28,7 +28,8 @@ The current persistent Blockcheck state directory is
 `/var/lib/zapret2control/blockcheck/`, owned by root with directory mode
 `0700`; the recovery marker is a root-owned regular file with mode `0600`.
 The staged options directory is `/run/zapret2control/blockcheck/`. It is
-volatile and is managed by the `zapret2control` systemd RuntimeDirectory.
+volatile: systemd creates the root-owned `/run/zapret2control/` RuntimeDirectory,
+and the helper securely creates and validates its `blockcheck/` subdirectory.
 
 Package upgrades migrate the durable state directory from the legacy
 `/var/lib/zapret2applet/blockcheck/` location after stopping the old worker and
