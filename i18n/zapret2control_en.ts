@@ -1941,6 +1941,22 @@
         <source>Восстановление последней резервной копии…</source>
         <translation>Restoring the latest backup…</translation>
     </message>
+    <message>
+        <source>Экспорт доступен после чтения конфигурации.</source>
+        <translation>Export is available after reading the configuration.</translation>
+    </message>
+    <message>
+        <source>Не удалось сохранить копию: недопустимый путь к локальному файлу.</source>
+        <translation>Could not save the copy: invalid local file path.</translation>
+    </message>
+    <message>
+        <source>Не удалось сохранить копию: %1</source>
+        <translation>Could not save the copy: %1</translation>
+    </message>
+    <message>
+        <source>Копия конфигурации сохранена: %1</source>
+        <translation>Configuration copy saved: %1</translation>
+    </message>
 </context>
 <context>
     <name>ProfileController</name>
