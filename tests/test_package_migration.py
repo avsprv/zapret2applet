@@ -180,6 +180,13 @@ def main() -> None:
         (rpm_unit_dir / LEGACY_UNITS[0]).write_text("[Unit]", encoding="utf-8")
         rpm_runtime_dir = temp_path / "rpm-run" / "systemd" / "system"
         rpm_runtime_dir.mkdir(parents=True)
+        rpm_old_parent = temp_path / "rpm-var" / "lib" / "zapret2applet"
+        rpm_new_parent = temp_path / "rpm-var" / "lib" / "zapret2control"
+        rpm_old_state = rpm_old_parent / "blockcheck"
+        rpm_old_state.mkdir(parents=True, mode=0o700)
+        rpm_old_state.chmod(0o700)
+        (rpm_old_state / "state.json").write_text('{"version":2}\\n', encoding="ascii")
+        (rpm_old_state / "state.json").chmod(0o600)
         rpm_script = rpm_pretrans.replace(
             '"/usr/lib/systemd/system/$unit"',
             f'"{rpm_unit_dir}/$unit"',
@@ -189,6 +196,10 @@ def main() -> None:
         ).replace(
             "/run/systemd/system",
             str(rpm_runtime_dir),
+        ).replace(
+            "/var/lib/zapret2applet", str(rpm_old_parent)
+        ).replace(
+            "/var/lib/zapret2control", str(rpm_new_parent)
         )
         systemctl = bin_dir / "systemctl"
         systemctl.write_text(
@@ -209,6 +220,8 @@ def main() -> None:
             "stop " + LEGACY_UNITS[0],
             "disable " + LEGACY_UNITS[0],
         ], rpm_calls
+        assert (rpm_new_parent / "blockcheck" / "state.json").read_text(encoding="ascii") == '{"version":2}\\n'
+        assert not rpm_old_state.exists()
 
         # A failed RPM stop must abort before attempting to disable the unit.
         rpm_env["FAIL_STOP"] = "1"
