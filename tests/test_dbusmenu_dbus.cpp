@@ -153,7 +153,7 @@ private slots:
         }
 
         QVERIFY(m_bus.unregisterService(QString::fromLatin1(notificationService)));
-        QVERIFY(m_bus.unregisterObject(QStringLiteral("/org/freedesktop/Notifications")));
+        m_bus.unregisterObject(QStringLiteral("/org/freedesktop/Notifications"));
 
         // Missing notification daemons must be a non-fatal condition.
         TrayController controller;
