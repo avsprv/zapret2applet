@@ -125,8 +125,7 @@ marker_absent() {
 }
 
 recovery_failure_logged() {
-    journalctl --unit=zapret2control-blockcheck.service --no-pager --output=cat \\
-        | grep -q "zapret2control blockcheck recovery:"
+    journalctl --unit=zapret2control-blockcheck.service --no-pager --output=cat | grep -q "zapret2control blockcheck recovery:"
 }
 
 start_upstream() {
