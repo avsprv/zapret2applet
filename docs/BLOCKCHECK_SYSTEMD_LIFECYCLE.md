@@ -19,8 +19,7 @@ unverifiable systemd state; a failed worker unit is tolerated only when no durab
 recovery marker remains. Submit, UUID-bound cancellation, and recovery share a
 dedicated queue lock; the worker does not hold it during diagnostics, and the QML
 client preserves the original cancellation UUID even if it adopts a successor job.
-End-to-end runtime validation on a systemd host is still pending; the installed
-production Widgets application continues to use its legacy Blockcheck path.
+Real systemd lifecycle E2E validation now passes on a disposable systemd VM. It covers normal recovery of a previously active service, preservation of an initially inactive service, marker retention and boot-recovery retry after a failed restore, and recovery after worker-main-process SIGKILL. A full machine reboot during an interrupted package upgrade is not covered by this E2E test. The installed production Widgets application continues to use its legacy Blockcheck path.
 
 ## Runtime and persistent storage paths
 
