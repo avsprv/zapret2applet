@@ -103,6 +103,46 @@ class StateStore:
             self._thread_state.dir_fd = None
             os.close(dir_fd)
 
+    @contextlib.contextmanager
+    def queue_locked(self, create: bool = False, blocking: bool = True) -> Iterator["StateStore"]:
+        """Acquire the short-lived queue lock used to serialize submit/cancel/recovery.
+
+        Lock ordering is queue lock -> lifecycle lock. The worker deliberately
+        does not hold the queue lock while running the upstream diagnostic.
+        """
+        if getattr(self._thread_state, "queue_dir_fd", None) is not None:
+            raise StateError("nested queue locks are not supported")
+        dir_fd = self._open_directory(create=create)
+        lock_fd = -1
+        try:
+            try:
+                lock_fd = os.open("queue.lock", os.O_RDWR | os.O_CREAT | os.O_NOFOLLOW,
+                                  0o600, dir_fd=dir_fd)
+            except OSError as exc:
+                raise StateError(f"cannot open queue lock: {exc}") from exc
+            info = os.fstat(lock_fd)
+            if (not stat.S_ISREG(info.st_mode) or info.st_uid != self.owner
+                    or stat.S_IMODE(info.st_mode) != 0o600 or info.st_nlink != 1):
+                raise StateError("queue lock has unsafe type, owner, mode, or link count")
+            flags = fcntl.LOCK_EX if blocking else fcntl.LOCK_EX | fcntl.LOCK_NB
+            try:
+                fcntl.flock(lock_fd, flags)
+            except BlockingIOError as exc:
+                raise StateError("another Blockcheck queue operation is active") from exc
+            self._thread_state.queue_dir_fd = dir_fd
+            yield self
+        finally:
+            if lock_fd >= 0:
+                os.close(lock_fd)
+            self._thread_state.queue_dir_fd = None
+            os.close(dir_fd)
+
+    def _require_queue_lock(self) -> int:
+        dir_fd = getattr(self._thread_state, "queue_dir_fd", None)
+        if dir_fd is None:
+            raise StateError("queue operation requires the queue lock")
+        return dir_fd
+
     def _require_lock(self) -> int:
         dir_fd = getattr(self._thread_state, "dir_fd", None)
         if dir_fd is None:
