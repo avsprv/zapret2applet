@@ -154,7 +154,7 @@ void BlockcheckJobController::launch(ProcessTask task,const QStringList &argumen
         if(m_process!=process)return;
         handleProcessFinished(process,code,state);
         process->deleteLater();
-        if (m_cancelRequested && !m_operationId.isEmpty()
+        if (task != ProcessTask::Cancel && m_cancelRequested && !m_operationId.isEmpty()
             && m_terminalPhase.isEmpty() && m_task == ProcessTask::None)
             launch(ProcessTask::Cancel,{QStringLiteral("blockcheck-job-cancel"),m_operationId});
     });
