@@ -62,7 +62,7 @@ SH
 cat > /usr/local/libexec/zapret2control-e2e-service <<'SH'
 #!/bin/sh
 set -eu
-printf 'start\\n' >> /run/zapret2control-e2e/start-attempts
+printf 'start\n' >> /run/zapret2control-e2e/start-attempts
 if [ -e /run/zapret2control-e2e/fail-start ]; then
     echo "intentional E2E service startup failure" >&2
     exit 42
