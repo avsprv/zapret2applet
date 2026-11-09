@@ -212,6 +212,43 @@ class StateTests(unittest.TestCase):
                 with contender.locked(blocking=False):
                     pass
 
+    def test_queue_lock_serializes_threads(self):
+        self.state.mkdir(mode=0o700)
+        entered = threading.Event()
+        release = threading.Event()
+        finished = threading.Event()
+
+        def holder():
+            with self.store.queue_locked():
+                entered.set()
+                release.wait(3)
+
+        def contender():
+            with self.store.queue_locked():
+                finished.set()
+
+        first = threading.Thread(target=holder)
+        first.start()
+        self.assertTrue(entered.wait(2))
+        second = threading.Thread(target=contender)
+        second.start()
+        time.sleep(0.25)
+        self.assertFalse(finished.is_set())
+        release.set()
+        first.join(2)
+        second.join(2)
+        self.assertTrue(finished.is_set())
+        self.assertEqual(stat.S_IMODE((self.state / "queue.lock").stat().st_mode), 0o600)
+
+    def test_queue_lock_symlink_is_rejected(self):
+        self.state.mkdir(mode=0o700)
+        target = self.root / "outside-queue-lock"
+        target.write_text("")
+        (self.state / "queue.lock").symlink_to(target)
+        with self.assertRaises(StateError):
+            with self.store.queue_locked():
+                pass
+
     def test_lock_serializes_threads(self):
         self.store.directory.mkdir(mode=0o700)
         # Reuse one StateStore instance to verify per-thread descriptor ownership.
