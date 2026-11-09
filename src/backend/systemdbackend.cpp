@@ -30,23 +30,24 @@ void SystemdBackend::query(const QString &verb, const std::function<void(const Q
 {
     auto *proc = new QProcess(this);
     auto completed = std::make_shared<bool>(false);
+    auto timedOut = std::make_shared<bool>(false);
     auto *timeout = new QTimer(proc);
     timeout->setSingleShot(true);
-    connect(timeout, &QTimer::timeout, this, [this, proc, onResult, completed] {
+    connect(timeout, &QTimer::timeout, this, [this, proc, completed, timedOut] {
         if (*completed)
             return;
-        *completed = true;
+        *timedOut = true;
         emit errorOccurred(tr("Превышено время ожидания ответа systemctl."));
         proc->kill();
-        onResult(QString());
-        proc->deleteLater();
     });
-    connect(proc, &QProcess::finished, this, [proc, onResult, completed, timeout] {
+    connect(proc, &QProcess::finished, this, [proc, onResult, completed, timedOut, timeout] {
         if (*completed)
             return;
         *completed = true;
         timeout->stop();
-        onResult(QString::fromUtf8(proc->readAllStandardOutput()).trimmed());
+        const QString output = *timedOut
+            ? QString() : QString::fromUtf8(proc->readAllStandardOutput()).trimmed();
+        onResult(output);
         proc->deleteLater();
     });
     connect(proc, &QProcess::errorOccurred, this,
@@ -139,6 +140,7 @@ void SystemdBackend::startNextUnitAction()
     const quint64 requestId = pending.requestId;
     auto *proc = new QProcess(this);
     auto completed = std::make_shared<bool>(false);
+    auto timedOut = std::make_shared<bool>(false);
     auto *timeout = new QTimer(proc);
     timeout->setSingleShot(true);
     const auto reportResult = [this, action, requestId](bool success) {
@@ -162,23 +164,21 @@ void SystemdBackend::startNextUnitAction()
     };
 
     connect(timeout, &QTimer::timeout, this,
-            [this, proc, action, reportResult, completed] {
+            [this, proc, action, completed, timedOut] {
         if (*completed)
             return;
-        *completed = true;
+        *timedOut = true;
         emit errorOccurred(tr("Превышено время ожидания операции systemd: %1").arg(action));
         proc->kill();
-        proc->deleteLater();
-        reportResult(false);
     });
     connect(proc, &QProcess::finished, this,
-            [this, proc, action, reportResult, completed, timeout](int code, QProcess::ExitStatus status) {
+            [this, proc, action, reportResult, completed, timedOut, timeout](int code, QProcess::ExitStatus status) {
         if (*completed)
             return;
         *completed = true;
         timeout->stop();
-        const bool success = code == 0 && status == QProcess::NormalExit;
-        if (!success && !Helper::isAuthDismissed(code)) {
+        const bool success = !*timedOut && code == 0 && status == QProcess::NormalExit;
+        if (!*timedOut && !success && !Helper::isAuthDismissed(code)) {
             const QString err = QString::fromUtf8(proc->readAllStandardError()).trimmed();
             emit errorOccurred(tr("Операция не выполнена (код %1): %2").arg(code).arg(err));
         }
