@@ -7,8 +7,8 @@ from blockcheck_staging import StagedOptionsStore
 from blockcheck_state import StateError, StateStore
 
 WORKER_UNIT = "zapret2control-blockcheck.service"
-STATE_DIRECTORY = "/var/lib/zapret2applet/blockcheck"
-RUNTIME_DIRECTORY = "/run/zapret2applet/blockcheck"
+STATE_DIRECTORY = "/var/lib/zapret2control/blockcheck"
+RUNTIME_DIRECTORY = "/run/zapret2control/blockcheck"
 
 class CancelError(StateError):
     """Cancellation could not be performed safely."""
