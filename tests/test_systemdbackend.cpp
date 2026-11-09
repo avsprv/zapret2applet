@@ -21,10 +21,19 @@ public:
     bool holdPrivilegedProcessOpen = false;
     bool delayFirstStateQuery = false;
     bool delayFirstBootQuery = false;
+    bool shortTimeouts = false;
+    bool delayNextAction = false;
+    bool delayNextStateQuery = false;
     int bootQueryCount = 0;
     QPointer<QProcess> lastPrivilegedProcess;
 
 protected:
+    int processTimeoutMs(bool privileged) const override
+    {
+        Q_UNUSED(privileged);
+        return shortTimeouts ? 50 : SystemdBackend::processTimeoutMs(privileged);
+    }
+
     void startProcess(QProcess *process, const QString &program,
                       const QStringList &arguments, bool privileged) override
     {
@@ -37,6 +46,12 @@ protected:
                                                        activePrivilegedProcesses);
             lastPrivilegedProcess = process;
             connect(process, &QProcess::finished, this, [this] { --activePrivilegedProcesses; });
+            if (delayNextAction) {
+                delayNextAction = false;
+                process->start(QStringLiteral("/bin/sh"),
+                               {QStringLiteral("-c"), QStringLiteral("exec sleep 10")});
+                return;
+            }
             connect(process, &QProcess::errorOccurred, this,
                     [this](QProcess::ProcessError error) {
                 if (error == QProcess::FailedToStart)
@@ -63,6 +78,12 @@ protected:
             return;
         }
 
+        if (arguments.value(0) == QLatin1String("is-active") && delayNextStateQuery) {
+            delayNextStateQuery = false;
+            process->start(QStringLiteral("/bin/sh"),
+                           {QStringLiteral("-c"), QStringLiteral("exec sleep 10")});
+            return;
+        }
         if (arguments.value(0) == QLatin1String("is-active") && failNextStateQueryToStart) {
             failNextStateQueryToStart = false;
             process->start(QStringLiteral("/path/that/does/not/exist"));
@@ -106,6 +127,8 @@ private slots:
     void ordinaryVerificationPublishesGlobalState();
     void newerRefreshSupersedesOlderStateQuery();
     void newerRefreshSupersedesOlderBootQuery();
+    void stateQueryTimeoutProducesUnknown();
+    void continuesAfterTimedOutAction();
     void correlatedVerificationInvalidatesOlderRefresh();
     void destroyingBackendDestroysActiveProcesses();
 };
@@ -212,6 +235,37 @@ void SystemdBackendTest::newerRefreshSupersedesOlderBootQuery()
     QCOMPARE(bootState.at(0).at(0).toBool(), false);
     QTest::qWait(200);
     QCOMPARE(bootState.count(), 1);
+}
+
+void SystemdBackendTest::stateQueryTimeoutProducesUnknown()
+{
+    TestSystemdBackend backend;
+    backend.shortTimeouts = true;
+    backend.delayNextStateQuery = true;
+    QSignalSpy globalState(&backend, &ZapretBackend::stateChanged);
+    QSignalSpy errors(&backend, &ZapretBackend::errorOccurred);
+
+    backend.refresh();
+
+    QTRY_COMPARE_WITH_TIMEOUT(globalState.count(), 1, 3000);
+    QCOMPARE(globalState.at(0).at(0).value<ZapretBackend::State>(), ZapretBackend::State::Unknown);
+    QCOMPARE(errors.count(), 1);
+}
+
+void SystemdBackendTest::continuesAfterTimedOutAction()
+{
+    TestSystemdBackend backend;
+    backend.shortTimeouts = true;
+    backend.delayNextAction = true;
+    QSignalSpy finished(&backend, &ZapretBackend::unitActionFinished);
+
+    backend.stop();
+    backend.start();
+
+    QTRY_COMPARE_WITH_TIMEOUT(finished.count(), 2, 3000);
+    QVERIFY(!finished.at(0).at(2).toBool());
+    QVERIFY(finished.at(1).at(2).toBool());
+    QCOMPARE(backend.maxConcurrentPrivilegedProcesses, 1);
 }
 
 void SystemdBackendTest::correlatedVerificationInvalidatesOlderRefresh()
