@@ -1363,6 +1363,8 @@
   <context>
     <name>Main</name>
     <message><source>Zapret2 Control</source><translation>Zapret2 Control</translation></message>
+    <message><source>Подбор завершён, найдено стратегий: %1</source><translation>Strategy scan completed; strategies found: %1</translation></message>
+    <message><source>Доступна новая версия zapret2: %1</source><translation>A new version of zapret2 is available: %1</translation></message>
     <message><source>Статус</source><translation>Status</translation></message>
     <message><source>Конфигурация</source><translation>Configuration</translation></message>
     <message><source>Профили</source><translation>Profiles</translation></message>

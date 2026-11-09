@@ -21,6 +21,7 @@ public:
     ~TrayController() override;
 
     void setServiceState(const QString &state, const QString &stateCode, bool active, bool busy);
+    void showNotification(const QString &title, const QString &message);
 
     bool watcherAvailable() const;
     bool registered() const;

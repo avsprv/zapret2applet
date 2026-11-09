@@ -6,6 +6,7 @@
 #include <QDBusMessage>
 #include <QDBusPendingCallWatcher>
 #include <QDBusPendingReply>
+#include <QDBusPendingReply>
 #include <QDBusServiceWatcher>
 #include <QDBusReply>
 #include <QDBusObjectPath>
@@ -396,6 +397,35 @@ void TrayController::setServiceState(const QString &state, const QString &stateC
 {
     m_menu->setServiceState(state, active, busy);
     m_item->setServiceState(stateCode);
+}
+
+void TrayController::showNotification(const QString &title, const QString &message)
+{
+    if (title.isEmpty() || message.isEmpty() || !m_bus.isConnected())
+        return;
+
+    QDBusMessage request = QDBusMessage::createMethodCall(
+        QStringLiteral("org.freedesktop.Notifications"),
+        QStringLiteral("/org/freedesktop/Notifications"),
+        QStringLiteral("org.freedesktop.Notifications"),
+        QStringLiteral("Notify"));
+    request << QCoreApplication::applicationName()
+            << uint{0}
+            << QStringLiteral("zapret2control")
+            << title
+            << message
+            << QStringList{}
+            << QVariantMap{}
+            << -1;
+
+    auto *call = new QDBusPendingCallWatcher(m_bus.asyncCall(request), this);
+    connect(call, &QDBusPendingCallWatcher::finished, this,
+            [](QDBusPendingCallWatcher *watcher) {
+        const QDBusPendingReply<uint> reply = *watcher;
+        if (reply.isError())
+            qDebug() << "Desktop notification was not delivered:" << reply.error().message();
+        watcher->deleteLater();
+    });
 }
 
 bool TrayController::watcherAvailable() const

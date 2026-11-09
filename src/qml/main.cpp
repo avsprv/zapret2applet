@@ -8,6 +8,7 @@
 #include <QVariant>
 #include <QTranslator>
 #include <QStyleHints>
+#include <QWindow>
 
 #include "applicationcontroller.h"
 #include "configcontroller.h"
@@ -134,6 +135,26 @@ int main(int argc, char *argv[])
         return EXIT_FAILURE;
 
     QObject *rootWindow = engine.rootObjects().constFirst();
+    if (auto *window = qobject_cast<QWindow *>(rootWindow)) {
+        QObject::connect(&blockcheckController, &BlockcheckJobController::scanFinished,
+                         &app, [window, &trayController](int found, bool canceled) {
+            if (!canceled && !window->isVisible()) {
+                const QString title = QCoreApplication::translate("Main", "Zapret2 Control");
+                const QString message = QCoreApplication::translate(
+                    "Main", "Подбор завершён, найдено стратегий: %1").arg(found);
+                trayController.showNotification(title, message);
+            }
+        });
+        QObject::connect(&updateController, &UpdateController::updateAvailable,
+                         &app, [window, &trayController](const QString &tag) {
+            if (!window->isVisible()) {
+                const QString title = QCoreApplication::translate("Main", "Zapret2 Control");
+                const QString message = QCoreApplication::translate(
+                    "Main", "Доступна новая версия zapret2: %1").arg(tag);
+                trayController.showNotification(title, message);
+            }
+        });
+    }
     QObject::connect(&trayController, &TrayController::activateRequested, &app, [rootWindow] {
         QMetaObject::invokeMethod(rootWindow, "toggleWindow");
     });
