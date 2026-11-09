@@ -24,7 +24,7 @@ mkdir "$W/base"
 cat > "$W/base/blockcheck2.sh" <<'SH'
 #!/bin/sh
 trap 'exit 0' INT TERM
-while :; do sleep 1; done
+while :; do sleep 0.1; done
 SH
 chmod 755 "$W/base/blockcheck2.sh"
 mkdir "$W/target"
