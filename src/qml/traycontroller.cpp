@@ -408,6 +408,19 @@ bool TrayController::registered() const
     return m_registered;
 }
 
+bool TrayController::registrationFailed() const
+{
+    return m_registrationFailed;
+}
+
+void TrayController::setRegistrationFailed(bool failed)
+{
+    if (m_registrationFailed == failed)
+        return;
+    m_registrationFailed = failed;
+    emit registrationFailedChanged();
+}
+
 void TrayController::setRegistered(bool registered)
 {
     if (m_registered == registered)
@@ -447,8 +460,10 @@ void TrayController::registerWithWatcher()
         || m_registered || m_registrationPending)
         return;
 
+    setRegistrationFailed(false);
     if (!m_exported) {
         if (!m_bus.registerService(m_serviceName)) {
+            setRegistrationFailed(true);
             qWarning() << "Unable to own StatusNotifierItem service:"
                        << m_bus.lastError().message();
             return;
@@ -457,6 +472,7 @@ void TrayController::registerWithWatcher()
                                  | QDBusConnection::ExportAllSignals
                                  | QDBusConnection::ExportAllProperties;
         if (!m_bus.registerObject(QString::fromLatin1(menuPath), m_menu, exportFlags)) {
+            setRegistrationFailed(true);
             qWarning() << "Unable to export DBusMenu:" << m_bus.lastError().message();
             m_bus.unregisterService(m_serviceName);
             return;
@@ -465,6 +481,7 @@ void TrayController::registerWithWatcher()
             new StatusNotifierItemAdaptor(m_item);
         if (!m_bus.registerObject(QString::fromLatin1(itemPath), m_item,
                                   QDBusConnection::ExportAdaptors)) {
+            setRegistrationFailed(true);
             qWarning() << "Unable to export StatusNotifierItem:"
                        << m_bus.lastError().message();
             m_bus.unregisterObject(QString::fromLatin1(menuPath));
@@ -491,6 +508,7 @@ void TrayController::registerWithWatcher()
         QDBusPendingReply<> reply = *watcher;
         if (reply.isError()) {
             setRegistered(false);
+            setRegistrationFailed(true);
             qWarning() << "StatusNotifierItem registration failed:"
                        << reply.error().message();
         } else {

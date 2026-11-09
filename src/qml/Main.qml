@@ -9,6 +9,7 @@ import "pages"
 Kirigami.ApplicationWindow {
     id: root
 
+    required property bool startMinimized
     required property var appController
     required property var settingsManager
     required property var autostartController
@@ -21,6 +22,7 @@ Kirigami.ApplicationWindow {
     required property var updateController
 
     title: qsTr("Zapret2 Control")
+    visible: !startMinimized
     width: Kirigami.Units.gridUnit * 54
     height: Kirigami.Units.gridUnit * 38
     minimumWidth: Kirigami.Units.gridUnit * 36

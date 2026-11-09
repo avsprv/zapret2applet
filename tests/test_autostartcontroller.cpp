@@ -21,7 +21,7 @@ private slots:
         QVERIFY(file.open(QIODevice::ReadOnly));
         const QByteArray content = file.readAll();
         QVERIFY(content.contains("X-Zapret2Control-Managed=true"));
-        QVERIFY(content.contains("Exec=\"/usr/bin/zapret2control\""));
+        QVERIFY(content.contains("Exec=\"/usr/bin/zapret2control\" --minimized"));
         controller.setEnabled(false);
         QVERIFY2(controller.errorMessage().isEmpty(), qPrintable(controller.errorMessage()));
         QVERIFY(!controller.enabled());
@@ -48,7 +48,7 @@ private slots:
         QFile migrated(newPath);
         QVERIFY(migrated.open(QIODevice::ReadOnly));
         const QByteArray content = migrated.readAll();
-        QVERIFY(content.contains("Exec=\"/usr/bin/zapret2control\""));
+        QVERIFY(content.contains("Exec=\"/usr/bin/zapret2control\" --minimized"));
         QVERIFY(content.contains("X-Zapret2Control-Managed=true"));
         QVERIFY(!QFile::exists(legacyPath));
         QVERIFY(controller.enabled());

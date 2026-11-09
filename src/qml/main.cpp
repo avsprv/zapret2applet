@@ -1,5 +1,7 @@
 #include <cstdlib>
 
+#include <QCommandLineOption>
+#include <QCommandLineParser>
 #include <QGuiApplication>
 #include <QLocale>
 #include <QQmlApplicationEngine>
@@ -34,6 +36,12 @@ QLocale localeForLanguage(const QString &language)
 int main(int argc, char *argv[])
 {
     QGuiApplication app(argc, argv);
+    QCommandLineParser parser;
+    const QCommandLineOption minimizedOption(QStringLiteral("minimized"));
+    parser.addOption(minimizedOption);
+    parser.process(app);
+    const bool startMinimized = parser.isSet(minimizedOption);
+
     QCoreApplication::setApplicationName(QStringLiteral("zapret2control"));
     QCoreApplication::setApplicationVersion(QStringLiteral(QZAPRET_VERSION));
     QGuiApplication::setDesktopFileName(QStringLiteral("zapret2control"));
@@ -106,6 +114,7 @@ int main(int argc, char *argv[])
     QList<QTranslator *> translators = I18n::install(app, initialLocale);
     QQmlApplicationEngine engine;
     engine.setInitialProperties({
+        {QStringLiteral("startMinimized"), startMinimized},
         {QStringLiteral("appController"), QVariant::fromValue(static_cast<QObject *>(&controller))},
         {QStringLiteral("settingsManager"), QVariant::fromValue(static_cast<QObject *>(&settingsManager))},
         {QStringLiteral("autostartController"), QVariant::fromValue(static_cast<QObject *>(&autostartController))},
@@ -134,6 +143,13 @@ int main(int argc, char *argv[])
         if (!trayController.watcherAvailable())
             QMetaObject::invokeMethod(rootWindow, "showWindow");
     });
+    QObject::connect(&trayController, &TrayController::registrationFailedChanged, &app,
+                     [rootWindow, &trayController] {
+        if (trayController.registrationFailed())
+            QMetaObject::invokeMethod(rootWindow, "showWindow");
+    });
+    if (startMinimized && (!trayController.watcherAvailable() || trayController.registrationFailed()))
+        QMetaObject::invokeMethod(rootWindow, "showWindow");
 
     QObject::connect(&settingsManager, &SettingsManager::languageChanged, &app, [&]() {
         for (QTranslator *translator : translators)
