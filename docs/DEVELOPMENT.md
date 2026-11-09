@@ -1,66 +1,94 @@
 # Для разработчиков
 
-## Принципы
+## Архитектурные принципы
 
-- GUI работает **без root**. Привилегированные действия выполняет `zapret2control-helper`
-  (`/usr/libexec/zapret2control/`) через `pkexec` и polkit-действия `org.zapret2control.helper` и
-  `org.zapret2control.update` (второе спрашивает пароль каждый раз, без `auth_admin_keep`).
-- Хелпер принимает только фиксированный набор команд (`unit start|stop|enable|disable`, `blockcheck`,
-  `blockcheck-cancel`, `update`), строго валидирует аргументы, запускает blockcheck2 с чистым окружением,
-  а обновление скачивает только по HTTPS и сверяет `sha256sum.txt` релиза.
-- Вся работа с zapret2 изолирована в `src/backend/` (интерфейс `ZapretBackend`).
-- Апстрим подключён как submodule (`third_party/zapret2`) и **не правится**; версия закреплена тегом.
-  В сборку он не входит, это закреплённая ссылка на проверенную версию.
+- Production-приложение сейчас использует Qt Widgets. Его точка входа — `src/main.cpp`, главное окно — `src/mainwindow.*`.
+- Параллельная реализация Qt Quick/Kirigami собирается как preview-цель. Её точка входа — `src/qml/main.cpp`, корневой интерфейс — `src/qml/Main.qml`. Preview не устанавливается и не заменяет production UI до завершения миграции и прохождения gate из [MIGRATION_QML_KIRIGAMI.md](MIGRATION_QML_KIRIGAMI.md).
+- Повторно используемая прикладная логика и интеграции с системой размещаются в `src/backend/`. Контроллеры QML — адаптеры между UI и backend; они не должны дублировать доменную логику.
+- GUI работает **без root**. Привилегированные действия выполняет `zapret2control-helper` через `pkexec` и Polkit.
+- QML не запускает shell-команды, не обращается к привилегированным файлам и не вызывает `pkexec` напрямую.
+- Upstream подключён как Git submodule (`third_party/zapret2`) и не изменяется в рамках обычной разработки приложения.
+
+## Структура репозитория
+
+```
+.github/
+  ISSUE_TEMPLATE/       шаблоны bug report и feature request
+  workflows/            CI и сборка пакетов
+data/                   desktop entry, AppStream, иконки, Polkit и systemd-шаблоны
+docs/                   архитектура, разработка, стандарты качества и миграция
+i18n/                   Qt Linguist .ts-файлы
+packaging/
+  debian/               конфигурация DEB
+  fedora/               spec для RPM
+  helper/               привилегированный helper и его модули
+src/
+  backend/              прикладная логика и системные адаптеры
+  qml/
+    components/         общие переиспользуемые QML-компоненты
+    pages/              страницы Kirigami preview
+    *controller.*       QObject-контроллеры preview
+    Main.qml            корневой QML-интерфейс
+    main.cpp            точка входа QML preview
+  *.cpp, *.h            Qt Widgets production UI и общие классы
+  main.cpp              точка входа production UI
+tests/                  C++, Python и shell-тесты
+third_party/zapret2/    закреплённый Git submodule upstream-проекта
+```
+
+Каталоги `.reuse/` и `LICENSES/` появятся на отдельном этапе внедрения REUSE compliance. Каталог `cmake/` добавляется только при появлении собственных CMake-модулей, которые действительно нужно вынести из корневого `CMakeLists.txt`.
 
 ## Версия Qt
 
-Минимум — **Qt 6.8 LTS** (проверяется в `CMakeLists.txt`, переменная `QZAPRET_QT_MIN`). API новее 6.8 не
-используются. Сборка проверена на Qt 6.8.4; на Qt 6.12 LTS проверим, когда он появится в дистрибутивах.
+Минимум — **Qt 6.8 LTS** (проверяется в `CMakeLists.txt`, переменная `QZAPRET_QT_MIN`). Используйте API, совместимые с этим baseline. Для QML/Kirigami применяются Qt 6 и KDE Frameworks 6; версии в QML import statements не указываются.
 
-## Структура
-
-```
-src/                  Qt6-код GUI (src/i18n.* — подключение переводов)
-src/backend/          адаптер к zapret2 (systemd), blockcheck2, проверка и установка обновлений
-i18n/                 переводы (.ts)
-data/                 .desktop и шаблон polkit-политики
-tests/                QtTest и shell-тесты хелпера
-packaging/helper/     zapret2control-helper — привилегированная часть
-packaging/fedora/     spec для RPM
-packaging/debian/     файлы для DEB (для сборки линкуются в debian/, см. packaging/README.md)
-third_party/zapret2/  апстрим, submodule
-```
-
-## Тесты
+## Сборка и тесты
 
 ```bash
+cmake -S . -B build -G Ninja
+cmake --build build
 ctest --test-dir build --output-on-failure
-# парсер blockcheck, переводы, сравнение версий, валидация и обновление в хелпере
+cmake --build build --target zapret2control-qml-preview_qmllint
 ```
 
-Без установки хелпер находится по `../packaging/helper/zapret2control-helper`; путь можно переопределить
-переменной окружения `QZAPRET_HELPER`.
+CI дополнительно проверяет desktop/AppStream metadata и собирает DEB/RPM пакеты. Не ослабляйте lint/test проверки и не отключайте категории предупреждений ради зелёной сборки.
+
+Без установки helper находится в `packaging/helper/zapret2control-helper`; путь можно переопределить переменной окружения `QZAPRET_HELPER`.
+
+## Форматирование C++
+
+Настройки форматирования определены в корневом `.clang-format`. Перед форматированием больших участков сначала проверьте diff: не включайте несвязанные массовые изменения в функциональные коммиты.
+
+## QML и Kirigami
+
+- Используйте актуальные Qt 6 и Kirigami API без версий в import.
+- Цвета берите из семантической темы Kirigami; не задавайте HEX/RGB для стандартных элементов.
+- Для размеров и отступов используйте `Kirigami.Units.gridUnit`, `smallSpacing` и `largeSpacing`.
+- Сохраняйте нулевой уровень QML warnings и `Unqualified access`; не отключайте категории qmllint.
+- Общий визуальный компонент выделяйте в `src/qml/components/`, если он повторно используется или имеет самостоятельный контракт/поведение. Не создавайте абстракции ради одного использования.
+- Подробные критерии находятся в [QUALITY_STANDARDS.md](QUALITY_STANDARDS.md).
 
 ## Переводы
 
-Исходные строки в коде — русские (`tr("…")`), английский перевод лежит в `i18n/zapret2control_en.ts` и
-вшивается в бинарник. Для остальных языков без собственного перевода показывается английский. После правки строк:
+Исходные строки в коде — русские; английские переводы лежат в `i18n/*.ts` и компилируются Qt Linguist. После изменения строк обновите каталоги:
 
 ```bash
-cmake --build build --target update_translations   # lupdate: обновит .ts
-# дописать переводы в i18n/zapret2control_en.ts (Qt Linguist или любой редактор), затем:
-ctest --test-dir build -R i18n                      # нет пустых и незавершённых, плейсхолдеры %1 совпадают
+cmake --build build --target update_translations
+ctest --test-dir build -R i18n
 ```
 
-Новый язык: добавить `i18n/zapret2control_<код>.ts` в `qt_add_translations()` в `CMakeLists.txt`.
+Новый язык добавляется отдельным `.ts`-файлом и регистрируется в `qt_add_translations()` в `CMakeLists.txt`.
 
-## Обновление апстрима
+## Обновление upstream
 
 ```bash
 git -C third_party/zapret2 fetch --tags
 git -C third_party/zapret2 checkout <тег>
-git add third_party/zapret2 && git commit -m "Bump zapret2 to <тег>"
+git add third_party/zapret2
+git commit -m "chore: bump zapret2 submodule"
 ```
+
+Upstream обновляется отдельным осознанным изменением; проверяйте совместимость и закрепляйте конкретный тег/commit.
 
 ## Пакеты
 
