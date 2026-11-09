@@ -100,7 +100,10 @@ Required invariants:
    Cancellation validates its immutable operation UUID against the recovery marker or
    staged request and submits `systemctl stop --no-block` before releasing the queue lock.
    Recovery also holds the queue lock while verifying service state and removing the marker,
-   so a delayed cancellation cannot overlap a replacement submission.
+   so a delayed cancellation cannot overlap a replacement submission. If the matching
+   request is still staged, cancellation waits for the lifecycle lock after queuing the
+   stop and removes only that UUID's staged options; this covers a worker canceled before
+   it consumes the request.
 7. GUI lifetime is irrelevant to worker and recovery lifetime.
 8. Options cross the privilege boundary as validated argv values or a strictly parsed,
    bounded data file. Never use shell evaluation or source a generated shell file.
