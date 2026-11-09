@@ -35,12 +35,15 @@ private:
         quint64 requestId = 0;
     };
     void startNextUnitAction();
+    void finishRefreshQuery();
     void runUnitAction(const QString &action, quint64 requestId = 0);
     void query(const QString &verb, const std::function<void(const QString &)> &onResult);
 
     QString m_unit;
     QQueue<PendingUnitAction> m_pendingActions;
     bool m_actionInProgress = false;
+    bool m_refreshInProgress = false;
+    int m_refreshQueriesPending = 0;
     quint64 m_stateQueryGeneration = 0;
     quint64 m_verificationGeneration = 0;
 };
