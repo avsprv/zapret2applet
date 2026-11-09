@@ -133,6 +133,7 @@ def main() -> None:
         new_parent = temp_path / "var" / "lib" / "zapret2control"
         old_state = old_parent / "blockcheck"
         old_state.mkdir(parents=True, mode=0o700)
+        old_parent.chmod(0o700)
         old_state.chmod(0o700)
         (old_state / "state.json").write_text('{"version":1}\n', encoding="ascii")
         (old_state / "state.json").chmod(0o600)
@@ -214,6 +215,7 @@ def main() -> None:
         rpm_new_parent = temp_path / "rpm-var" / "lib" / "zapret2control"
         rpm_old_state = rpm_old_parent / "blockcheck"
         rpm_old_state.mkdir(parents=True, mode=0o700)
+        rpm_old_parent.chmod(0o700)
         rpm_old_state.chmod(0o700)
         (rpm_old_state / "state.json").write_text('{"version":2}\n', encoding="ascii")
         (rpm_old_state / "state.json").chmod(0o600)
