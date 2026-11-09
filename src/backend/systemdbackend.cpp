@@ -95,8 +95,9 @@ void SystemdBackend::verifyState()
     const quint64 generation = ++m_stateQueryGeneration;
     query(QStringLiteral("is-active"), [this, generation](const QString &out) {
         const State state = parseUnitState(out);
-        if (generation == m_stateQueryGeneration)
-            emit stateChanged(state);
+        if (generation != m_stateQueryGeneration)
+            return;
+        emit stateChanged(state);
         emit stateVerified(state);
     });
 }
