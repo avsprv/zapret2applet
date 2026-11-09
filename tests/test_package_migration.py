@@ -23,11 +23,15 @@ def main() -> None:
     cmake = (ROOT / "CMakeLists.txt").read_text(encoding="utf-8")
     package_workflow = (ROOT / ".github/workflows/packages.yml").read_text(encoding="utf-8")
     helper = (ROOT / "packaging/helper/zapret2control-helper").read_text(encoding="utf-8")
+    worker_unit = (ROOT / "data/systemd/zapret2control-blockcheck.service.in").read_text(encoding="utf-8")
+    worker = (ROOT / "packaging/helper/blockcheck_worker.py").read_text(encoding="utf-8")
     manpage = ROOT / "data/zapret2control.1"
 
     assert "DESTINATION ${CMAKE_INSTALL_DATADIR}/zapret2control)" in cmake
     assert "module_dir=/usr/share/zapret2control" in helper
     assert "%{_datadir}/zapret2control/*.py" in spec
+    assert "RuntimeDirectory=zapret2applet" in worker_unit
+    assert 'StagedOptionsStore(state, "/run/zapret2applet/blockcheck")' in worker
     assert "data/zapret2control.1" in cmake
     assert "%{_mandir}/man1/zapret2control.1*" in spec
     assert manpage.is_file()
