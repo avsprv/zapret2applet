@@ -91,8 +91,14 @@ Required invariants:
    state. On failure it remains for the next boot or an administrator retry.
 5. The marker is created before the service stop request, so a crash at any point after
    that write is recoverable.
-6. Only one Blockcheck operation may run at a time. Serialize start, cancel, and recovery
-   using a root-owned lock in the persistent state directory.
+6. Only one Blockcheck operation may run at a time. Serialize submit, cancel, and
+   recovery with a dedicated root-owned `queue.lock` in the persistent state directory.
+   Acquire locks in the order queue lock -> lifecycle lock. The worker holds the lifecycle
+   lock for the scan but does not hold the queue lock while running upstream code.
+   Cancellation validates its immutable operation UUID against the recovery marker or
+   staged request and submits `systemctl stop --no-block` before releasing the queue lock.
+   Recovery also holds the queue lock while verifying service state and removing the marker,
+   so a delayed cancellation cannot overlap a replacement submission.
 7. GUI lifetime is irrelevant to worker and recovery lifetime.
 8. Options cross the privilege boundary as validated argv values or a strictly parsed,
    bounded data file. Never use shell evaluation or source a generated shell file.
@@ -153,8 +159,9 @@ Replace direct service stop/start orchestration with a systemd job client:
   process;
 - observe unit state with asynchronous polling and read the unit journal through a
   narrowly allowlisted helper operation; do not block the GUI thread;
-- request cancellation by asking the helper to stop only
-  `zapret2control-blockcheck.service`;
+- request cancellation with the current operation UUID; the helper checks that UUID
+  against the active recovery marker or staged request while holding `queue.lock`, and
+  ignores stale requests without stopping a replacement job;
 - keep the busy state until systemd confirms the job is finished and recovery has been
   verified;
 - surface a distinct recovery-pending/error state when the marker remains, and offer a retry
@@ -196,7 +203,12 @@ host's real `zapret2.service`.
 - power-loss simulation: leave marker, then boot recovery restores the service;
 - recovery start failure: marker remains and the error is observable;
 - malformed, symlinked, hard-linked, wrong-owner, and wrong-mode state files fail closed;
-- concurrent start/cancel/recovery/service-management/update operations serialize correctly;
+- concurrent submit/cancel/recovery operations serialize through `queue.lock` without
+  holding it during the upstream diagnostic;
+- delayed cancellation of operation A cannot stop a staged or active operation B, including
+  when the worker publishes its recovery marker while cancellation is inspecting state;
+- QML cancellation passes one immutable UUID and does not retarget a newly adopted job;
+- concurrent service-management/update operations serialize correctly with the lifecycle lock;
 - a staged request or durable recovery marker blocks service-management and update admission;
 - failed worker state without a recovery marker does not permanently block service operations;
 - direct invocation of the internal update or clean-install entry point without the admission guard is rejected;
