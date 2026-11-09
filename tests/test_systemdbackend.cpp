@@ -24,6 +24,7 @@ public:
     bool shortTimeouts = false;
     bool delayNextAction = false;
     bool delayNextStateQuery = false;
+    bool delayNextStateQueryBriefly = false;
     int bootQueryCount = 0;
     QPointer<QProcess> lastPrivilegedProcess;
 
@@ -78,6 +79,12 @@ protected:
             return;
         }
 
+        if (arguments.value(0) == QLatin1String("is-active") && delayNextStateQueryBriefly) {
+            delayNextStateQueryBriefly = false;
+            process->start(QStringLiteral("/bin/sh"),
+                           {QStringLiteral("-c"), QStringLiteral("sleep 0.25; printf active")});
+            return;
+        }
         if (arguments.value(0) == QLatin1String("is-active") && delayNextStateQuery) {
             delayNextStateQuery = false;
             process->start(QStringLiteral("/bin/sh"),
@@ -132,6 +139,7 @@ private slots:
     void refreshCoalescesWhileQueriesAreRunning();
     void stateQueryTimeoutProducesUnknown();
     void continuesAfterTimedOutAction();
+    void verificationDuringActionIsInvalidatedWhenActionFinishes();
     void correlatedVerificationInvalidatesOlderRefresh();
     void destroyingBackendDestroysActiveProcesses();
 };
@@ -334,6 +342,27 @@ void SystemdBackendTest::continuesAfterTimedOutAction()
     QVERIFY(!finished.at(0).at(2).toBool());
     QVERIFY(finished.at(1).at(2).toBool());
     QCOMPARE(backend.maxConcurrentPrivilegedProcesses, 1);
+}
+
+void SystemdBackendTest::verificationDuringActionIsInvalidatedWhenActionFinishes()
+{
+    TestSystemdBackend backend;
+    backend.holdPrivilegedProcessOpen = true;
+    QSignalSpy verified(&backend, &ZapretBackend::stateVerified);
+    QSignalSpy finished(&backend, &ZapretBackend::unitActionFinished);
+
+    backend.start();
+    QTRY_VERIFY_WITH_TIMEOUT(backend.lastPrivilegedProcess
+                                 && backend.lastPrivilegedProcess->state() != QProcess::NotRunning,
+                             3000);
+
+    backend.delayNextStateQueryBriefly = true;
+    backend.verifyState();
+    backend.lastPrivilegedProcess->kill();
+
+    QTRY_COMPARE_WITH_TIMEOUT(finished.count(), 1, 3000);
+    QTest::qWait(400);
+    QCOMPARE(verified.count(), 0);
 }
 
 void SystemdBackendTest::correlatedVerificationInvalidatesOlderRefresh()
