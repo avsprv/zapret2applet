@@ -30,8 +30,8 @@ def main() -> None:
     assert "DESTINATION ${CMAKE_INSTALL_DATADIR}/zapret2control)" in cmake
     assert "module_dir=/usr/share/zapret2control" in helper
     assert "%{_datadir}/zapret2control/*.py" in spec
-    assert "RuntimeDirectory=zapret2applet" in worker_unit
-    assert 'StagedOptionsStore(state, "/run/zapret2applet/blockcheck")' in worker
+    assert "RuntimeDirectory=zapret2control" in worker_unit
+    assert 'StagedOptionsStore(state, "/run/zapret2control/blockcheck")' in worker
     assert "data/zapret2control.1" in cmake
     assert "%{_mandir}/man1/zapret2control.1*" in spec
     assert manpage.is_file()
@@ -47,6 +47,22 @@ def main() -> None:
 
     assert "deb-systemd-invoke stop" in preinst
     assert "systemctl stop" not in preinst
+    assert "/var/lib/zapret2applet/blockcheck" in preinst
+    assert "/var/lib/zapret2control/blockcheck" in preinst
+    assert "/var/lib/zapret2applet/blockcheck" in spec
+    assert "/var/lib/zapret2control/blockcheck" in spec
+    path_sources = [
+        helper, worker,
+        (ROOT / "packaging/helper/blockcheck_submit.py").read_text(encoding="utf-8"),
+        (ROOT / "packaging/helper/blockcheck_cancel.py").read_text(encoding="utf-8"),
+        (ROOT / "packaging/helper/blockcheck_status.py").read_text(encoding="utf-8"),
+        (ROOT / "packaging/helper/blockcheck_recovery.py").read_text(encoding="utf-8"),
+        (ROOT / "packaging/helper/blockcheck_probe.py").read_text(encoding="utf-8"),
+        (ROOT / "packaging/helper/blockcheck_admission.py").read_text(encoding="utf-8"),
+    ]
+    for source in path_sources:
+        assert "/run/zapret2applet" not in source
+        assert "/var/lib/zapret2applet" not in source
     assert "deb-systemd-helper disable" in preinst
     assert "systemctl daemon-reload" in postinst
     assert "%pretrans" in spec
@@ -105,6 +121,33 @@ def main() -> None:
         assert calls[0].endswith("stop " + LEGACY_UNITS[0]), calls
         assert calls[1].endswith("disable " + LEGACY_UNITS[0]), calls
         assert not any(LEGACY_UNITS[1] in call for call in calls), calls
+
+        # A valid legacy durable state directory is moved intact to the new path.
+        old_parent = temp_path / "var" / "lib" / "zapret2applet"
+        new_parent = temp_path / "var" / "lib" / "zapret2control"
+        old_state = old_parent / "blockcheck"
+        old_state.mkdir(parents=True, mode=0o700)
+        old_state.chmod(0o700)
+        (old_state / "state.json").write_text('{"version":1}\\n', encoding="ascii")
+        (old_state / "state.json").chmod(0o600)
+        migration_preinst = temp_path / "preinst-state-migration"
+        migration_script = test_script.replace(
+            "/var/lib/zapret2applet", str(old_parent)
+        ).replace(
+            "/var/lib/zapret2control", str(new_parent)
+        )
+        migration_preinst.write_text(migration_script, encoding="utf-8")
+        migration_preinst.chmod(0o755)
+        subprocess.run([str(migration_preinst), "upgrade"], check=True, env=env)
+        assert (new_parent / "blockcheck" / "state.json").read_text(encoding="ascii") == '{"version":1}\\n'
+        assert not old_state.exists()
+
+        # Ambiguous dual state must stop the upgrade rather than discard either copy.
+        old_state.mkdir(parents=True, mode=0o700)
+        (new_parent / "blockcheck").mkdir(mode=0o700)
+        ambiguous = subprocess.run([str(migration_preinst), "upgrade"], env=env)
+        assert ambiguous.returncode != 0
+        assert old_state.is_dir() and (new_parent / "blockcheck").is_dir()
 
         # A failed stop must abort the upgrade and must not disable the unit.
         failing_bin = temp_path / "failing-bin"
