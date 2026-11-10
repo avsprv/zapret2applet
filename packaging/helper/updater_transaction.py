@@ -133,6 +133,8 @@ def validate_manifest(document: Any) -> dict[str, Any]:
         if expected is None or set(entry) != expected:
             _fail("invalid manifest entry fields")
         path = _relative_path(entry["path"])
+        if is_user_data_path(path):
+            _fail(f"manifest cannot claim preserved user data: {path}")
         if path in seen:
             _fail("duplicate manifest path")
         if kind == "symlink":
