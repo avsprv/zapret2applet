@@ -1,6 +1,7 @@
 #include "settingsmanager.h"
 
 #include <QSettings>
+#include <QStringList>
 
 namespace {
 constexpr auto kThemeKey = "appearance/theme";
