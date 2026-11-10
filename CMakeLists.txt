@@ -60,7 +60,6 @@ qt_add_translations(zapret2control_i18n
         src/qml/settingsmanager.cpp
         src/qml/logscontroller.cpp
         src/qml/listscontroller.cpp
-        src/qml/blockcheckcontroller.cpp
         src/qml/blockcheckjobcontroller.cpp
         src/qml/updatecontroller.cpp
         src/qml/autostartcontroller.cpp
@@ -264,16 +263,6 @@ if(BUILD_TESTING)
     target_link_libraries(test_systemdbackend PRIVATE Qt6::Test Qt6::Core)
     target_compile_definitions(test_systemdbackend PRIVATE QZAPRET_HELPER_PATH="/nonexistent")
     add_test(NAME systemd_backend COMMAND test_systemdbackend)
-
-    qt_add_executable(test_blockcheckcontroller tests/test_blockcheckcontroller.cpp
-        src/qml/blockcheckcontroller.cpp src/qml/blockcheckcontroller.h
-        src/backend/blockcheckrunner.cpp src/backend/blockcheckrunner.h
-        src/backend/systemdbackend.cpp src/backend/systemdbackend.h
-        src/backend/zapretbackend.h src/backend/helperpath.h)
-    target_include_directories(test_blockcheckcontroller PRIVATE src src/qml)
-    target_link_libraries(test_blockcheckcontroller PRIVATE Qt6::Test Qt6::Core Qt6::Gui)
-    target_compile_definitions(test_blockcheckcontroller PRIVATE QZAPRET_HELPER_PATH="/nonexistent")
-    add_test(NAME blockcheck_controller COMMAND test_blockcheckcontroller)
 
     qt_add_executable(test_blockcheckjobcontroller tests/test_blockcheckjobcontroller.cpp
         src/qml/blockcheckjobcontroller.cpp src/qml/blockcheckjobcontroller.h
