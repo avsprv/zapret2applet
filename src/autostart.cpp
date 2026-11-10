@@ -21,7 +21,7 @@ QString legacyDesktopEntry(const QString &legacyExecutable)
                           "Type=Application\n"
                           "Name=zapret2applet\n"
                           "Comment=Unofficial Qt6 GUI for zapret2\n"
-                          "Exec=\"%1\" --minimized\n"
+                          "Exec=\\"%1\\" --minimized\n"
                           "Icon=zapret2applet\n"
                           "Terminal=false\n"
                           "X-GNOME-Autostart-enabled=true\n")
@@ -34,11 +34,26 @@ QString currentDesktopEntry(const QString &applicationPath)
                           "Type=Application\n"
                           "Name=Zapret2 Control\n"
                           "Comment=Network Control for Linux\n"
-                          "Exec=\"%1\" --minimized\n"
+                          "Exec=\\"%1\\" --minimized\n"
                           "Icon=zapret2control\n"
                           "Terminal=false\n"
                           "X-GNOME-Autostart-enabled=true\n")
         .arg(escapeExecPath(applicationPath));
+}
+
+bool isManagedCurrentEntry(const QString &path, const QString &applicationPath)
+{
+    const QFileInfo info(path);
+    if (!info.exists() || info.isSymLink() || !info.isFile())
+        return false;
+
+    QFile entry(path);
+    if (!entry.open(QIODevice::ReadOnly))
+        return false;
+
+    const QByteArray contents = entry.readAll();
+    return entry.error() == QFile::NoError
+        && contents == currentDesktopEntry(applicationPath).toUtf8();
 }
 } // namespace
 
@@ -85,29 +100,42 @@ bool Autostart::migrateLegacyEntry(const QString &autostartDirectory, const QStr
 
 bool Autostart::isEnabled()
 {
+    const QString applicationPath = QCoreApplication::applicationFilePath();
     const QString directory = QStandardPaths::writableLocation(QStandardPaths::GenericConfigLocation)
         + QStringLiteral("/autostart");
-    migrateLegacyEntry(directory, QCoreApplication::applicationFilePath());
-    return QFileInfo(desktopPath()).isFile();
+    migrateLegacyEntry(directory, applicationPath);
+    return isManagedCurrentEntry(desktopPath(), applicationPath);
 }
 
 bool Autostart::setEnabled(bool enabled)
 {
+    const QString applicationPath = QCoreApplication::applicationFilePath();
     const QString directory = QStandardPaths::writableLocation(QStandardPaths::GenericConfigLocation)
         + QStringLiteral("/autostart");
-    if (!migrateLegacyEntry(directory, QCoreApplication::applicationFilePath()))
+    if (!migrateLegacyEntry(directory, applicationPath))
         return false;
 
     const QString path = desktopPath();
-    if (!enabled)
-        return !QFile::exists(path) || QFile::remove(path);
+    const QFileInfo info(path);
+    const bool pathExists = info.exists() || info.isSymLink();
+
+    if (!enabled) {
+        if (!pathExists)
+            return true;
+        if (!isManagedCurrentEntry(path, applicationPath))
+            return false;
+        return QFile::remove(path);
+    }
+
+    if (pathExists)
+        return isManagedCurrentEntry(path, applicationPath);
 
     if (!QDir().mkpath(QFileInfo(path).absolutePath()))
         return false;
 
-    QSaveFile f(path);
-    if (!f.open(QIODevice::WriteOnly | QIODevice::Text))
+    QSaveFile file(path);
+    if (!file.open(QIODevice::WriteOnly | QIODevice::Text))
         return false;
-    const QByteArray data = currentDesktopEntry(QCoreApplication::applicationFilePath()).toUtf8();
-    return f.write(data) == data.size() && f.commit();
+    const QByteArray data = currentDesktopEntry(applicationPath).toUtf8();
+    return file.write(data) == data.size() && file.commit();
 }
