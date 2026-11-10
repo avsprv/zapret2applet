@@ -98,6 +98,25 @@ private slots:
         QCOMPARE(current.readAll(), original);
     }
 
+    void createsAndRemovesManagedCurrentEntry()
+    {
+        QTemporaryDir directory;
+        QVERIFY(directory.isValid());
+        const bool hadConfigHome = qEnvironmentVariableIsSet("XDG_CONFIG_HOME");
+        const QByteArray previousConfigHome = qgetenv("XDG_CONFIG_HOME");
+        qputenv("XDG_CONFIG_HOME", directory.path().toLocal8Bit());
+
+        QVERIFY(Autostart::setEnabled(true));
+        QVERIFY(Autostart::isEnabled());
+        QVERIFY(Autostart::setEnabled(false));
+        QVERIFY(!Autostart::isEnabled());
+
+        if (hadConfigHome)
+            qputenv("XDG_CONFIG_HOME", previousConfigHome);
+        else
+            qunsetenv("XDG_CONFIG_HOME");
+    }
+
     void refusesToOverwriteUserOwnedCurrentEntry()
     {
         QTemporaryDir directory;
