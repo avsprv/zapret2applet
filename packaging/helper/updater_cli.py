@@ -117,7 +117,7 @@ def _run_checked(
     return result
 
 
-def _prepare_upstream(upstream: Path, release_tag: str) -> None:
+def _prepare_upstream(upstream: Path, release_tag: str, checksum_file: Path) -> None:
     if not re.fullmatch(r"v[0-9]+(?:\.[0-9]+)+", release_tag):
         raise ActivationError("invalid upstream release tag")
     install_script = upstream / "install_bin.sh"
@@ -125,7 +125,12 @@ def _prepare_upstream(upstream: Path, release_tag: str) -> None:
         raise ActivationError("upstream install_bin.sh is missing or unsafe")
     # Validate the extracted tree before executing any upstream helper code.
     build_manifest(upstream, release_tag)
+    if not checksum_file.is_file() or checksum_file.is_symlink():
+        raise ActivationError("release checksum manifest is missing or unsafe")
     _run_checked(["/bin/sh", str(install_script)], cwd=upstream)
+    # The selector script may only create links; verify it did not alter the
+    # checksummed upstream binaries before constructing the new ownership manifest.
+    _run_checked(["sha256sum", "-c", str(checksum_file)], cwd=upstream.parent)
     for relative in ("nfq2/nfqws2", "ip2net/ip2net", "mdig/mdig"):
         binary = upstream / relative
         if not binary.is_symlink():
@@ -182,6 +187,7 @@ def run_update(
     journal_dir: str | os.PathLike[str],
     release_tag: str,
     unit: str,
+    checksum_file: str | os.PathLike[str],
     *,
     no_service: bool = False,
     expected_uid: int | None = None,
@@ -190,7 +196,7 @@ def run_update(
     upstream, active = Path(upstream_root), Path(active_root)
     state = ensure_journal_directory(journal_dir, expected_uid=uid)
     recover_pending(state, active, unit, expected_uid=uid)
-    _prepare_upstream(upstream, release_tag)
+    _prepare_upstream(upstream, release_tag, Path(checksum_file))
 
     transaction_id = uuid.uuid4().hex
     staged = active.parent / f".zapret2control-stage-{transaction_id}"
@@ -218,6 +224,7 @@ def main(argv: Sequence[str] | None = None) -> int:
     update_parser.add_argument("--journal-dir", required=True)
     update_parser.add_argument("--tag", required=True)
     update_parser.add_argument("--unit", required=True)
+    update_parser.add_argument("--checksums", required=True)
     update_parser.add_argument("--no-service", action="store_true")
     args = parser.parse_args(argv)
 
@@ -231,7 +238,7 @@ def main(argv: Sequence[str] | None = None) -> int:
             return 0
         backup = run_update(
             args.upstream, args.base, args.journal_dir, args.tag, args.unit,
-            no_service=args.no_service,
+            args.checksums, no_service=args.no_service,
         )
         print(f"Updated to {args.tag}; previous installation retained at {backup}")
         return 0
