@@ -773,7 +773,7 @@ update-locked)
     if grep -qE '(^/|(^|/)\.\.(/|$))' "$tmp/list"; then die "unsafe paths in archive"; fi
     if grep -qv "^$name/" "$tmp/list"; then die "unexpected content outside $name/"; fi
     # Только обычные файлы и каталоги: ни ссылок, ни устройств.
-    python3 - "$tmp/z.tgz" "$name" <<'PY'
+    if ! python3 - "$tmp/z.tgz" "$name" <<'PY'
 import sys
 import tarfile
 
@@ -835,7 +835,9 @@ for path in seen:
             reject(f"non-directory parent: {parent}")
         parent = parent.rpartition("/")[0]
 PY
-    [ "$?" -eq 0 ] || die "archive structure validation failed"
+    then
+        die "archive structure validation failed"
+    fi
     # Только обычные файлы и каталоги: ни ссылок, ни устройств.
     if tar -tvzf "$tmp/z.tgz" | cut -c1 | grep -qv '[-d]'; then die "links or special files in archive"; fi
 
