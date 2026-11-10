@@ -1,0 +1,138 @@
+# Upstream updater transaction design
+
+Status: implementation design for the updater refactor. This document describes the required behavior; it does not claim that the current updater already implements it.
+
+## Current behavior and verified constraints
+
+The privileged `update-locked` path downloads and validates the upstream archive, extracts it under `/var/tmp`, copies the current installation to `$BASE.bak`, and overlays the new archive with `cp -a "$stage/." "$BASE/"`. The overlay does not remove obsolete upstream files.
+
+The archive contains ordinary files and directories; the helper rejects archive symlinks and special files. The upstream `install_bin.sh` is run after extraction and generates relative symlinks for the selected architecture:
+
+- `nfq2/nfqws2`
+- `ip2net/ip2net`
+- `mdig/mdig`
+
+The upstream selector probes `ip2net` with `0.0.0.0` input, then creates all three links from the selected architecture directory. The current clean-install path verifies all three links and executes both `nfqws2 --version` and the `ip2net` probe. The current update path verifies only `nfqws2`; this validation gap must be closed.
+
+The service unit uses fixed paths under `/opt/zapret2`. Replacing the installation with a symlink-based version pointer would therefore require a broader security and path-resolution redesign. The preferred design keeps `/opt/zapret2` a real directory.
+
+## Required ownership model
+
+The new installation carries a root-owned manifest at:
+
+```
+/opt/zapret2/.zapret2control-upstream-manifest.json
+```
+
+The manifest records only paths owned by the upstream archive and the generated architecture links. It must not claim user data or untracked legacy files. The manifest itself is reserved: an upstream archive containing this path is rejected.
+
+The manifest must be versioned and strictly validated. At minimum it records:
+
+- schema version;
+- upstream release tag;
+- normalized relative path for each owned regular file;
+- file type and mode;
+- SHA-256 for each regular file;
+- relative target for each generated symlink.
+
+Reject absolute paths, empty components, `.`, `..`, duplicate paths, unsupported file types, invalid modes, malformed hashes, and symlink targets that resolve outside the installation root. The manifest is not a substitute for validating the downloaded archive.
+
+### Explicit user data
+
+The following paths are preserved independently of the manifest:
+
+- `config`;
+- user-owned source hostlists under `ipset/` (the existing allowlisted `zapret-hosts-user*.txt` files);
+- `init.d/*/custom.d/` and their regular-file contents.
+
+Preservation must retain file contents and safe metadata. Symlinks and special files in preserved paths must fail closed rather than be followed.
+
+### Migration from installations without a manifest
+
+Absence of a manifest means ownership of existing files is unknown. The migration must not infer that an unknown file is upstream-owned and delete it.
+
+Build the new tree from the validated new archive, then preserve explicit user data and unknown legacy files that are absent from the new archive. If an untracked legacy path collides with a path supplied by the new archive, the new archive owns that path; explicit user-data paths always take precedence. Unknown legacy files that do not collide are retained but remain untracked, so a later update cannot delete them automatically.
+
+This is intentionally conservative: the first manifest establishes ownership only for the new archive and generated links. It does not retroactively claim ownership of the old installation.
+
+### Subsequent updates
+
+When a valid previous manifest exists:
+
+1. Build the new tree from the new archive.
+2. Preserve explicit user data.
+3. Copy forward only legacy/untracked regular files and directories that are absent from the new archive.
+4. Do not copy paths listed in the previous manifest unless they are also present in the new archive.
+5. Generate architecture links and create the new manifest.
+6. Validate the complete staged tree.
+
+Thus a file present in the old manifest but absent from the new archive is omitted, while untracked files are retained. Never recursively delete a directory merely because it is absent from a manifest; only construct the new tree from the desired contents.
+
+## Staging and validation
+
+The download may remain under a temporary directory, but the extracted final staging tree must be a sibling of `/opt/zapret2` so it is guaranteed to be on the same filesystem as the active installation. Use a private, root-owned, non-symlink staging directory with a transaction-specific name.
+
+Before touching the active installation:
+
+- validate archive structure, path traversal, entry count, expanded size, file types, release version, and binary checksums;
+- validate all required upstream files and the systemd unit paths;
+- run `install_bin.sh` in the staged tree with a clean environment;
+- verify that all three generated links exist, are executable, and resolve inside the staged tree;
+- execute `nfqws2 --version`;
+- run the known-safe `ip2net` probe with `0.0.0.0` input and require non-empty output;
+- do not invent a `mdig` command-line probe until its supported invocation and exit semantics are confirmed;
+- validate the manifest against the staged tree;
+- validate the preserved configuration and hostlists without modifying them.
+
+The update must also validate the trust boundary of `/opt`, the installation directory, staging directory, backup directory, and persistent transaction-state directory. They must be real directories with expected root ownership and safe permissions; no path component may be a symlink.
+
+## Atomic activation and crash recovery
+
+Do not use a two-step `mv active old; mv staged active` sequence: it creates a window in which `/opt/zapret2` is missing.
+
+Use Linux `renameat2(..., RENAME_EXCHANGE)` to atomically exchange the active directory and the fully validated staged sibling. Both paths must be on the same filesystem. If the operation is unavailable or unsupported, fail closed and leave the active installation unchanged; do not silently fall back to a non-atomic replacement.
+
+Persist a root-owned transaction journal outside `/opt/zapret2`, under `/var/lib/zapret2control/updater/`. The journal records a schema version, transaction UUID, release tag, staging and backup basenames, the old and new directory device/inode identities, and whether the service was active. Write it atomically with file and directory fsync before the exchange.
+
+After exchange, the old installation is located at the former staging path. Rename it to a unique backup path in the same parent directory. Recovery must infer the exact completed step from the recorded directory identities, not from a phase string alone, because power loss can occur between a rename and the following journal update.
+
+Recovery cases:
+
+| Observed identities | Recovery |
+|---|---|
+| Active path is old; staging path is new | Exchange did not happen. Remove only the transaction's validated staging tree and clear the journal. |
+| Active path is new; staging path is old | Exchange happened. Move the old tree to the recorded backup path, then finalize the transaction. |
+| Active path is new; staging is absent; backup is old | Backup rename happened. Finalize the transaction. |
+| Any identity is missing, duplicated, unsafe, or unexpected | Stop and preserve all paths; report manual recovery required. |
+
+Never remove a path solely because its name resembles a staging or backup directory. Verify it against the journal UUID, root ownership, path containment, directory type, and recorded device/inode identity.
+
+The existing service-restart semantics remain: if the service was active before the update, stop it only after staging is complete, verify it reached `inactive`, activate the new tree, then start it and verify `active`. A restart failure is reported as an unsuccessful partial update; the new tree and previous-version backup remain available. Do not automatically roll back a fully activated tree solely because the service failed to restart.
+
+## Locking and failure behavior
+
+The existing Blockcheck admission guard remains held throughout the complete update and recovery operation. The updater's own transaction lock/journal must prevent concurrent update attempts and reject malformed or unresolved transactions. A crash must not leave a lock whose mere existence permanently blocks recovery; process locks or safely recoverable transaction state are preferred over a persistent mkdir lock.
+
+Any validation or staging failure occurs before service stop and must leave the active tree untouched. Any failure after service stop but before atomic exchange must attempt to restore the previous service state. Any failure after exchange must preserve both complete trees and the journal; never delete the only known-good copy.
+
+## Regression test matrix
+
+Tests must exercise the real helper against synthetic archives and an isolated filesystem:
+
+- a file present in the previous manifest but absent from the new archive is removed;
+- a new upstream file is installed;
+- user config, user hostlists, and `custom.d` contents survive;
+- unknown legacy files absent from the new archive survive first migration;
+- a legacy installation without a manifest is never destructively pruned;
+- a second update removes only paths owned by the previous manifest;
+- generated symlinks are recorded and regenerated correctly;
+- archive path traversal, symlinks, special files, oversized entries, missing checksums, and malformed manifests are rejected;
+- invalid `nfqws2` and `ip2net` prevent activation; missing/non-executable `mdig` link prevents activation;
+- staging on a different filesystem is not used;
+- exchange unsupported or failed leaves the old installation and service state intact;
+- simulated crash at each journal/exchange/backup boundary is recovered idempotently;
+- unknown or tampered transaction paths are preserved and cause fail-closed recovery;
+- service-state query errors and transitional states reject the update;
+- failed restart retains the new installation, old backup, and a clear failure result.
+
+The existing CI must not weaken archive, package, QML, or systemd test coverage. Real power-loss behavior still requires a separate VM-level test; deterministic filesystem and process-crash tests are necessary but not equivalent to physical power-loss testing.
