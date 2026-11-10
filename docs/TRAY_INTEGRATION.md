@@ -6,8 +6,8 @@ Implemented in the production Qt Quick/Kirigami application through `TrayControl
 `DBusMenu`, and QtDBus. The application exports StatusNotifierItem and DBusMenu interfaces,
 tracks watcher availability, retries registration after watcher restarts, and provides a
 no-watcher fallback. Automated private-session-bus tests cover protocol marshalling, menu
-structure, registration and action dispatch. Final package startup validation remains part of
-the migration CI gate.
+structure, watcher registration/restart and action dispatch. Final package startup validation
+and manual desktop lifecycle checks remain part of the migration gate.
 
 ## Decision
 
@@ -35,7 +35,8 @@ exported values change.
 2. Register the application's unique service name with `RegisterStatusNotifierItem`.
 3. Detect watcher appearance/disappearance through D-Bus service-owner notifications. Retry
    registration when a watcher appears; do not busy-loop when no watcher is present.
-4. Treat session-bus disconnection as a recoverable state. Do not crash or block the GUI thread.
+4. Treat session-bus disconnection as a recoverable state. Do not crash or block the GUI thread;
+   verify disconnect/reconnect behavior during manual desktop testing.
 5. Unregister exported objects and release the service name cleanly during application shutdown.
 6. Do not implement a private tray host or assume that KDE Plasma is present. The watcher/host
    owns presentation.
@@ -106,17 +107,26 @@ pre-colored raster icon as the only representation.
 - Do not link `KF6::StatusNotifierItem` or `QMenu` into the application.
 - The tray implementation is included in the installed DEB and RPM packages.
 
+## Manual desktop verification
+
+Before release, verify on a real Plasma 6 session and on a desktop without a StatusNotifierWatcher:
+
+- Close-to-tray hides only while tray registration is active; otherwise the application exits.
+- Explicit Quit always exits, including when close-to-tray is enabled.
+- The application restores its window if the watcher disappears while it is hidden.
+- Session-bus disconnect/reconnect does not leave a stranded process or permanently stale tray item.
+- Inactive/failed tray overlays update after light/dark palette changes.
+- Desktop autostart with `--minimized` shows the window when no watcher is available.
+
 ## Automated tests
 
 - SNI introspection includes required properties, methods, and signals with exact D-Bus signatures.
 - Tooltip and icon property marshalling follows the SNI specification.
-- Watcher absence at startup, later appearance, watcher restart, and session-bus disconnection.
+- Watcher absence at startup, later appearance, and watcher restart.
 - DBusMenu layout returns the correct recursive structure, property filtering, revision, and stable IDs.
 - Event dispatch rejects unknown IDs and unsupported events without invoking actions.
 - Start/stop menu actions are enabled only for valid application states and route through
   ApplicationController.
-- Close-to-tray hides only when registration is available; otherwise the application exits.
-- Explicit Quit always exits.
 - Production target links QtDBus and has no Qt Widgets dependency.
 - XDG autostart creates and removes only a managed entry, refuses unmanaged files and symlinks,
   and preserves user-owned entries.
