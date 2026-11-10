@@ -218,6 +218,8 @@ public:
     void refreshTheme()
     {
         emit NewIcon();
+        emit NewOverlayIcon();
+        emit NewAttentionIcon();
     }
 
     void setServiceState(const QString &stateCode)
