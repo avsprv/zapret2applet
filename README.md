@@ -14,7 +14,7 @@
 > [!IMPORTANT]
 > **Независимый проект.** zapret2control не связан с автором или сопровождающими [zapret2](https://github.com/bol-van/zapret2).
 >
-> Приложение не выполняет первоначальную установку zapret2. Найденные стратегии необходимо вручную перенести в конфигурацию zapret2 и проверить.
+> Приложение не включает zapret2 в свой состав. При этом вкладка «Обновления» поддерживает чистую установку zapret2 из upstream-релиза. Найденные стратегии blockcheck2 автоматически не применяются: их необходимо вручную перенести в конфигурацию и проверить.
 
 ## Содержание
 
@@ -130,12 +130,12 @@ Helper принимает ограниченный набор операций �
 
 **Fedora:**
 ```bash
-sudo dnf install cmake ninja-build gcc-c++ qt6-qtbase-devel qt6-qttools-devel polkit
+sudo dnf install cmake ninja-build gcc-c++ extra-cmake-modules kf6-kirigami-devel qt6-qtbase-devel qt6-qtdeclarative-devel qt6-qttools-devel desktop-file-utils appstream util-linux-core dbus-daemon systemd curl tar python3 polkit
 ```
 
 **Debian / Ubuntu:**
 ```bash
-sudo apt install build-essential cmake ninja-build qt6-base-dev qt6-tools-dev qt6-l10n-tools pkexec
+sudo apt install build-essential cmake ninja-build extra-cmake-modules libkirigami-dev qt6-base-dev qt6-declarative-dev qt6-tools-dev qt6-l10n-tools desktop-file-utils appstream dbus-daemon systemd curl tar python3 pkexec
 ```
 
 ### Сборка и тесты
