@@ -100,7 +100,7 @@ def validate_manifest(document: Any) -> dict[str, Any]:
         "schema_version", "release_tag", "entries"
     }:
         _fail("invalid manifest top-level structure")
-    if isinstance(document["schema_version"], bool) or document["schema_version"] != SCHEMA_VERSION:
+    if type(document["schema_version"]) is not int or document["schema_version"] != SCHEMA_VERSION:
         _fail("unsupported manifest schema version")
     tag = document["release_tag"]
     if not isinstance(tag, str) or not _RELEASE_RE.fullmatch(tag):
@@ -114,6 +114,8 @@ def validate_manifest(document: Any) -> dict[str, Any]:
         if not isinstance(entry, dict):
             _fail("manifest entry must be an object")
         kind = entry.get("type")
+        if not isinstance(kind, str):
+            _fail("invalid manifest entry type")
         expected = {
             "file": {"path", "type", "mode", "sha256"},
             "directory": {"path", "type", "mode"},
@@ -125,7 +127,7 @@ def validate_manifest(document: Any) -> dict[str, Any]:
         if path in seen:
             _fail("duplicate manifest path")
         if kind == "symlink":
-            if isinstance(entry["mode"], bool) or entry["mode"] != 0o777:
+            if type(entry["mode"]) is not int or entry["mode"] != 0o777:
                 _fail("symlink mode must be 0777")
             mode = 0o777
         else:
@@ -217,7 +219,7 @@ def _walk_entries(root: Path) -> list[dict[str, Any]]:
 
 def build_manifest(root: str | os.PathLike[str], release_tag: str) -> dict[str, Any]:
     root_path = Path(root)
-    if not _RELEASE_RE.fullmatch(release_tag):
+    if not isinstance(release_tag, str) or not _RELEASE_RE.fullmatch(release_tag):
         _fail("invalid release tag")
     if root_path.is_symlink() or not root_path.is_dir():
         _fail("installation root must be a real directory")
@@ -333,24 +335,24 @@ def load_manifest(
         info = manifest_path.lstat()
     except OSError as exc:
         _fail(f"manifest is missing: {exc}")
-    if not stat.S_ISREG(info.st_mode) or info.st_uid != (
+    if not stat.S_ISREG(info.st_mode) or info.st_nlink != 1 or info.st_uid != (
         os.geteuid() if expected_uid is None else expected_uid
     ):
-        _fail("manifest must be an owned regular file")
-    if stat.S_IMODE(info.st_mode) & 0o077:
-        _fail("manifest permissions must be private (0600)")
+        _fail("manifest must be an owned single-link regular file")
+    if stat.S_IMODE(info.st_mode) != 0o600:
+        _fail("manifest permissions must be 0600")
     if info.st_size > MAX_MANIFEST_BYTES:
         _fail("manifest exceeds size limit")
     flags = os.O_RDONLY | getattr(os, "O_NOFOLLOW", 0)
     try:
         fd = os.open(manifest_path, flags)
         opened = os.fstat(fd)
-        if not stat.S_ISREG(opened.st_mode) or opened.st_uid != (
+        if not stat.S_ISREG(opened.st_mode) or opened.st_nlink != 1 or opened.st_uid != (
             os.geteuid() if expected_uid is None else expected_uid
-        ):
+        ) or (opened.st_dev, opened.st_ino) != (info.st_dev, info.st_ino):
             os.close(fd)
             _fail("opened manifest is not an owned regular file")
-        if stat.S_IMODE(opened.st_mode) & 0o077 or opened.st_size > MAX_MANIFEST_BYTES:
+        if stat.S_IMODE(opened.st_mode) != 0o600 or opened.st_size > MAX_MANIFEST_BYTES:
             os.close(fd)
             _fail("opened manifest has unsafe permissions or size")
         with os.fdopen(fd, "rb") as stream:
