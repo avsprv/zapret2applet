@@ -69,6 +69,15 @@ class UpdaterActivationTests(unittest.TestCase):
         finalize_transaction(self.journal)
         self.assertFalse(self.journal.exists())
 
+    def test_recovery_finishes_aborted_cleanup_after_crash(self):
+        self.prepare_journal()
+        import shutil
+        shutil.rmtree(self.stage)
+        result = recover_transaction(self.journal, self.base)
+        self.assertEqual(result, "completed_abort_cleanup")
+        self.assertEqual((self.active / "old.txt").read_text(encoding="utf-8"), "old")
+        finalize_transaction(self.journal)
+
     def test_recovery_finishes_backup_rename_after_exchange(self):
         self.prepare_journal()
         activation._renameat2(self.active, self.stage, activation.RENAME_EXCHANGE)
