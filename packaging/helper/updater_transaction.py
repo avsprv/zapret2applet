@@ -185,6 +185,8 @@ def _validate_preserved_user_data(child: os.DirEntry[str], relative: str) -> Non
     except OSError as exc:
         _fail(f"cannot inspect preserved user data {relative}: {exc}")
     parts = relative.split("/")
+    if info.st_uid != os.geteuid():
+        _fail(f"unexpected owner for preserved user data: {relative}")
     if stat.S_ISLNK(info.st_mode):
         if relative == "config" or (len(parts) == 2 and parts[0] == "ipset"):
             _fail(f"preserved user data must be a single-link regular file: {relative}")
@@ -243,6 +245,8 @@ def _walk_entries(root: Path, *, allow_manifest: bool = False) -> list[dict[str,
                 continue
             _relative_path(path)
             info = child.stat(follow_symlinks=False)
+            if info.st_uid != os.geteuid():
+                _fail(f"unexpected owner for {path}")
             mode = stat.S_IMODE(info.st_mode)
             if not stat.S_ISLNK(info.st_mode) and (mode & 0o022 or mode & ~0o777):
                 _fail(f"unsafe permissions on {path}")
