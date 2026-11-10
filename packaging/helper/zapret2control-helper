@@ -725,8 +725,8 @@ update-locked)
 
     command -v flock >/dev/null 2>&1 || die "flock is required for crash-safe update locking"
     if [ -d "$RUNDIR/update.lock" ] && [ ! -L "$RUNDIR/update.lock" ]; then
-        secure_root_dir "$RUNDIR/update.lock" && rmdir "$RUNDIR/update.lock" \
-            || die "legacy update lock directory is not safely removable"
+        secure_root_dir "$RUNDIR/update.lock" || die "legacy update lock directory is unsafe"
+        die "legacy update lock directory exists; verify no older updater is running and remove it manually"
     fi
     if [ ! -e "$RUNDIR/update.lock" ] && [ ! -L "$RUNDIR/update.lock" ]; then
         ( umask 077; : > "$RUNDIR/update.lock" ) || die "cannot create update lock file"
