@@ -134,12 +134,7 @@ grep -q mysite.example "$W/opt/zapret2/ipset/zapret-hosts-user.txt" && ok "user 
 grep -q '^9.9.9$' "$W/opt/zapret2/docs/changes.txt" && ok "new version installed" || bad "version not updated"
 [ "$("$W/opt/zapret2/nfq2/nfqws2")" = "nfqws2 9.9.9" ] && ok "binary linked and runs" || bad "binary link broken"
 backup=$(find "$W/opt" -maxdepth 1 -type d -name '.zapret2control-backup-*' | head -n 1)
-[ -n "$backup" ] && grep -q '^1.0.6$' "$backup/docs/changes.txt" && ok "previous version retained after restart failure" || bad "previous version backup missing"
-out=$(run_update_with_service v9.9.9); rc=$?
-[ $rc -eq 0 ] && ok "next update recovers interrupted transaction first" || bad "pending recovery update rc=$rc: $out"
-[ "$(cat "$SERVICE_STATE_FILE")" = active ] && ok "recovery restores previously active service" || bad "pending recovery did not restore service"
-[ -z "$(find "$W/state/zapret2control/updater" -type f -name '*.json' -print -quit)" ] && ok "recovery clears completed journal" || bad "recovery journal was not cleared"
-
+[ -n "$backup" ] && grep -q '^1.0.6$' "$backup/docs/changes.txt" && ok "backup of previous version kept" || bad "no backup"
 flock -n "$W/run/update.lock" -c true && ok "process lock released" || bad "update lock is still held"
 
 # --- 1a. active service is stopped and restored around the update
@@ -156,7 +151,12 @@ out=$(QZAPRET_TEST_SYSTEMCTL_START_FAIL=1 run_update_with_service v9.9.9); rc=$?
 [ $rc -eq 2 ] && echo "$out" | grep -q "failed to restart" && ok "service restart failure is reported" || bad "restart failure rc=$rc: $out"
 grep -q '^9.9.9$' "$W/opt/zapret2/docs/changes.txt" && ok "updated files retained after restart failure" || bad "new files were not retained after restart failure"
 backup=$(find "$W/opt" -maxdepth 1 -type d -name '.zapret2control-backup-*' | head -n 1)
-[ -n "$backup" ] && grep -q '^1.0.6
+[ -n "$backup" ] && grep -q '^1.0.6$' "$backup/docs/changes.txt" && ok "previous version retained after restart failure" || bad "previous version backup missing"
+out=$(run_update_with_service v9.9.9); rc=$?
+[ $rc -eq 0 ] && ok "next update recovers interrupted transaction first" || bad "pending recovery update rc=$rc: $out"
+[ "$(cat "$SERVICE_STATE_FILE")" = active ] && ok "recovery restores previously active service" || bad "pending recovery did not restore service"
+[ -z "$(find "$W/state/zapret2control/updater" -type f -name '*.json' -print -quit)" ] && ok "recovery clears completed journal" || bad "recovery journal was not cleared"
+
 # --- 1b. unsafe installation paths must fail closed
 make_base; make_release v9.9.9
 chmod 777 "$W/opt/zapret2"
