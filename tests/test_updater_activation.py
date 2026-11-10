@@ -96,7 +96,8 @@ class UpdaterActivationTests(unittest.TestCase):
         replacement.mkdir()
         marker = replacement / "untrusted.txt"
         marker.write_text("leave", encoding="utf-8")
-        self.stage.rmdir()
+        import shutil
+        shutil.rmtree(self.stage)
         replacement.rename(self.stage)
         with self.assertRaisesRegex(ActivationError, "manual recovery required"):
             recover_transaction(self.journal, self.base)
