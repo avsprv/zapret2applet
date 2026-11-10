@@ -377,6 +377,13 @@ def recover_transaction(
         document["phase"] = "aborted"
         _write_journal(journal_path, document, uid, replace_existing=True)
         return "discarded_unactivated_stage"
+    if active_old and not staged.exists() and not staged.is_symlink() and not backup.exists() and not backup.is_symlink():
+        # A prior recovery may have removed the stage and crashed before
+        # recording the terminal phase. The active inode proves no exchange occurred.
+        if document["phase"] != "aborted":
+            document["phase"] = "aborted"
+            _write_journal(journal_path, document, uid, replace_existing=True)
+        return "completed_abort_cleanup"
     if active_new and stage_old and not backup.exists() and not backup.is_symlink():
         _renameat2(staged, backup, RENAME_NOREPLACE)
         _fsync_directory(parent_path)
