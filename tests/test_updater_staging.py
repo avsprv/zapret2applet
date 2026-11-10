@@ -72,7 +72,8 @@ class UpdaterStagingTests(unittest.TestCase):
         self.assertEqual((self.stage / "shared.txt").read_bytes(), b"upstream replacement")
 
     def test_untracked_legacy_symlink_fails_closed(self):
-        (self.active / "escape").symlink_to("/etc/passwd")
+        self.put(self.active, "target.txt", b"inside")
+        (self.active / "escape").symlink_to("target.txt")
         with self.assertRaisesRegex(ManifestError, "untracked legacy symlink"):
             build_staging_tree(self.upstream, self.active, self.stage, "v1.2.3")
 
