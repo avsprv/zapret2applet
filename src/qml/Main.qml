@@ -186,8 +186,8 @@ Kirigami.ApplicationWindow {
                                 Layout.preferredWidth: Kirigami.Units.smallSpacing * 3
                                 Layout.preferredHeight: Kirigami.Units.smallSpacing * 3
                                 radius: width / 2
-                                color: root.appController.serviceStateCode === "inactive" ? Kirigami.Theme.neutralTextColor
-                                     : root.appController.serviceStateCode === "failed" ? Kirigami.Theme.negativeTextColor
+                                color: root.appController.serviceStateCode === "active"
+                                     ? Kirigami.Theme.highlightColor
                                      : Kirigami.Theme.textColor
                                 Accessible.ignored: true
                             }
