@@ -140,7 +140,6 @@ grep -q '^9.9.9$' "$W/opt/zapret2/docs/changes.txt" && ok "updated files retaine
 grep -q '^1.0.6$' "$W/opt/zapret2.bak/docs/changes.txt" && ok "previous version retained after restart failure" || bad "previous version backup missing"
 
 # --- 1b. uncertain or unavailable service state must fail closed
-# --- 1b. uncertain or unavailable service state must fail closed
 make_base; make_release v9.9.9
 printf 'activating\n' > "$SERVICE_STATE_FILE"
 out=$(run_update_with_service v9.9.9); rc=$?
