@@ -98,42 +98,42 @@ Kirigami.ApplicationWindow {
             Kirigami.Action {
                 text: qsTr("Конфигурация")
                 icon.name: "document-edit"
-                onTriggered: root.pageStack.push(configPageComponent)
+                onTriggered: root.pageStack.replace(configPageComponent)
             },
             Kirigami.Action {
                 text: qsTr("Профили")
                 icon.name: "view-list-details"
-                onTriggered: root.pageStack.push(profilesPageComponent)
+                onTriggered: root.pageStack.replace(profilesPageComponent)
             },
             Kirigami.Action {
                 text: qsTr("Списки")
                 icon.name: "view-list-text"
-                onTriggered: root.pageStack.push(listsPageComponent)
+                onTriggered: root.pageStack.replace(listsPageComponent)
             },
             Kirigami.Action {
                 text: qsTr("Мониторинг")
                 icon.name: "utilities-system-monitor"
-                onTriggered: root.pageStack.push(logsPageComponent)
+                onTriggered: root.pageStack.replace(logsPageComponent)
             },
             Kirigami.Action {
                 text: qsTr("Подбор стратегий")
                 icon.name: "search"
-                onTriggered: root.pageStack.push(blockcheckPageComponent)
+                onTriggered: root.pageStack.replace(blockcheckPageComponent)
             },
             Kirigami.Action {
                 text: qsTr("Обновления")
                 icon.name: "system-software-update"
-                onTriggered: root.pageStack.push(updatePageComponent)
+                onTriggered: root.pageStack.replace(updatePageComponent)
             },
             Kirigami.Action {
                 text: qsTr("Настройки")
                 icon.name: "settings-configure"
-                onTriggered: root.pageStack.push(settingsPageComponent)
+                onTriggered: root.pageStack.replace(settingsPageComponent)
             },
             Kirigami.Action {
                 text: qsTr("О программе")
                 icon.name: "help-about"
-                onTriggered: root.pageStack.push(aboutPageComponent)
+                onTriggered: root.pageStack.replace(aboutPageComponent)
             },
             Kirigami.Action {
                 text: qsTr("Выход")
@@ -275,7 +275,7 @@ Kirigami.ApplicationWindow {
                         Controls.Button {
                             text: qsTr("Открыть обновления")
                             icon.name: "system-software-update"
-                            onClicked: root.pageStack.push(updatePageComponent)
+                            onClicked: root.pageStack.replace(updatePageComponent)
                         }
                     }
                 }
