@@ -182,6 +182,25 @@ def _copy_unknown_legacy(
             _copy_regular(active / path, destination, entry["mode"])
 
 
+def _fsync_tree(root: Path, parent: Path) -> None:
+    directories: list[Path] = []
+    for current, child_dirs, _files in os.walk(root, topdown=True, followlinks=False):
+        current_path = Path(current)
+        directories.append(current_path)
+        child_dirs[:] = [name for name in child_dirs if not (current_path / name).is_symlink()]
+    for directory in reversed(directories):
+        fd = os.open(directory, os.O_RDONLY | getattr(os, "O_DIRECTORY", 0))
+        try:
+            os.fsync(fd)
+        finally:
+            os.close(fd)
+    parent_fd = os.open(parent, os.O_RDONLY | getattr(os, "O_DIRECTORY", 0))
+    try:
+        os.fsync(parent_fd)
+    finally:
+        os.close(parent_fd)
+
+
 def _write_manifest(stage: Path, document: dict[str, Any]) -> None:
     payload = (json.dumps(document, sort_keys=True, indent=2) + "\n").encode("utf-8")
     if len(payload) > MAX_MANIFEST_BYTES:
@@ -240,6 +259,7 @@ def build_staging_tree(
         or parent_info.st_dev != active.lstat().st_dev
         or parent_info.st_uid != os.geteuid()
         or stat.S_IMODE(parent_info.st_mode) & 0o022
+        or stat.S_IMODE(parent_info.st_mode) & ~0o777
     ):
         raise ManifestError("staging parent must be privately owned and on the installation filesystem")
 
@@ -255,6 +275,7 @@ def build_staging_tree(
     new_entries = new_manifest["entries"]
     new_paths = {entry["path"] for entry in new_entries}
 
+    active_root_mode = stat.S_IMODE(active.lstat().st_mode)
     stage.mkdir(mode=0o700)
     try:
         for entry in new_entries:
@@ -282,6 +303,8 @@ def build_staging_tree(
         verify_manifest(stage, new_manifest)
         # Validate every preserved and untracked object in the completed tree.
         _walk_entries(stage, allow_manifest=True)
+        os.chmod(stage, active_root_mode)
+        _fsync_tree(stage, parent)
         return new_manifest
     except Exception:
         # This destination is a newly-created, private transaction path. The
