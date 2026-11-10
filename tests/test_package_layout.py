@@ -44,6 +44,8 @@ def main() -> None:
     assert "tests/test_updater_service.py" in cmake
     assert "tests/test_updater_cli.py" in cmake
     assert "%{_datadir}/zapret2control/*.py" in spec
+    assert "util-linux" in control
+    assert "util-linux-core" in spec
     assert "RuntimeDirectory=zapret2control" in worker_unit
     assert "TimeoutStopSec=180" in worker_unit
     assert "TimeoutStartSec=180" in recovery_unit
