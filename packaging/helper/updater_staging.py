@@ -20,6 +20,7 @@ from updater_transaction import (
     MAX_MANIFEST_BYTES,
     ManifestError,
     _validate_root,
+    _walk_entries,
     build_manifest,
     is_user_data_path,
     verify_manifest,
