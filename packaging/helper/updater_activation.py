@@ -142,13 +142,19 @@ def _validate_journal(value: Any) -> dict[str, Any]:
     return value
 
 
-def _write_journal(path: Path, document: dict[str, Any], expected_uid: int) -> None:
+def _write_journal(
+    path: Path, document: dict[str, Any], expected_uid: int, *, replace_existing: bool = False
+) -> None:
     parent = path.parent
     _safe_directory(parent, expected_uid)
     payload = (json.dumps(_validate_journal(document), sort_keys=True, indent=2) + "\n").encode()
     if len(payload) > MAX_JOURNAL_BYTES:
         _fail("transaction journal exceeds size limit")
-    if path.exists() or path.is_symlink():
+    if replace_existing:
+        current = _read_journal(path, expected_uid)
+        if current["transaction_id"] != document["transaction_id"]:
+            _fail("refusing to replace a different transaction journal")
+    elif path.exists() or path.is_symlink():
         _fail("transaction journal already exists")
     fd, temporary = tempfile.mkstemp(prefix=f".{path.name}.", dir=parent)
     try:
