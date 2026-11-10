@@ -64,7 +64,6 @@ def recover_pending(
     parent: str | os.PathLike[str],
     unit: str,
     *,
-    no_service: bool = False,
     expected_uid: int | None = None,
 ) -> list[str]:
     state = ensure_journal_directory(journal_dir, expected_uid=expected_uid)
@@ -175,7 +174,7 @@ def run_update(
     uid = os.geteuid() if expected_uid is None else expected_uid
     upstream, active = Path(upstream_root), Path(active_root)
     state = ensure_journal_directory(journal_dir, expected_uid=uid)
-    recover_pending(state, active.parent, unit, no_service=no_service, expected_uid=uid)
+    recover_pending(state, active.parent, unit, expected_uid=uid)
     _prepare_upstream(upstream, release_tag)
 
     transaction_id = uuid.uuid4().hex
@@ -212,7 +211,6 @@ def main(argv: Sequence[str] | None = None) -> int:
         if args.command == "recover":
             results = recover_pending(
                 args.journal_dir, Path(args.base).parent, args.unit,
-                no_service=args.no_service,
             )
             for result in results:
                 print(f"Recovered updater transaction: {result}")
