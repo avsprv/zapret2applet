@@ -137,7 +137,7 @@ def _validate_journal(value: Any) -> dict[str, Any]:
         _fail("transaction directory identities must be distinct")
     if value["active_name"] == value["stage_name"] or value["active_name"] == value["backup_name"] or value["stage_name"] == value["backup_name"]:
         _fail("transaction directory names must be distinct")
-    if value["phase"] not in ("prepared", "exchanged", "backup_saved"):
+    if value["phase"] not in ("prepared", "exchanged", "backup_saved", "aborted"):
         _fail("invalid transaction journal phase")
     return value
 
@@ -281,7 +281,6 @@ def activate_staged_tree(
     _fsync_directory(parent)
     document["phase"] = "backup_saved"
     _write_journal(journal_path, document, uid)
-    _unlink_journal(journal_path)
     return document
 
 
@@ -314,16 +313,32 @@ def recover_transaction(
         # Exchange did not happen: discard only the exact staged inode recorded by the journal.
         shutil.rmtree(staged)
         _fsync_directory(parent_path)
-        _unlink_journal(journal_path)
+        document["phase"] = "aborted"
+        _write_journal(journal_path, document, uid)
         return "discarded_unactivated_stage"
     if active_new and stage_old and not backup.exists() and not backup.is_symlink():
         _renameat2(staged, backup, RENAME_NOREPLACE)
         _fsync_directory(parent_path)
         document["phase"] = "backup_saved"
         _write_journal(journal_path, document, uid)
-        _unlink_journal(journal_path)
         return "completed_backup_rename"
     if active_new and not staged.exists() and not staged.is_symlink() and backup_old:
-        _unlink_journal(journal_path)
+        if document["phase"] != "backup_saved":
+            document["phase"] = "backup_saved"
+            _write_journal(journal_path, document, uid)
         return "completed_after_backup_rename"
     _fail("transaction paths do not match journal identities; manual recovery required")
+
+
+def finalize_transaction(
+    journal: str | os.PathLike[str],
+    *,
+    expected_uid: int | None = None,
+) -> None:
+    """Remove a completed/aborted journal only after service-state handling succeeds."""
+    uid = os.geteuid() if expected_uid is None else expected_uid
+    path = Path(journal)
+    document = _read_journal(path, uid)
+    if document["phase"] not in ("backup_saved", "aborted"):
+        _fail("cannot finalize a transaction that has not reached a terminal filesystem state")
+    _unlink_journal(path)
