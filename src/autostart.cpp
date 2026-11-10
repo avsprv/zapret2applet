@@ -21,7 +21,7 @@ QString legacyDesktopEntry(const QString &legacyExecutable)
                           "Type=Application\n"
                           "Name=zapret2applet\n"
                           "Comment=Unofficial Qt6 GUI for zapret2\n"
-                          "Exec=\\"%1\\" --minimized\n"
+                          "Exec=\"%1\" --minimized\n"
                           "Icon=zapret2applet\n"
                           "Terminal=false\n"
                           "X-GNOME-Autostart-enabled=true\n")
@@ -34,7 +34,7 @@ QString currentDesktopEntry(const QString &applicationPath)
                           "Type=Application\n"
                           "Name=Zapret2 Control\n"
                           "Comment=Network Control for Linux\n"
-                          "Exec=\\"%1\\" --minimized\n"
+                          "Exec=\"%1\" --minimized\n"
                           "Icon=zapret2control\n"
                           "Terminal=false\n"
                           "X-GNOME-Autostart-enabled=true\n")
