@@ -81,7 +81,7 @@ jobs:
             cat "$startup_log"
             exit 1
           fi
-          helper="$(dpkg-query -L zapret2control | grep '/zapret2control-helper
+          helper="$(dpkg-query -L zapret2control | grep '/zapret2control-helper$')"
           policy="$(dpkg-query -L zapret2control | grep '/org.zapret2control.policy$')"
           test -n "$helper" && test -x "$helper"
           test -n "$policy" && test -f "$policy"
@@ -228,7 +228,7 @@ jobs:
             cat "$startup_log"
             exit 1
           fi
-          helper="$(rpm -ql zapret2control | grep '/zapret2control-helper
+          helper="$(rpm -ql zapret2control | grep '/zapret2control-helper$')"
           policy="$(rpm -ql zapret2control | grep '/org.zapret2control.policy$')"
           test -n "$helper" && test -x "$helper"
           test -n "$policy" && test -f "$policy"
