@@ -17,6 +17,7 @@ from typing import Any
 
 from updater_transaction import (
     MANIFEST_NAME,
+    MAX_MANIFEST_BYTES,
     ManifestError,
     _validate_root,
     build_manifest,
@@ -181,6 +182,8 @@ def _copy_unknown_legacy(
 
 def _write_manifest(stage: Path, document: dict[str, Any]) -> None:
     payload = (json.dumps(document, sort_keys=True, indent=2) + "\n").encode("utf-8")
+    if len(payload) > MAX_MANIFEST_BYTES:
+        raise ManifestError("manifest exceeds size limit")
     fd, temporary = tempfile.mkstemp(prefix=f".{MANIFEST_NAME}.", dir=stage)
     try:
         os.fchmod(fd, 0o600)
@@ -254,6 +257,10 @@ def build_staging_tree(
             if entry["type"] == "directory":
                 if not destination_path.exists():
                     destination_path.mkdir(mode=entry["mode"])
+                else:
+                    if not destination_path.is_dir() or destination_path.is_symlink():
+                        raise ManifestError(f"upstream directory collides with non-directory: {path}")
+                    os.chmod(destination_path, entry["mode"])
             elif entry["type"] == "file":
                 _copy_regular(source_path, destination_path, entry["mode"])
             else:
