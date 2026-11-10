@@ -42,8 +42,9 @@ def _validate_root(root: Path, expected_uid: int | None = None) -> None:
         _fail(f"cannot inspect installation root: {exc}")
     if not stat.S_ISDIR(info.st_mode) or info.st_uid != owner:
         _fail("installation root must be a real directory owned by the expected user")
-    if stat.S_IMODE(info.st_mode) & 0o022:
-        _fail("installation root must not be group/world-writable")
+    mode = stat.S_IMODE(info.st_mode)
+    if mode & 0o022 or mode & ~0o777:
+        _fail("installation root has unsafe permissions")
 
 
 def _relative_path(value: Any) -> str:
