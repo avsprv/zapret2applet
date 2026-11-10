@@ -25,6 +25,7 @@ jobs:
         if: github.event_name == 'push' && github.ref == 'refs/heads/feature/rename-zapret2control'
         run: |
           cmake --build build --target zapret2control_i18n_lupdate
+          cd "$GITHUB_WORKSPACE"
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add i18n/zapret2control_en.ts
