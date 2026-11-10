@@ -1,8 +1,16 @@
 zapret2control (0.5.0) unstable; urgency=medium
 
-  * Rename application, binary, helper, desktop, Polkit and systemd IDs.
+  * Complete the Qt 6 / KDE Kirigami production GUI migration.
+  * Add centralized settings, theme and language selection, and adaptive tray icons.
+  * Rework Blockcheck lifecycle around dedicated systemd worker and recovery units.
+  * Replace the updater overlay with manifest-based staging, atomic directory exchange,
+    persistent transaction journaling, and service-aware crash recovery.
+  * Harden upstream archive validation, binary checksum verification, and preservation
+    of user configuration, hostlists, custom scripts, and unknown legacy files.
+  * Standardize application, executable, helper, desktop, Polkit, systemd, and package IDs.
+  * Expand automated regression coverage and Debian/Fedora package smoke tests.
 
- -- avsprv <avsprv@users.noreply.github.com>  Sun, 08 Nov 2026 09:00:00 +0300
+ -- avsprv <avsprv@users.noreply.github.com>  Tue, 10 Nov 2026 09:00:00 +0300
 
 zapret2applet (0.4.0) unstable; urgency=medium
 
