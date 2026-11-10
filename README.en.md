@@ -11,6 +11,9 @@
 
 The application provides a graphical interface for managing an existing zapret2 service, running blockcheck2 network diagnostics, and updating zapret2.
 
+> [!WARNING]
+> **Early-stage software.** Zapret2 Control is at an early stage of development. The application and individual features may contain bugs, behave unreliably, or terminate unexpectedly. Review configuration changes and updates carefully; do not rely on the application as the sole means of managing network availability.
+
 > [!IMPORTANT]
 > **Independent project.** zapret2control is not affiliated with the author or maintainers of [zapret2](https://github.com/bol-van/zapret2).
 >
