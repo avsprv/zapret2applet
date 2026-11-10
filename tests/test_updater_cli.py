@@ -11,6 +11,7 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "packaging/helper"))
 
 from updater_cli import run_update
+from updater_activation import ActivationError
 
 
 class UpdaterCliTests(unittest.TestCase):
@@ -20,6 +21,7 @@ class UpdaterCliTests(unittest.TestCase):
         self.active = self.base / "zapret2"
         self.upstream = self.base / "upstream"
         self.state = self.base / "var/lib/zapret2control/updater"
+        (self.base / "var/lib").mkdir(parents=True, mode=0o755)
         self.active.mkdir(mode=0o755)
         self.upstream.mkdir(mode=0o755)
         (self.active / "config").write_text("NFQWS2_ENABLE=0\n", encoding="utf-8")
@@ -75,7 +77,7 @@ class UpdaterCliTests(unittest.TestCase):
 
     def test_invalid_upstream_does_not_change_active_installation(self):
         (self.upstream / "install_bin.sh").write_text("#!/bin/sh\nexit 9\n", encoding="utf-8")
-        with self.assertRaises(Exception):
+        with self.assertRaises(ActivationError):
             run_update(
                 self.upstream, self.active, self.state, "v1.2.3",
                 "zapret2.service", no_service=True,
