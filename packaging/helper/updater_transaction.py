@@ -169,10 +169,13 @@ def _sha256(path: Path) -> str:
 
 def _walk_entries(root: Path) -> list[dict[str, Any]]:
     entries: list[dict[str, Any]] = []
+    pending: list[tuple[Path, str]] = [(root, "")]
 
-    def visit(directory: Path, relative: str) -> None:
+    while pending:
+        directory, relative = pending.pop()
         try:
-            children = sorted(os.scandir(directory), key=lambda item: item.name)
+            with os.scandir(directory) as iterator:
+                children = sorted(iterator, key=lambda item: item.name, reverse=True)
         except OSError as exc:
             _fail(f"cannot inspect directory {relative or '.'}: {exc}")
         for child in children:
@@ -181,13 +184,14 @@ def _walk_entries(root: Path) -> list[dict[str, Any]]:
                 _fail("upstream tree contains the reserved manifest path")
             if is_user_data_path(path):
                 continue
+            _relative_path(path)
             info = child.stat(follow_symlinks=False)
             mode = stat.S_IMODE(info.st_mode)
             if mode & 0o022 or mode & ~0o777:
                 _fail(f"unsafe permissions on {path}")
             if stat.S_ISDIR(info.st_mode):
                 entries.append({"path": path, "type": "directory", "mode": mode})
-                visit(Path(child.path), path)
+                pending.append((Path(child.path), path))
             elif stat.S_ISREG(info.st_mode):
                 if info.st_nlink != 1:
                     _fail(f"hard-linked regular file is not allowed: {path}")
@@ -198,24 +202,21 @@ def _walk_entries(root: Path) -> list[dict[str, Any]]:
                     "sha256": _sha256(Path(child.path)),
                 })
             elif stat.S_ISLNK(info.st_mode):
-                target = os.readlink(child.path)
-                target = _safe_symlink_target(path, target)
+                target = _safe_symlink_target(path, os.readlink(child.path))
                 _verify_symlink_containment(root, path, target)
                 entries.append({
                     "path": path,
                     "type": "symlink",
                     "mode": 0o777,
-                    "target": _safe_symlink_target(path, target),
+                    "target": target,
                 })
             else:
                 _fail(f"unsupported filesystem object: {path}")
+            if len(entries) > MAX_ENTRIES:
+                _fail("upstream tree contains too many entries")
 
-    visit(root, "")
     entries.sort(key=lambda item: item["path"])
-    if len(entries) > MAX_ENTRIES:
-        _fail("upstream tree contains too many entries")
     return entries
-
 
 def build_manifest(root: str | os.PathLike[str], release_tag: str) -> dict[str, Any]:
     root_path = Path(root)
