@@ -29,6 +29,30 @@ Kirigami.ApplicationWindow {
     minimumWidth: Kirigami.Units.gridUnit * 36
     minimumHeight: Kirigami.Units.gridUnit * 27
     pageStack.initialPage: dashboardPage
+    property var pendingNavigationPage: null
+
+
+    Controls.Dialog {
+        id: discardListsChangesDialog
+        modal: true
+        title: qsTr("Несохранённые изменения")
+        standardButtons: Controls.Dialog.Discard | Controls.Dialog.Cancel
+
+        Controls.Label {
+            width: parent.width
+            wrapMode: Text.WordWrap
+            text: qsTr("Текущий хостлист изменён. Отбросить несохранённые изменения и перейти в другой раздел?")
+        }
+
+        onAccepted: {
+            const destination = root.pendingNavigationPage
+            root.pendingNavigationPage = null
+            if (destination)
+                root.pageStack.replace(destination)
+        }
+
+        onRejected: root.pendingNavigationPage = null
+    }
 
     Kirigami.Dialog {
         id: quitBlockedDialog
@@ -82,6 +106,15 @@ Kirigami.ApplicationWindow {
         pageStack.push(settingsPageComponent)
     }
 
+    function navigateTo(pageComponent) {
+        if (listsController.dirty) {
+            pendingNavigationPage = pageComponent
+            discardListsChangesDialog.open()
+            return
+        }
+        pageStack.replace(pageComponent)
+    }
+
     globalDrawer: Kirigami.GlobalDrawer {
         title: qsTr("Zapret2 Control")
         titleIcon: "zapret2control"
@@ -93,47 +126,47 @@ Kirigami.ApplicationWindow {
             Kirigami.Action {
                 text: qsTr("Статус")
                 icon.name: "network-connect"
-                onTriggered: root.pageStack.replace(dashboardPage)
+                onTriggered: root.navigateTo(dashboardPage)
             },
             Kirigami.Action {
                 text: qsTr("Конфигурация")
                 icon.name: "document-edit"
-                onTriggered: root.pageStack.replace(configPageComponent)
+                onTriggered: root.navigateTo(configPageComponent)
             },
             Kirigami.Action {
                 text: qsTr("Профили")
                 icon.name: "view-list-details"
-                onTriggered: root.pageStack.replace(profilesPageComponent)
+                onTriggered: root.navigateTo(profilesPageComponent)
             },
             Kirigami.Action {
                 text: qsTr("Списки")
                 icon.name: "view-list-text"
-                onTriggered: root.pageStack.replace(listsPageComponent)
+                onTriggered: root.navigateTo(listsPageComponent)
             },
             Kirigami.Action {
                 text: qsTr("Мониторинг")
                 icon.name: "utilities-system-monitor"
-                onTriggered: root.pageStack.replace(logsPageComponent)
+                onTriggered: root.navigateTo(logsPageComponent)
             },
             Kirigami.Action {
                 text: qsTr("Подбор стратегий")
                 icon.name: "search"
-                onTriggered: root.pageStack.replace(blockcheckPageComponent)
+                onTriggered: root.navigateTo(blockcheckPageComponent)
             },
             Kirigami.Action {
                 text: qsTr("Обновления")
                 icon.name: "system-software-update"
-                onTriggered: root.pageStack.replace(updatePageComponent)
+                onTriggered: root.navigateTo(updatePageComponent)
             },
             Kirigami.Action {
                 text: qsTr("Настройки")
                 icon.name: "settings-configure"
-                onTriggered: root.pageStack.replace(settingsPageComponent)
+                onTriggered: root.navigateTo(settingsPageComponent)
             },
             Kirigami.Action {
                 text: qsTr("О программе")
                 icon.name: "help-about"
-                onTriggered: root.pageStack.replace(aboutPageComponent)
+                onTriggered: root.navigateTo(aboutPageComponent)
             },
             Kirigami.Action {
                 text: qsTr("Выход")
