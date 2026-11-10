@@ -172,3 +172,20 @@ A separate `updater_activation.py` module now provides the next isolated transac
 Regression tests cover successful exchange, both principal recovery windows, unexpected inode replacement, existing backup paths, simulated unsupported exchange, and symlinked journals.
 
 This activation module is also **not connected to `update-locked`**. Service stop/start orchestration, service-state persistence and recovery, full production-helper integration, and VM-level crash testing remain prerequisites.
+
+
+### Service lifecycle implementation progress
+
+The separate `updater_service.py` layer now wraps the activation primitives with systemd state checks:
+
+- accepts only a definitive `active` or `inactive` pre-update state;
+- stops an active service and verifies `inactive` before exchanging directories;
+- starts the service after activation and verifies `active`;
+- retains the transaction journal and old backup if restart fails;
+- recovers the filesystem transaction first, then restores the previously recorded service state, and only then finalizes the journal;
+- attempts to restore service state if stop verification or pre-activation work fails;
+- supports an explicit no-service mode for isolated operations.
+
+Mocked systemd tests cover normal active-service updates, restart failure followed by recovery, transitional-state rejection, and no-service operation.
+
+All three Python layers (`updater_staging.py`, `updater_activation.py`, and `updater_service.py`) remain isolated and are **not yet wired into the privileged shell helper**. The next integration phase must first add persistent-journal discovery/recovery at helper startup, then replace the overlay-copy section with staging plus service-aware atomic activation. The old overlay path must not be removed until the integrated helper passes end-to-end tests.
