@@ -1,8 +1,4 @@
-"""Crash-recoverable atomic activation primitives for updater directory trees.
-
-This module is intentionally separate from the production helper until its
-journal and recovery behavior has passed the full regression matrix.
-"""
+"""Crash-recoverable atomic activation primitives used by updater_service."""
 from __future__ import annotations
 
 import ctypes
