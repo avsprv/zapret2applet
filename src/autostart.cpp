@@ -18,6 +18,13 @@ QString escapeExecPath(QString value)
     return value;
 }
 
+QString escapeLegacyExecPath(QString value)
+{
+    value.replace(QLatin1Char('\\'), QStringLiteral("\\\\"));
+    value.replace(QLatin1Char('"'), QStringLiteral("\\\""));
+    return value;
+}
+
 QString legacyDesktopEntry(const QString &legacyExecutable)
 {
     return QStringLiteral("[Desktop Entry]\n"
@@ -28,7 +35,7 @@ QString legacyDesktopEntry(const QString &legacyExecutable)
                           "Icon=zapret2applet\n"
                           "Terminal=false\n"
                           "X-GNOME-Autostart-enabled=true\n")
-        .arg(escapeExecPath(legacyExecutable));
+        .arg(escapeLegacyExecPath(legacyExecutable));
 }
 
 QString currentDesktopEntry(const QString &applicationPath)
