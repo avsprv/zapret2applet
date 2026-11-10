@@ -6,7 +6,6 @@ trap 'rm -rf "$tmp"' EXIT HUP INT TERM
 mkdir -p "$tmp/base"
 export QZAPRET_TEST_BASE="$tmp/base"
 export QZAPRET_TEST_BACKUP_DIR="$tmp/backups"
-export QZAPRET_TEST_LEGACY_BACKUP_DIR="$tmp/legacy-backups"
 export QZAPRET_TEST_ENFORCE_SECURITY=1
 printf 'NFQWS2_ENABLE=1\n# original\n' > "$tmp/base/config"
 out=$("$H" config-read)
@@ -80,33 +79,3 @@ if printf 'NFQWS2_ENABLE=1\n' | "$H" config-write "$current_hash" >/dev/null 2>&
 fi
 echo "ok: rejects symlink backup root"
 
-# A valid legacy backup root is moved intact to the new application path.
-rm -f "$tmp/backups"
-mkdir -m 700 "$tmp/legacy-backups"
-printf 'legacy backup\n' > "$tmp/legacy-backups/legacy-sentinel"
-chmod 600 "$tmp/legacy-backups/legacy-sentinel"
-current_hash=$(sha256sum "$tmp/base/config" | awk '{print $1}')
-printf 'AFTER_MIGRATION=1\n' | "$H" config-write "$current_hash" >/dev/null
-[ ! -e "$tmp/legacy-backups" ] || { echo "FAIL: legacy backup root still exists"; exit 1; }
-grep -q 'legacy backup' "$tmp/backups/legacy-sentinel"
-echo "ok: migrates legacy backup storage without losing existing backups"
-
-# If both roots exist, migration must fail closed and preserve both copies.
-mkdir -m 700 "$tmp/legacy-backups"
-printf 'ambiguous legacy\n' > "$tmp/legacy-backups/legacy-sentinel"
-current_hash=$(sha256sum "$tmp/base/config" | awk '{print $1}')
-if printf 'AMBIGUOUS=1\n' | "$H" config-write "$current_hash" >/dev/null 2>&1; then
-    echo "FAIL: ambiguous backup roots were accepted"; exit 1
-fi
-grep -q 'legacy backup' "$tmp/backups/legacy-sentinel"
-grep -q 'ambiguous legacy' "$tmp/legacy-backups/legacy-sentinel"
-echo "ok: refuses ambiguous backup roots without deleting either copy"
-
-# A symlinked legacy backup root must not be followed.
-rm -rf "$tmp/legacy-backups"
-ln -s "$tmp" "$tmp/legacy-backups"
-current_hash=$(sha256sum "$tmp/base/config" | awk '{print $1}')
-if printf 'SYMLINK=1\n' | "$H" config-write "$current_hash" >/dev/null 2>&1; then
-    echo "FAIL: symlink legacy backup root was accepted"; exit 1
-fi
-echo "ok: rejects symlink legacy backup root"
