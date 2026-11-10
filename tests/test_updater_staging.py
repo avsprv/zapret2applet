@@ -97,7 +97,7 @@ class UpdaterStagingTests(unittest.TestCase):
     def test_rejects_hardlinked_preserved_config(self):
         self.put(self.active, "config", b"shared config", 0o600)
         (self.active / "config-link").hardlink_to(self.active / "config")
-        with self.assertRaisesRegex(ManifestError, "single-link regular file"):
+        with self.assertRaisesRegex(ManifestError, "hard-linked regular file"):
             build_staging_tree(self.upstream, self.active, self.stage, "v1.2.3")
 
     def test_rejects_special_file_in_custom_directory(self):
