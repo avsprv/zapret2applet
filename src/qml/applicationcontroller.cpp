@@ -2,10 +2,17 @@
 
 #include "backend/systemdbackend.h"
 
+#include <QTimer>
+
 ApplicationController::ApplicationController(QObject *parent)
     : QObject(parent)
     , m_backend(new SystemdBackend(this))
+    , m_refreshTimer(new QTimer(this))
 {
+    m_refreshTimer->setInterval(3000);
+    connect(m_refreshTimer, &QTimer::timeout, this, &ApplicationController::refresh);
+    m_refreshTimer->start();
+
     connect(m_backend, &ZapretBackend::stateChanged,
             this, &ApplicationController::setState);
     connect(m_backend, &ZapretBackend::bootEnabledChanged, this, [this](bool enabled) {
