@@ -181,6 +181,9 @@ def _prepare_upstream(upstream: Path, release_tag: str, checksum_file: Path) -> 
     build_manifest(upstream, release_tag)
     _validate_checksum_manifest(checksum_file, upstream, os.geteuid())
     _run_checked(["/bin/sh", str(install_script)], cwd=upstream)
+    # Re-scan after executing the selector to reject symlinked parents or
+    # special objects before any generated runtime link is executed.
+    build_manifest(upstream, release_tag)
     _validate_checksum_manifest(checksum_file, upstream, os.geteuid())
     # The selector script may only create links; verify it did not alter the
     # checksummed upstream binaries before constructing the new ownership manifest.
