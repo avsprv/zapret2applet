@@ -1,6 +1,7 @@
 #include <QFile>
 #include <QTemporaryDir>
 #include <QDir>
+#include <QFileInfo>
 #include <QtTest>
 
 #include "autostart.h"
@@ -22,7 +23,7 @@ private slots:
             "Type=Application\n"
             "Name=zapret2applet\n"
             "Comment=Unofficial Qt6 GUI for zapret2\n"
-            "Exec=\"/usr/bin/zapret2applet\" --minimized\n"
+            "Exec=\\"/usr/bin/zapret2applet\\" --minimized\n"
             "Icon=zapret2applet\n"
             "Terminal=false\n"
             "X-GNOME-Autostart-enabled=true\n");
@@ -35,7 +36,7 @@ private slots:
         QVERIFY(current.open(QIODevice::ReadOnly));
         const QByteArray migrated = current.readAll();
         QVERIFY(migrated.contains("Name=Zapret2 Control"));
-        QVERIFY(migrated.contains("Exec=\"/usr/bin/zapret2control\" --minimized"));
+        QVERIFY(migrated.contains("Exec=\\"/usr/bin/zapret2control\\" --minimized"));
         QVERIFY(migrated.contains("Icon=zapret2control"));
         QVERIFY(!QFile::exists(legacyPath));
     }
@@ -76,7 +77,7 @@ private slots:
             qunsetenv("XDG_CONFIG_HOME");
     }
 
-    void doesNotOverwriteExistingNewEntry()
+    void doesNotOverwriteExistingNewEntryDuringMigration()
     {
         QTemporaryDir directory;
         QVERIFY(directory.isValid());
@@ -95,6 +96,92 @@ private slots:
         QVERIFY(legacy.exists());
         QVERIFY(current.open(QIODevice::ReadOnly));
         QCOMPARE(current.readAll(), original);
+    }
+
+    void refusesToOverwriteUserOwnedCurrentEntry()
+    {
+        QTemporaryDir directory;
+        QVERIFY(directory.isValid());
+        const bool hadConfigHome = qEnvironmentVariableIsSet("XDG_CONFIG_HOME");
+        const QByteArray previousConfigHome = qgetenv("XDG_CONFIG_HOME");
+        qputenv("XDG_CONFIG_HOME", directory.path().toLocal8Bit());
+
+        const QString autostartDirectory = directory.filePath(QStringLiteral("autostart"));
+        QVERIFY(QDir().mkpath(autostartDirectory));
+        const QString path = QDir(autostartDirectory).filePath(QStringLiteral("zapret2control.desktop"));
+        const QByteArray original("[Desktop Entry]\nType=Application\nName=Personal launcher\nExec=custom-command\n");
+        QFile entry(path);
+        QVERIFY(entry.open(QIODevice::WriteOnly));
+        QCOMPARE(entry.write(original), qint64(original.size()));
+        entry.close();
+
+        QVERIFY(!Autostart::setEnabled(true));
+        QVERIFY(entry.open(QIODevice::ReadOnly));
+        QCOMPARE(entry.readAll(), original);
+
+        if (hadConfigHome)
+            qputenv("XDG_CONFIG_HOME", previousConfigHome);
+        else
+            qunsetenv("XDG_CONFIG_HOME");
+    }
+
+    void refusesToRemoveUserOwnedCurrentEntry()
+    {
+        QTemporaryDir directory;
+        QVERIFY(directory.isValid());
+        const bool hadConfigHome = qEnvironmentVariableIsSet("XDG_CONFIG_HOME");
+        const QByteArray previousConfigHome = qgetenv("XDG_CONFIG_HOME");
+        qputenv("XDG_CONFIG_HOME", directory.path().toLocal8Bit());
+
+        const QString autostartDirectory = directory.filePath(QStringLiteral("autostart"));
+        QVERIFY(QDir().mkpath(autostartDirectory));
+        const QString path = QDir(autostartDirectory).filePath(QStringLiteral("zapret2control.desktop"));
+        const QByteArray original("[Desktop Entry]\nType=Application\nName=Personal launcher\nExec=custom-command\n");
+        QFile entry(path);
+        QVERIFY(entry.open(QIODevice::WriteOnly));
+        QCOMPARE(entry.write(original), qint64(original.size()));
+        entry.close();
+
+        QVERIFY(!Autostart::setEnabled(false));
+        QVERIFY(entry.exists());
+        QVERIFY(entry.open(QIODevice::ReadOnly));
+        QCOMPARE(entry.readAll(), original);
+
+        if (hadConfigHome)
+            qputenv("XDG_CONFIG_HOME", previousConfigHome);
+        else
+            qunsetenv("XDG_CONFIG_HOME");
+    }
+
+    void refusesSymlinkAsCurrentEntry()
+    {
+        QTemporaryDir directory;
+        QVERIFY(directory.isValid());
+        const bool hadConfigHome = qEnvironmentVariableIsSet("XDG_CONFIG_HOME");
+        const QByteArray previousConfigHome = qgetenv("XDG_CONFIG_HOME");
+        qputenv("XDG_CONFIG_HOME", directory.path().toLocal8Bit());
+
+        const QString autostartDirectory = directory.filePath(QStringLiteral("autostart"));
+        QVERIFY(QDir().mkpath(autostartDirectory));
+        const QString targetPath = directory.filePath(QStringLiteral("personal.desktop"));
+        QFile target(targetPath);
+        QVERIFY(target.open(QIODevice::WriteOnly));
+        target.write("[Desktop Entry]\nType=Application\n");
+        target.close();
+        const QString linkPath = QDir(autostartDirectory).filePath(QStringLiteral("zapret2control.desktop"));
+        if (!QFile::link(targetPath, linkPath))
+            QSKIP("Symlinks are unavailable on this platform");
+
+        QVERIFY(!Autostart::isEnabled());
+        QVERIFY(!Autostart::setEnabled(true));
+        QVERIFY(!Autostart::setEnabled(false));
+        QVERIFY(QFileInfo(linkPath).isSymLink());
+        QVERIFY(target.exists());
+
+        if (hadConfigHome)
+            qputenv("XDG_CONFIG_HOME", previousConfigHome);
+        else
+            qunsetenv("XDG_CONFIG_HOME");
     }
 };
 
