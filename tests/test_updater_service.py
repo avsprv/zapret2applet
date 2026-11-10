@@ -22,15 +22,16 @@ class UpdaterServiceTests(unittest.TestCase):
         self.temp = tempfile.TemporaryDirectory(prefix="zapret2control-service-")
         self.base = Path(self.temp.name)
         self.active = self.base / "active"
-        self.stage = self.base / "stage"
-        self.backup = self.base / "backup"
+        self.transaction_id = uuid.uuid4().hex
+        self.stage = self.base / f".zapret2control-stage-{self.transaction_id}"
+        self.backup = self.base / f".zapret2control-backup-{self.transaction_id}"
         self.journal_dir = self.base / "journal"
         self.journal_dir.mkdir(mode=0o700)
         self.active.mkdir(mode=0o755)
         self.stage.mkdir(mode=0o755)
         (self.active / "old.txt").write_text("old", encoding="utf-8")
         (self.stage / "new.txt").write_text("new", encoding="utf-8")
-        self.journal = self.journal_dir / f"{uuid.uuid4().hex}.json"
+        self.journal = self.journal_dir / f"{self.transaction_id}.json"
         self.state = "active"
         self.fail_start = False
         self.calls = []
