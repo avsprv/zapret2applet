@@ -82,7 +82,9 @@ def _copy_user_data(source_root: Path, stage: Path) -> None:
         if init_root.is_symlink() or not init_root.is_dir():
             raise ManifestError("init.d must be a real directory when preserving custom.d")
         for platform in sorted(init_root.iterdir()):
-            if platform.is_symlink() or not platform.is_dir():
+            if platform.is_symlink():
+                raise ManifestError(f"symlinked init.d platform directory: {platform.name}")
+            if not platform.is_dir():
                 continue
             custom = platform / "custom.d"
             if custom.exists() or custom.is_symlink():
@@ -124,7 +126,7 @@ def _copy_user_data(source_root: Path, stage: Path) -> None:
 def _copy_unknown_legacy(
     active: Path, stage: Path, previous_paths: set[str], new_paths: set[str],
     active_entries: list[dict[str, Any]], new_manifest_entries: list[dict[str, Any]]
-) -> None:
+ ) -> dict[str, int]:
     """Retain untracked regular files/directories absent from the new upstream tree."""
     entries = {entry["path"]: entry for entry in active_entries}
     preserve: list[str] = []
@@ -144,6 +146,7 @@ def _copy_unknown_legacy(
             parent = posixpath.dirname(parent)
 
     new_types = {entry["path"]: entry["type"] for entry in new_manifest_entries}
+    directory_modes: dict[str, int] = {}
     for path in sorted(preserve, key=lambda value: (value.count("/"), value)):
         parent = posixpath.dirname(path)
         blocked = False
@@ -165,21 +168,24 @@ def _copy_unknown_legacy(
             mode = stat.S_IMODE(info.st_mode)
             destination = _safe_parent(stage, path)
             if not destination.exists():
-                destination.mkdir(mode=mode)
+                destination.mkdir(mode=0o700)
+            directory_modes[path] = mode
             continue
         if entry["type"] == "directory":
             destination = _safe_parent(stage, path)
             if destination.exists():
                 if not destination.is_dir() or destination.is_symlink():
                     continue
-                os.chmod(destination, entry["mode"])
+                os.chmod(destination, 0o700)
             else:
-                destination.mkdir(mode=entry["mode"])
+                destination.mkdir(mode=0o700)
+            directory_modes[path] = entry["mode"]
         elif entry["type"] == "file":
             destination = _safe_parent(stage, path)
             if destination.exists() or destination.is_symlink():
                 continue
             _copy_regular(active / path, destination, entry["mode"])
+    return directory_modes
 
 
 def _fsync_tree(root: Path, parent: Path) -> None:
@@ -278,6 +284,7 @@ def build_staging_tree(
     active_root_mode = stat.S_IMODE(active.lstat().st_mode)
     stage.mkdir(mode=0o700)
     try:
+        directory_modes: dict[str, int] = {}
         for entry in new_entries:
             path = entry["path"]
             if is_user_data_path(path):
@@ -286,18 +293,25 @@ def build_staging_tree(
             source_path = upstream / path
             if entry["type"] == "directory":
                 if not destination_path.exists():
-                    destination_path.mkdir(mode=entry["mode"])
+                    destination_path.mkdir(mode=0o700)
                 else:
                     if not destination_path.is_dir() or destination_path.is_symlink():
                         raise ManifestError(f"upstream directory collides with non-directory: {path}")
-                    os.chmod(destination_path, entry["mode"])
+                    os.chmod(destination_path, 0o700)
+                directory_modes[path] = entry["mode"]
             elif entry["type"] == "file":
                 _copy_regular(source_path, destination_path, entry["mode"])
             else:
                 os.symlink(entry["target"], destination_path)
 
-        _copy_unknown_legacy(active, stage, previous_paths, new_paths, active_entries, new_entries)
+        directory_modes.update(
+            _copy_unknown_legacy(active, stage, previous_paths, new_paths, active_entries, new_entries)
+        )
         _copy_user_data(active, stage)
+        for relative, mode in sorted(
+            directory_modes.items(), key=lambda item: (-item[0].count("/"), item[0])
+        ):
+            os.chmod(stage / relative, mode)
         _write_manifest(stage, new_manifest)
         _validate_root(stage)
         verify_manifest(stage, new_manifest)
