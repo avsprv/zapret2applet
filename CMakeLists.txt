@@ -33,7 +33,7 @@ qt_add_library(zapret2control_i18n STATIC src/i18n.cpp src/i18n.h)
 target_include_directories(zapret2control_i18n PUBLIC src)
 target_link_libraries(zapret2control_i18n PUBLIC Qt6::Core)
 qt_add_translations(zapret2control_i18n
-    TS_FILES i18n/zapret2control_en.ts i18n/zapret2control_about_en.ts
+    TS_FILES i18n/zapret2control_en.ts
     SOURCES
         src/i18n.cpp
         src/qml/main.cpp
@@ -63,6 +63,7 @@ qt_add_translations(zapret2control_i18n
         src/qml/pages/BlockcheckPage.qml
         src/qml/pages/UpdatePage.qml
     INCLUDE_DIRECTORIES src
+    LUPDATE_OPTIONS -no-obsolete
 )
 
 # The Kirigami application is the sole production executable.
