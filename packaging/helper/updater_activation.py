@@ -157,7 +157,7 @@ def _write_journal(path: Path, document: dict[str, Any], expected_uid: int) -> N
             stream.write(payload)
             stream.flush()
             os.fsync(stream.fileno())
-        os.replace(temporary, path)
+        _renameat2(Path(temporary), path, RENAME_NOREPLACE)
         directory_fd = os.open(parent, os.O_RDONLY | getattr(os, "O_DIRECTORY", 0))
         try:
             os.fsync(directory_fd)
@@ -181,7 +181,10 @@ def _read_journal(path: Path, expected_uid: int) -> dict[str, Any]:
         _fail("transaction journal must be an owned single-link regular file")
     if stat.S_IMODE(info.st_mode) != 0o600 or info.st_size > MAX_JOURNAL_BYTES:
         _fail("transaction journal has unsafe permissions or size")
-    fd = os.open(path, os.O_RDONLY | getattr(os, "O_NOFOLLOW", 0))
+    try:
+        fd = os.open(path, os.O_RDONLY | getattr(os, "O_NOFOLLOW", 0))
+    except OSError as exc:
+        _fail(f"cannot securely open transaction journal: {exc}")
     try:
         opened = os.fstat(fd)
         if (opened.st_dev, opened.st_ino) != (info.st_dev, info.st_ino):
@@ -240,9 +243,7 @@ def activate_staged_tree(
         _fail("backup destination already exists")
     if active_path.name == stage_path.name or active_path.name == backup_path.name or stage_path.name == backup_path.name:
         _fail("transaction directory names must be distinct")
-    journal_parent_info = _safe_directory(journal_path.parent, uid)
-    if journal_parent_info.st_dev == 0:
-        _fail("invalid journal filesystem")
+    _safe_directory(journal_path.parent, uid)
     document = _journal_document(
         journal_path.stem, release_tag, active_path.name, stage_path.name,
         backup_path.name, parent_info.st_dev,
