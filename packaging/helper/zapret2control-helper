@@ -760,8 +760,8 @@ update-locked)
     fi
     ( cd "$tmp/x" && sha256sum -c --quiet "$tmp/sums.txt" ) || die "checksum mismatch, nothing was changed"
 
-    for f in blockcheck2.sh install_bin.sh docs/changes.txt; do
-        [ -f "$stage/$f" ] || die "archive has no $f"
+    for f in config.default blockcheck2.sh install_bin.sh docs/changes.txt common/base.sh init.d/sysv/zapret2 init.d/systemd/zapret2.service; do
+        [ -f "$stage/$f" ] && [ ! -L "$stage/$f" ] || die "archive has no safe required file: $f"
     done
     newver=$(grep -E '^[0-9]+(\.[0-9]+)+[[:space:]]*$' "$stage/docs/changes.txt" | tail -n 1 | tr -d '[:space:]')
     [ "$newver" = "${tag#v}" ] || die "version mismatch: archive says '$newver', expected '${tag#v}'"
@@ -805,7 +805,19 @@ update-locked)
     env -i PATH=/usr/sbin:/usr/bin:/sbin:/bin HOME=/root LANG=C.UTF-8 \
         sh "$BASE/install_bin.sh" </dev/null >"$tmp/install_bin.log" 2>&1 \
         || { cat "$tmp/install_bin.log" >&2; rollback; die "install_bin.sh failed"; }
+    for binary in nfq2/nfqws2 ip2net/ip2net mdig/mdig; do
+        binary_path="$BASE/$binary"
+        [ -f "$binary_path" ] && [ -x "$binary_path" ] || { rollback; die "required runtime binary is missing or not executable: $binary"; }
+        binary_target=$(readlink -f -- "$binary_path") || { rollback; die "cannot resolve runtime binary: $binary"; }
+        case "$binary_target" in
+            "$BASE"/binaries/*) ;;
+            *) rollback; die "runtime binary resolves outside the installation: $binary" ;;
+        esac
+    done
     "$BASE/nfq2/nfqws2" --version >/dev/null 2>&1 || { rollback; die "nfqws2 does not run on this system"; }
+    printf '0.0.0.0\n' | "$BASE/ip2net/ip2net" > "$tmp/ip2net-probe.log" 2>&1 \
+        || { rollback; die "ip2net does not run on this system"; }
+    [ -s "$tmp/ip2net-probe.log" ] || { rollback; die "ip2net returned no output"; }
 
     if [ "$was_active" = 1 ]; then
         echo "Starting $UNIT ..."
