@@ -21,8 +21,12 @@ jobs:
         run: cmake -S . -B build -G Ninja
       - name: Verify translation catalog is up to date
         run: |
+          cp i18n/zapret2control_en.ts /tmp/zapret2control_en.ts.before
           cmake --build build --target zapret2control_i18n_lupdate
-          git diff --exit-code -- i18n/zapret2control_en.ts
+          if ! cmp -s /tmp/zapret2control_en.ts.before i18n/zapret2control_en.ts; then
+            diff -u /tmp/zapret2control_en.ts.before i18n/zapret2control_en.ts || true
+            exit 1
+          fi
       - name: Build
         run: cmake --build build
       - name: Verify systemd units
