@@ -37,6 +37,9 @@ def _validate_root(root: Path, expected_uid: int | None = None) -> None:
     """Require a real, privately owned installation root before traversing it."""
     owner = os.geteuid() if expected_uid is None else expected_uid
     try:
+        absolute_root = root.absolute()
+        if root.resolve(strict=True) != absolute_root:
+            _fail("installation root path contains a symlink component")
         info = root.lstat()
     except OSError as exc:
         _fail(f"cannot inspect installation root: {exc}")
