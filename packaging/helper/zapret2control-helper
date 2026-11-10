@@ -768,8 +768,22 @@ update-locked)
 
     svc() { [ "$NOSVC" = 1 ] || systemctl "$1" "$UNIT"; }
     was_active=0
-    if [ "$NOSVC" != 1 ] && systemctl is-active --quiet "$UNIT" 2>/dev/null; then was_active=1; fi
-    [ "$was_active" = 1 ] && { echo "Stopping $UNIT ..."; svc stop || die "cannot stop $UNIT"; }
+    if [ "$NOSVC" != 1 ]; then
+        active_state=$(systemctl show --property=ActiveState --value "$UNIT" 2>/dev/null) \
+            || die "cannot determine the current state of $UNIT; update aborted"
+        case "$active_state" in
+            active) was_active=1 ;;
+            inactive) was_active=0 ;;
+            *) die "cannot safely update while $UNIT is in state '$active_state'" ;;
+        esac
+    fi
+    if [ "$was_active" = 1 ]; then
+        echo "Stopping $UNIT ..."
+        svc stop || die "cannot stop $UNIT"
+        stopped_state=$(systemctl show --property=ActiveState --value "$UNIT" 2>/dev/null) \
+            || die "cannot verify that $UNIT stopped; update aborted"
+        [ "$stopped_state" = inactive ] || die "$UNIT did not reach the inactive state; update aborted"
+    fi
 
     bak="$BASE.bak"
     rm -rf "$bak"
@@ -793,7 +807,13 @@ update-locked)
         || { cat "$tmp/install_bin.log" >&2; rollback; die "install_bin.sh failed"; }
     "$BASE/nfq2/nfqws2" --version >/dev/null 2>&1 || { rollback; die "nfqws2 does not run on this system"; }
 
-    [ "$was_active" = 1 ] && { echo "Starting $UNIT ..."; svc start || echo "zapret2control-helper: WARNING: cannot start $UNIT" >&2; }
+    if [ "$was_active" = 1 ]; then
+        echo "Starting $UNIT ..."
+        svc start || die "zapret2 was updated to $tag, but $UNIT failed to restart; previous version kept in $bak"
+        started_state=$(systemctl show --property=ActiveState --value "$UNIT" 2>/dev/null) \
+            || die "zapret2 was updated to $tag, but the service state could not be verified; previous version kept in $bak"
+        [ "$started_state" = active ] || die "zapret2 was updated to $tag, but $UNIT did not become active; previous version kept in $bak"
+    fi
     echo "OK: zapret2 updated to $tag (previous version kept in $bak)"
     ;;
 *)
