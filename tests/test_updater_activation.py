@@ -2,6 +2,7 @@
 """Regression tests for atomic updater activation and journal recovery."""
 
 from pathlib import Path
+import os
 import sys
 import tempfile
 import unittest
@@ -42,7 +43,7 @@ class UpdaterActivationTests(unittest.TestCase):
             (active_info.st_dev, active_info.st_ino),
             (stage_info.st_dev, stage_info.st_ino), False,
         )
-        activation._write_journal(self.journal, document, 0)
+        activation._write_journal(self.journal, document, os.geteuid())
         return document
 
     def test_atomic_exchange_retains_previous_tree_as_backup(self):
