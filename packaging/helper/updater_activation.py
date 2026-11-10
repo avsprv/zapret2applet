@@ -157,7 +157,10 @@ def _write_journal(path: Path, document: dict[str, Any], expected_uid: int) -> N
             stream.write(payload)
             stream.flush()
             os.fsync(stream.fileno())
-        _renameat2(Path(temporary), path, RENAME_NOREPLACE)
+        if replace_existing:
+            os.replace(temporary, path)
+        else:
+            _renameat2(Path(temporary), path, RENAME_NOREPLACE)
         directory_fd = os.open(parent, os.O_RDONLY | getattr(os, "O_DIRECTORY", 0))
         try:
             os.fsync(directory_fd)
@@ -280,7 +283,7 @@ def activate_staged_tree(
         _fail("backup directory identity mismatch after rename")
     _fsync_directory(parent)
     document["phase"] = "backup_saved"
-    _write_journal(journal_path, document, uid)
+    _write_journal(journal_path, document, uid, replace_existing=True)
     return document
 
 
@@ -314,18 +317,18 @@ def recover_transaction(
         shutil.rmtree(staged)
         _fsync_directory(parent_path)
         document["phase"] = "aborted"
-        _write_journal(journal_path, document, uid)
+        _write_journal(journal_path, document, uid, replace_existing=True)
         return "discarded_unactivated_stage"
     if active_new and stage_old and not backup.exists() and not backup.is_symlink():
         _renameat2(staged, backup, RENAME_NOREPLACE)
         _fsync_directory(parent_path)
         document["phase"] = "backup_saved"
-        _write_journal(journal_path, document, uid)
+        _write_journal(journal_path, document, uid, replace_existing=True)
         return "completed_backup_rename"
     if active_new and not staged.exists() and not staged.is_symlink() and backup_old:
         if document["phase"] != "backup_saved":
             document["phase"] = "backup_saved"
-            _write_journal(journal_path, document, uid)
+            _write_journal(journal_path, document, uid, replace_existing=True)
         return "completed_after_backup_rename"
     _fail("transaction paths do not match journal identities; manual recovery required")
 
