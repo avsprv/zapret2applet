@@ -44,7 +44,12 @@ def main() -> None:
     assert "tests/test_updater_service.py" in cmake
     assert "tests/test_updater_cli.py" in cmake
     assert "%{_datadir}/zapret2control/*.py" in spec
-    assert "util-linux" in control
+    # Debian 13 ships util-linux as an Essential package; do not add it to Depends.
+    assert "util-linux" not in control
+    assert "command -v flock" in helper
+    assert "flock -n 9" in helper
+    assert "pkexec," in control
+    assert "policykit-1" not in control
     assert "util-linux-core" in spec
     assert "RuntimeDirectory=zapret2control" in worker_unit
     assert "TimeoutStopSec=180" in worker_unit
