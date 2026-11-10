@@ -816,6 +816,8 @@ for member in members:
         reject(f"links, sparse files or special objects are forbidden: {raw!r}")
     if path == root and kind != "directory":
         reject("archive root is not a directory")
+    if kind == "directory" and member.size != 0:
+        reject(f"directory entry has payload: {path}")
     if path in seen:
         reject(f"duplicate archive path: {path}")
     seen[path] = kind
