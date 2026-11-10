@@ -28,14 +28,6 @@ QList<QTranslator *> I18n::install(QCoreApplication &app, const QLocale &locale)
             delete own;
         }
 
-        auto *about = new QTranslator(&app);
-        if (about->load(locale, QStringLiteral("zapret2control_about"), QStringLiteral("_"), QStringLiteral(":/i18n"))
-            || about->load(QStringLiteral(":/i18n/zapret2control_about_en.qm"))) {
-            app.installTranslator(about);
-            installed << about;
-        } else {
-            delete about;
-        }
     }
     return installed;
 }
