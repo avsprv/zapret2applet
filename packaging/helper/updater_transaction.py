@@ -16,7 +16,7 @@ import re
 import stat
 import tempfile
 from pathlib import Path
-from typing import Any, Iterable
+from typing import Any
 
 MANIFEST_NAME = ".zapret2control-upstream-manifest.json"
 SCHEMA_VERSION = 1
@@ -90,7 +90,7 @@ def validate_manifest(document: Any) -> dict[str, Any]:
         "schema_version", "release_tag", "entries"
     }:
         _fail("invalid manifest top-level structure")
-    if document["schema_version"] != SCHEMA_VERSION:
+    if isinstance(document["schema_version"], bool) or document["schema_version"] != SCHEMA_VERSION:
         _fail("unsupported manifest schema version")
     tag = document["release_tag"]
     if not isinstance(tag, str) or not _RELEASE_RE.fullmatch(tag):
@@ -331,6 +331,15 @@ def load_manifest(
     flags = os.O_RDONLY | getattr(os, "O_NOFOLLOW", 0)
     try:
         fd = os.open(manifest_path, flags)
+        opened = os.fstat(fd)
+        if not stat.S_ISREG(opened.st_mode) or opened.st_uid != (
+            os.geteuid() if expected_uid is None else expected_uid
+        ):
+            os.close(fd)
+            _fail("opened manifest is not an owned regular file")
+        if stat.S_IMODE(opened.st_mode) & 0o077 or opened.st_size > MAX_MANIFEST_BYTES:
+            os.close(fd)
+            _fail("opened manifest has unsafe permissions or size")
         with os.fdopen(fd, "rb") as stream:
             raw = stream.read(MAX_MANIFEST_BYTES + 1)
     except OSError as exc:
