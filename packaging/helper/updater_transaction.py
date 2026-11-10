@@ -33,6 +33,19 @@ def _fail(message: str) -> None:
     raise ManifestError(message)
 
 
+def _validate_root(root: Path, expected_uid: int | None = None) -> None:
+    """Require a real, privately owned installation root before traversing it."""
+    owner = os.geteuid() if expected_uid is None else expected_uid
+    try:
+        info = root.lstat()
+    except OSError as exc:
+        _fail(f"cannot inspect installation root: {exc}")
+    if not stat.S_ISDIR(info.st_mode) or info.st_uid != owner:
+        _fail("installation root must be a real directory owned by the expected user")
+    if stat.S_IMODE(info.st_mode) & 0o022:
+        _fail("installation root must not be group/world-writable")
+
+
 def _relative_path(value: Any) -> str:
     if not isinstance(value, str) or not value or value.startswith("/"):
         _fail("manifest path must be a non-empty relative path")
@@ -219,8 +232,7 @@ def build_manifest(root: str | os.PathLike[str], release_tag: str) -> dict[str, 
     root_path = Path(root)
     if not isinstance(release_tag, str) or not _RELEASE_RE.fullmatch(release_tag):
         _fail("invalid release tag")
-    if root_path.is_symlink() or not root_path.is_dir():
-        _fail("installation root must be a real directory")
+    _validate_root(root_path)
     return validate_manifest({
         "schema_version": SCHEMA_VERSION,
         "release_tag": release_tag,
@@ -253,8 +265,7 @@ def verify_manifest(
 ) -> dict[str, Any]:
     manifest = validate_manifest(document)
     root_path = Path(root)
-    if root_path.is_symlink() or not root_path.is_dir():
-        _fail("installation root must be a real directory")
+    _validate_root(root_path, expected_uid)
     owner = os.geteuid() if expected_uid is None else expected_uid
     for entry in manifest["entries"]:
         info = _lstat_no_symlink_parents(root_path, entry["path"])
@@ -283,8 +294,7 @@ def verify_manifest(
 
 def write_manifest(root: str | os.PathLike[str], release_tag: str) -> dict[str, Any]:
     root_path = Path(root)
-    if root_path.is_symlink() or not root_path.is_dir():
-        _fail("installation root must be a real directory")
+    _validate_root(root_path)
     manifest_path = root_path / MANIFEST_NAME
     try:
         manifest_path.lstat()
@@ -328,6 +338,7 @@ def load_manifest(
     expected_uid: int | None = None,
 ) -> dict[str, Any]:
     root_path = Path(root)
+    _validate_root(root_path, expected_uid)
     manifest_path = root_path / MANIFEST_NAME
     try:
         info = manifest_path.lstat()
