@@ -40,7 +40,7 @@ chmod 700 "$SYSTEMCTL"
 ok()  { echo "ok: $*"; }
 bad() { echo "FAIL: $*"; fail=1; }
 
-# make_release <tag> [bad_sums] [unsafe] [symlink] [broken_bin] [oversized] [broken_ip2net] [nonexec_mdig]
+# make_release <tag> [bad_sums] [unsafe] [symlink] [broken_bin] [oversized] [broken_ip2net] [nonexec_mdig] [duplicate]
 make_release() {
     tag=$1; name=zapret2-$tag; rel=$W/rel/$tag
     rm -rf "$W/src" "$rel"; mkdir -p "$W/src/$name"/docs "$W/src/$name"/nfq2 "$W/src/$name"/ip2net "$W/src/$name"/mdig "$W/src/$name"/common "$W/src/$name"/init.d/sysv "$W/src/$name"/init.d/systemd "$W/src/$name"/binaries/linux-x86_64 "$rel"
@@ -82,12 +82,13 @@ EOS
             "$rel/sha256sum.txt" > "$rel/sha256sum.tmp"
         mv "$rel/sha256sum.tmp" "$rel/sha256sum.txt"
     fi
-    if [ "$3" = unsafe ]; then
+    if [ "$9" = duplicate ]; then
+        ( cd "$W/src" && tar -cf "$rel/$name.tar" "$name" && tar -rf "$rel/$name.tar" "$name/install_bin.sh" && gzip -f "$rel/$name.tar" )
+    elif [ "$3" = unsafe ]; then
         ( cd "$W/src" && tar -czf "$rel/$name.tar.gz" --transform "s|^$name/docs/changes.txt|$name/../evil|" "$name" )
     else
         ( cd "$W/src" && tar -czf "$rel/$name.tar.gz" "$name" )
-    fi
-}
+    fi}
 
 # make_base — «установленный» старый zapret2 с пользовательскими файлами
 make_base() {
@@ -189,6 +190,12 @@ make_base; make_release v9.9.9 "" "" symlink
 out=$(run_update v9.9.9); rc=$?
 [ $rc -eq 2 ] && echo "$out" | grep -q 'links' && ok "symlink in archive rejected" || bad "symlink rc=$rc: $out"
 expect_untouched "symlink"
+
+# --- 4a. duplicate archive members are rejected before extraction
+make_base; make_release v9.9.9 "" "" "" "" "" "" "" duplicate
+out=$(run_update v9.9.9); rc=$?
+[ $rc -eq 2 ] && echo "$out" | grep -q 'duplicate archive path' && ok "duplicate archive member rejected" || bad "duplicate member rc=$rc: $out"
+expect_untouched "duplicate archive member"
 
 # --- 5. распаковываемый объём ограничен до извлечения архива
 make_base; make_release v9.9.9 "" "" "" "" oversized
