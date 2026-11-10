@@ -153,6 +153,15 @@ def _validate_checksum_manifest(checksum_file: Path, upstream: Path, expected_ui
             raise ActivationError(f"unsafe or duplicate checksum path: {relative}")
         seen.add(relative)
         binary = upstream.parent / relative
+        current = upstream.parent
+        for component in relative.split("/")[:-1]:
+            current = current / component
+            try:
+                parent_info = current.lstat()
+            except OSError as exc:
+                raise ActivationError(f"cannot inspect checksummed binary parent {component}: {exc}") from exc
+            if not stat.S_ISDIR(parent_info.st_mode):
+                raise ActivationError(f"checksummed binary parent is not a real directory: {component}")
         try:
             binary_info = binary.lstat()
         except OSError as exc:
