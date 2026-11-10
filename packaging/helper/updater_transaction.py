@@ -298,7 +298,7 @@ def write_manifest(root: str | os.PathLike[str], release_tag: str) -> dict[str, 
     document = validate_manifest({
         "schema_version": SCHEMA_VERSION,
         "release_tag": release_tag,
-        "entries": _walk_entries(root_path, allow_manifest=False),
+        "entries": _walk_entries(root_path),
     })
     payload = (json.dumps(document, sort_keys=True, indent=2) + "\n").encode("utf-8")
     if len(payload) > MAX_MANIFEST_BYTES:
