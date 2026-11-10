@@ -189,7 +189,7 @@ def _remove_partial_stage(stage: Path, parent: Path, expected_uid: int) -> None:
     parent_info = parent.lstat()
     if (
         stage.parent != parent
-        or not re.fullmatch(r"\\.zapret2control-stage-[0-9a-f]{32}", stage.name)
+        or not re.fullmatch(r"\.zapret2control-stage-[0-9a-f]{32}", stage.name)
         or not stat.S_ISDIR(info.st_mode)
         or info.st_uid != expected_uid
         or info.st_dev != parent_info.st_dev
