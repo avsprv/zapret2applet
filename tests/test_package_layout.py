@@ -35,8 +35,10 @@ def main() -> None:
     assert "module_dir=/usr/share/zapret2control" in helper
     assert "packaging/helper/updater_transaction.py" in cmake
     assert "packaging/helper/updater_staging.py" in cmake
+    assert "packaging/helper/updater_activation.py" in cmake
     assert "tests/test_updater_transaction.py" in cmake
     assert "tests/test_updater_staging.py" in cmake
+    assert "tests/test_updater_activation.py" in cmake
     assert "%{_datadir}/zapret2control/*.py" in spec
     assert "RuntimeDirectory=zapret2control" in worker_unit
     assert "TimeoutStopSec=180" in worker_unit
