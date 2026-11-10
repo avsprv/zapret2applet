@@ -67,20 +67,7 @@ jobs:
           DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends ./dist/*.deb
           test "$(dpkg-query -W -f='${Status}' zapret2control)" = "install ok installed"
           test -x /usr/bin/zapret2control
-          startup_log="$RUNNER_TEMP/zapret2control-startup.log"
-          set +e
-          timeout --signal=TERM 8s dbus-run-session -- env QT_QPA_PLATFORM=offscreen /usr/bin/zapret2control >"$startup_log" 2>&1
-          startup_status=$?
-          set -e
-          if [ "$startup_status" -ne 124 ]; then
-            cat "$startup_log"
-            echo "Kirigami application did not stay running after startup (status $startup_status)" >&2
-            exit 1
-          fi
-          if grep -E 'module ".*" is not installed|failed to load component|QQmlApplicationEngine failed' "$startup_log"; then
-            cat "$startup_log"
-            exit 1
-          fi
+          sh tests/test_qml_startup.sh /usr/bin/zapret2control
           helper="$(dpkg-query -L zapret2control | grep '/zapret2control-helper$')"
           policy="$(dpkg-query -L zapret2control | grep '/org.zapret2control.policy$')"
           test -n "$helper" && test -x "$helper"
@@ -214,20 +201,7 @@ jobs:
           rpm -qf /usr/bin/zapret2control
           rpm -q --qf '[%{FILENAMES} %{FILEMODES:perms}\\n]' zapret2control
           test -x /usr/bin/zapret2control
-          startup_log="$RUNNER_TEMP/zapret2control-startup.log"
-          set +e
-          timeout --signal=TERM 8s dbus-run-session -- env QT_QPA_PLATFORM=offscreen /usr/bin/zapret2control >"$startup_log" 2>&1
-          startup_status=$?
-          set -e
-          if [ "$startup_status" -ne 124 ]; then
-            cat "$startup_log"
-            echo "Kirigami application did not stay running after startup (status $startup_status)" >&2
-            exit 1
-          fi
-          if grep -E 'module ".*" is not installed|failed to load component|QQmlApplicationEngine failed' "$startup_log"; then
-            cat "$startup_log"
-            exit 1
-          fi
+          sh tests/test_qml_startup.sh /usr/bin/zapret2control
           helper="$(rpm -ql zapret2control | grep '/zapret2control-helper$')"
           policy="$(rpm -ql zapret2control | grep '/org.zapret2control.policy$')"
           test -n "$helper" && test -x "$helper"
