@@ -8,6 +8,7 @@ from __future__ import annotations
 import json
 import os
 import posixpath
+import re
 import shutil
 import stat
 import tempfile
@@ -51,7 +52,7 @@ def _copy_regular(source: Path, destination: Path, mode: int) -> None:
             destination, os.O_WRONLY | os.O_CREAT | os.O_EXCL | getattr(os, "O_NOFOLLOW", 0), mode
         )
         try:
-            with os.fdopen(source_fd, "rb", closefd=False) as src, os.fdopen(destination_fd, "wb") as dst:
+            with os.fdopen(source_fd, "rb", closefd=False) as src, os.fdopen(destination_fd, "wb", closefd=False) as dst:
                 shutil.copyfileobj(src, dst, 1024 * 1024)
                 dst.flush()
                 os.fsync(dst.fileno())
@@ -64,19 +65,24 @@ def _copy_regular(source: Path, destination: Path, mode: int) -> None:
 
 def _copy_user_data(source_root: Path, stage: Path) -> None:
     """Copy only the explicit user-data allowlist, after the source was validated."""
-    selected: list[str] = []
-    for entry in _walk_entries(source_root):
-        path = entry["path"]
-        if is_user_data_path(path):
-            selected.append(path)
-    # _walk_entries omits user data by design. Discover its roots explicitly.
+    # _walk_entries omits user data by design. Discover its roots explicitly,
+    # but never traverse a symlinked container directory.
     candidates = [source_root / "config"]
     ipset = source_root / "ipset"
-    if ipset.is_dir() and not ipset.is_symlink():
-        candidates.extend(sorted(p for p in ipset.iterdir() if p.name.startswith("zapret-hosts-user") and p.name.endswith(".txt")))
+    if ipset.exists() or ipset.is_symlink():
+        if ipset.is_symlink() or not ipset.is_dir():
+            raise ManifestError("ipset must be a real directory when preserving user hostlists")
+        candidates.extend(sorted(
+            p for p in ipset.iterdir()
+            if re.fullmatch(r"zapret-hosts-user.*\.txt", p.name)
+        ))
     init_root = source_root / "init.d"
-    if init_root.is_dir() and not init_root.is_symlink():
+    if init_root.exists() or init_root.is_symlink():
+        if init_root.is_symlink() or not init_root.is_dir():
+            raise ManifestError("init.d must be a real directory when preserving custom.d")
         for platform in sorted(init_root.iterdir()):
+            if platform.is_symlink() or not platform.is_dir():
+                raise ManifestError(f"unsafe init.d platform directory: {platform.name}")
             custom = platform / "custom.d"
             if custom.exists() or custom.is_symlink():
                 candidates.append(custom)
@@ -115,7 +121,8 @@ def _copy_user_data(source_root: Path, stage: Path) -> None:
 
 
 def _copy_unknown_legacy(
-    active: Path, stage: Path, previous_paths: set[str], new_paths: set[str], active_entries: list[dict[str, Any]]
+    active: Path, stage: Path, previous_paths: set[str], new_paths: set[str],
+    active_entries: list[dict[str, Any]], new_manifest_entries: list[dict[str, Any]]
 ) -> None:
     """Retain untracked regular files/directories absent from the new upstream tree."""
     entries = {entry["path"]: entry for entry in active_entries}
@@ -135,7 +142,17 @@ def _copy_unknown_legacy(
                 preserve.append(parent)
             parent = posixpath.dirname(parent)
 
+    new_types = {entry["path"]: entry["type"] for entry in new_manifest_entries}
     for path in sorted(preserve, key=lambda value: (value.count("/"), value)):
+        parent = posixpath.dirname(path)
+        blocked = False
+        while parent:
+            if parent in new_paths and new_types.get(parent) != "directory":
+                blocked = True
+                break
+            parent = posixpath.dirname(parent)
+        if blocked:
+            continue
         entry = entries.get(path)
         if entry is None:
             # A parent may have been manifest-owned; its metadata is still available
@@ -207,8 +224,13 @@ def build_staging_tree(
         raise ManifestError("staging destination already exists")
     parent = stage.parent
     parent_info = parent.lstat()
-    if not stat.S_ISDIR(parent_info.st_mode) or parent_info.st_dev != active.lstat().st_dev:
-        raise ManifestError("staging destination must be a real directory on the installation filesystem")
+    if (
+        not stat.S_ISDIR(parent_info.st_mode)
+        or parent_info.st_dev != active.lstat().st_dev
+        or parent_info.st_uid != os.geteuid()
+        or stat.S_IMODE(parent_info.st_mode) & 0o022
+    ):
+        raise ManifestError("staging parent must be privately owned and on the installation filesystem")
 
     new_manifest = build_manifest(upstream, release_tag)
     active_entries = _walk_entries(active)
@@ -238,7 +260,7 @@ def build_staging_tree(
             else:
                 os.symlink(entry["target"], destination_path)
 
-        _copy_unknown_legacy(active, stage, previous_paths, new_paths, active_entries)
+        _copy_unknown_legacy(active, stage, previous_paths, new_paths, active_entries, new_entries)
         _copy_user_data(active, stage)
         _write_manifest(stage, new_manifest)
         _validate_root(stage)
