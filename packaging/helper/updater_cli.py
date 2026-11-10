@@ -67,10 +67,15 @@ def recover_pending(
     expected_uid: int | None = None,
 ) -> list[str]:
     state = ensure_journal_directory(journal_dir, expected_uid=expected_uid)
-    journals = sorted(state.glob("*.json"))
-    for item in journals:
-        if item.is_symlink() or not item.is_file():
+    entries = sorted(state.iterdir())
+    for item in entries:
+        if (
+            not re.fullmatch(r"[0-9a-f]{32}\\.json", item.name)
+            or item.is_symlink()
+            or not item.is_file()
+        ):
             raise ActivationError(f"unexpected object in transaction journal directory: {item.name}")
+    journals = entries
     if len(journals) > 1:
         raise ActivationError("multiple pending updater journals require manual recovery")
     results: list[str] = []
