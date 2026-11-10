@@ -194,8 +194,8 @@ The helper uses a process-scoped `flock` descriptor rather than a persistent loc
 
 
 1. The helper acquires its existing update lock and invokes persistent-journal recovery before downloading a new release.
-2. Existing archive path/type/size checks and upstream binary checksums remain in the shell helper.
-3. The CLI runs upstream `install_bin.sh` in the extracted tree, builds the sibling staging tree, validates the manifest, generated links, runtime probes and systemd unit.
+2. Existing archive path/type/size checks, duplicate-member rejection and upstream binary checksums remain in the shell helper.
+3. The CLI validates the extracted tree before executing upstream `install_bin.sh`, rechecks the binary checksums after the script runs, builds the sibling staging tree, and validates the manifest, generated links, runtime probes and systemd unit.
 4. The service-aware activation layer stops and verifies an active service, performs the atomic directory exchange, retains the old tree as a unique sibling backup, restarts and verifies the service, then removes the journal.
 5. If service restart fails, the new installation, previous-version backup and journal remain. The next update invocation attempts recovery and restores the previously recorded service state before downloading anything.
 
