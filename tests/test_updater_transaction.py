@@ -85,6 +85,23 @@ class UpdaterManifestTests(unittest.TestCase):
         with self.assertRaisesRegex(ManifestError, "reserved manifest path"):
             build_manifest(self.root, "v1.2.3")
 
+    def test_rejects_symlink_that_escapes_through_untracked_user_data(self):
+        user_data_link = self.root / "init.d/linux/custom.d/escape"
+        user_data_link.parent.mkdir(parents=True)
+        user_data_link.symlink_to("/etc")
+        (self.root / "link").symlink_to("init.d/linux/custom.d/escape/passwd")
+        with self.assertRaisesRegex(ManifestError, "inside the installation"):
+            build_manifest(self.root, "v1.2.3")
+
+    def test_write_rejects_preexisting_reserved_path(self):
+        self.put(MANIFEST_NAME, b"upstream supplied this", 0o600)
+        with self.assertRaisesRegex(ManifestError, "reserved manifest path"):
+            write_manifest(self.root, "v1.2.3")
+
+    def test_rejects_boolean_schema_version(self):
+        with self.assertRaisesRegex(ManifestError, "schema version"):
+            validate_manifest({"schema_version": True, "release_tag": "v1.2.3", "entries": []})
+
     def test_rejects_unsafe_modes(self):
         self.put("docs/unsafe.txt", mode=0o666)
         with self.assertRaisesRegex(ManifestError, "unsafe permissions"):
