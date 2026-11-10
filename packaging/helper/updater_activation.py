@@ -91,6 +91,10 @@ def _journal_document(
 ) -> dict[str, Any]:
     if not re.fullmatch(r"[0-9a-f]{32}", transaction_id):
         _fail("invalid transaction identifier")
+    if stage_name != f".zapret2control-stage-{transaction_id}":
+        _fail("staging basename does not match transaction identifier")
+    if backup_name != f".zapret2control-backup-{transaction_id}":
+        _fail("backup basename does not match transaction identifier")
     if not re.fullmatch(r"v[0-9]+(?:\.[0-9]+)+", release_tag):
         _fail("invalid release tag")
     if type(service_was_active) is not bool:
