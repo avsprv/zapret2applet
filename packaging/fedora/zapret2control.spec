@@ -23,6 +23,7 @@ BuildRequires:  systemd-rpm-macros
 BuildRequires:  curl
 BuildRequires:  tar
 BuildRequires:  dbus-daemon
+BuildRequires:  util-linux-core
 Requires:       polkit
 Requires:       kf6-kirigami
 Requires:       qt6-qtdeclarative
