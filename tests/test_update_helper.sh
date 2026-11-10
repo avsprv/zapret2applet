@@ -82,13 +82,18 @@ EOS
             "$rel/sha256sum.txt" > "$rel/sha256sum.tmp"
         mv "$rel/sha256sum.tmp" "$rel/sha256sum.txt"
     fi
-    if [ "$9" = duplicate ]; then
-        ( cd "$W/src" && tar -cf "$rel/$name.tar" "$name" && tar -rf "$rel/$name.tar" "$name/install_bin.sh" && gzip -f "$rel/$name.tar" )
-    elif [ "$3" = unsafe ]; then
-        ( cd "$W/src" && tar -czf "$rel/$name.tar.gz" --transform "s|^$name/docs/changes.txt|$name/../evil|" "$name" )
-    else
-        ( cd "$W/src" && tar -czf "$rel/$name.tar.gz" "$name" )
-    fi
+    case "${9:-}" in
+        duplicate)
+            ( cd "$W/src" && tar -cf "$rel/$name.tar" "$name" && tar -rf "$rel/$name.tar" "$name/install_bin.sh" && gzip -f "$rel/$name.tar" )
+            ;;
+        *)
+            if [ "$3" = unsafe ]; then
+                ( cd "$W/src" && tar -czf "$rel/$name.tar.gz" --transform "s|^$name/docs/changes.txt|$name/../evil|" "$name" )
+            else
+                ( cd "$W/src" && tar -czf "$rel/$name.tar.gz" "$name" )
+            fi
+            ;;
+    esac
 }
 
 # make_base — «установленный» старый zapret2 с пользовательскими файлами
