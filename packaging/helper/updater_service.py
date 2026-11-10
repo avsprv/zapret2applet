@@ -19,20 +19,24 @@ _UNIT_RE = re.compile(r"^[A-Za-z0-9_.@:-]+\.service$")
 
 
 def _systemctl(arguments: list[str]) -> subprocess.CompletedProcess[str]:
+    command = "systemctl"
+    environment = {
+        "PATH": "/usr/sbin:/usr/bin:/sbin:/bin",
+        "HOME": "/root",
+        "LANG": "C.UTF-8",
+    }
+    if os.environ.get("QZAPRET_TEST_MODE") == "1":
+        command = os.environ.get("QZAPRET_TEST_SYSTEMCTL", command)
     try:
         return subprocess.run(
-            ["systemctl", *arguments],
+            [command, *arguments],
             stdin=subprocess.DEVNULL,
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
             text=True,
             check=False,
             timeout=30,
-            env={
-                "PATH": "/usr/sbin:/usr/bin:/sbin:/bin",
-                "HOME": "/root",
-                "LANG": "C.UTF-8",
-            },
+            env=environment,
         )
     except (OSError, subprocess.TimeoutExpired) as exc:
         raise ActivationError(f"systemctl {' '.join(arguments)} failed: {exc}") from exc
@@ -123,7 +127,12 @@ def activate_with_service(
     if was_active:
         # On failure, deliberately retain the journal and old backup for the
         # next invocation's recovery path.
-        _set_service_state(unit, "start", "active")
+        try:
+            _set_service_state(unit, "start", "active")
+        except Exception as exc:
+            raise ActivationError(
+                f"installation activated but {unit} failed to restart; previous version retained at {backup}: {exc}"
+            ) from exc
     finalize_transaction(journal, expected_uid=expected_uid)
     return document
 
