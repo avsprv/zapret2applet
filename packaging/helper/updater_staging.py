@@ -225,8 +225,15 @@ def build_staging_tree(
     _validate_root(active)
     if stage.exists() or stage.is_symlink():
         raise ManifestError("staging destination already exists")
+    if not stage.is_absolute():
+        raise ManifestError("staging destination must be an absolute path")
     parent = stage.parent
-    parent_info = parent.lstat()
+    try:
+        if parent.resolve(strict=True) != parent.absolute():
+            raise ManifestError("staging parent path contains a symlink component")
+        parent_info = parent.lstat()
+    except OSError as exc:
+        raise ManifestError(f"cannot inspect staging parent: {exc}") from exc
     if (
         not stat.S_ISDIR(parent_info.st_mode)
         or parent_info.st_dev != active.lstat().st_dev
