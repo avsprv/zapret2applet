@@ -96,7 +96,7 @@ class UpdaterCliTests(unittest.TestCase):
 
     def test_invalid_staged_unit_cleans_partial_tree_without_touching_active(self):
         unit = self.upstream / "init.d/systemd/zapret2.service"
-        unit.write_text("[Service]\\nExecStart=/wrong/path\\n", encoding="utf-8")
+        unit.write_text("[Service]\nExecStart=/wrong/path\n", encoding="utf-8")
         with self.assertRaisesRegex(ActivationError, "systemd unit"):
             run_update(
                 self.upstream, self.active, self.state, "v1.2.3",
@@ -108,12 +108,12 @@ class UpdaterCliTests(unittest.TestCase):
     def test_install_script_cannot_modify_checksummed_binaries(self):
         script = self.upstream / "install_bin.sh"
         script.write_text(
-            "#!/bin/sh\\n"
-            "mkdir -p nfq2 ip2net mdig\\n"
-            "ln -s ../binaries/x86_64/nfqws2 nfq2/nfqws2\\n"
-            "ln -s ../binaries/x86_64/ip2net ip2net/ip2net\\n"
-            "ln -s ../binaries/x86_64/mdig mdig/mdig\\n"
-            "echo tampered >> binaries/x86_64/nfqws2\\n",
+            "#!/bin/sh\n"
+            "mkdir -p nfq2 ip2net mdig\n"
+            "ln -s ../binaries/x86_64/nfqws2 nfq2/nfqws2\n"
+            "ln -s ../binaries/x86_64/ip2net ip2net/ip2net\n"
+            "ln -s ../binaries/x86_64/mdig mdig/mdig\n"
+            "echo tampered >> binaries/x86_64/nfqws2\n",
             encoding="utf-8",
         )
         with self.assertRaisesRegex(ActivationError, "sha256sum"):
