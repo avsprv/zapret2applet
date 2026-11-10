@@ -64,6 +64,7 @@ qt_add_translations(zapret2control_i18n
         src/qml/pages/UpdatePage.qml
     INCLUDE_DIRECTORIES src
     LUPDATE_OPTIONS -no-obsolete
+    LUPDATE_TARGET zapret2control_i18n_lupdate
 )
 
 # The Kirigami application is the sole production executable.
