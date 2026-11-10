@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """Strict upstream ownership manifest primitives for the transactional updater.
 
 This module is intentionally not wired into the production update path yet.
