@@ -136,3 +136,22 @@ Tests must exercise the real helper against synthetic archives and an isolated f
 - failed restart retains the new installation, old backup, and a clear failure result.
 
 The existing CI must not weaken archive, package, QML, or systemd test coverage. Real power-loss behavior still requires a separate VM-level test; deterministic filesystem and process-crash tests are necessary but not equivalent to physical power-loss testing.
+
+
+## Implementation progress
+
+The manifest primitives now validate the installation root and every traversed entry for real filesystem types, expected ownership, safe modes, hardlink constraints, and preserved-user-data structure.
+
+A separate `updater_staging.py` module now builds a complete staging tree without changing the active installation. Its current contract is:
+
+- the upstream tree is validated and its ownership manifest is built before copying;
+- the destination must be a new absolute path under a privately owned, non-symlink parent on the same filesystem as the active installation;
+- upstream-owned files and generated relative links are copied into a new private tree;
+- explicit user data is copied from the active tree and takes precedence over archive paths;
+- unknown legacy regular files and directories absent from the new archive are retained, including unknown children inside previously manifest-owned directories;
+- paths owned by the previous manifest but absent from the new archive are not copied forward;
+- untracked legacy symlinks fail closed and require manual review;
+- the new manifest contains only paths from the validated upstream tree, not preserved legacy/user data;
+- the completed tree and its manifest are verified before the function returns.
+
+This module is deliberately **not connected to `update-locked`**. The existing overlay updater remains the production path until staging tests, atomic exchange, journaled recovery, service-state handling, and end-to-end transaction tests are complete. A staging failure leaves the active installation untouched; the caller must retain or inspect the failed private staging directory rather than treating it as activated.
