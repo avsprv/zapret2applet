@@ -1,7 +1,7 @@
 # Quality and engineering standards
 
 This document defines the acceptance criteria for changes to zapret2control. It applies to the
-existing Qt Widgets application and, in particular, to the QML/Kirigami migration.
+production Qt Quick/Kirigami application and its C++ backend.
 
 These rules use the official KDE Kirigami documentation and KDE Human Interface Guidelines as
 the design and implementation baseline. They do not imply that zapret2control is an official KDE
@@ -11,8 +11,8 @@ project or has passed KDE project review.
 
 - QML owns presentation, navigation, layout, accessibility metadata, and user interaction.
 - C++ owns business logic, validation, process lifecycle, filesystem access, and data models.
-- Reusable domain logic belongs outside page classes and must not be duplicated between Widgets
-  and QML implementations.
+- Reusable domain logic belongs in backend classes and must not be duplicated between QML
+  controllers and backend implementations.
 - Expose backend functionality through typed QObject properties, signals, slots, and
   Q_INVOKABLE methods. Prefer explicit models (QAbstractItemModel) for growing or structured
   collections instead of encoding domain data as presentation-specific JavaScript objects.
@@ -20,8 +20,8 @@ project or has passed KDE project review.
   prevent duplicate operations, and handle cancellation and process completion safely.
 - QML must not execute shell commands, access privileged files, or invoke pkexec directly.
   All privileged operations must pass through the allowlisted Polkit helper.
-- Keep the production Widgets executable available until QML feature parity, regression tests,
-  installation, and package validation are complete.
+- Keep Qt Quick/Kirigami as the sole production GUI. Do not reintroduce a parallel Widgets UI or
+  retain obsolete Widgets-only application sources.
 
 ## 2. Kirigami and Qt Quick UI
 
@@ -47,9 +47,8 @@ project or has passed KDE project review.
 ## 3. Localization and application metadata
 
 - All user-visible strings must be translatable. Do not introduce untranslated literal UI text.
-- Use one consistent localization pipeline for Widgets and QML. QML translations must be
-  extracted, compiled, included in packages, and tested; merely wrapping strings in qsTr() is
-  not sufficient.
+- Use one consistent localization pipeline for C++ and QML. QML translations must be extracted,
+  compiled, included in packages, and tested; merely wrapping strings in qsTr() is not sufficient.
 - Add translator context/comments for ambiguous strings and preserve placeholders in translations.
 - Keep Russian and English translations in sync. A change is not complete while required
   translations are missing or unfinished.
@@ -102,8 +101,8 @@ project or has passed KDE project review.
 - Keep the QML module URI, target names, install paths, and resource layout consistent.
 - Use ECM/KDE CMake facilities where they materially improve integration, dependency checking,
   installation, translations, and compiler diagnostics.
-- Keep build targets and tests independently understandable. Do not link Qt Widgets into the
-  QML-only target unless there is a documented technical reason.
+- Keep build targets and tests independently understandable. The production target must not
+  discover or link Qt Widgets; no Widgets GUI target is maintained.
 - Install desktop entries, icons, translations, helper/polkit policy, and application metadata
   into standard locations.
 - Keep README instructions, development documentation, package metadata, and actual build
@@ -116,8 +115,8 @@ project or has passed KDE project review.
 Every change must pass the relevant checks before the next migration stage proceeds.
 
 Required baseline:
-- Configure and build the production Widgets target.
-- Configure and build the QML target.
+- Configure and build the production `zapret2control` Qt Quick/Kirigami target.
+- Verify that Qt Widgets is absent from the production dependency graph.
 - Run the complete CTest suite.
 - Run QML static validation/linting and fail CI on QML syntax or import errors.
 - Check translation extraction/compilation and placeholder consistency.
@@ -144,7 +143,7 @@ distribution environment. A green build alone is not proof of runtime correctnes
 
 ## 10. QML migration completion gate
 
-The QML application must not replace the production Widgets executable until all of the
+The production QML/Kirigami application is considered fully migrated only when all of the
 following are true:
 
 - Every production feature has a QML equivalent or an explicitly approved documented removal.
@@ -153,7 +152,8 @@ following are true:
 - Application metadata, About page, translations, desktop integration, and icons are complete.
 - Accessibility, keyboard navigation, minimum-size layouts, and light/dark themes are reviewed.
 - Controller/model unit and integration tests cover success, failure, cancellation, and stale data.
-- QML target installs and launches correctly from both DEB and RPM packages.
+- The production QML target installs and launches correctly from both DEB and RPM packages.
+- The repository contains no obsolete Qt Widgets GUI sources, targets, or Widgets-only tests.
 - Full CI, package checks, and manual desktop smoke tests pass.
 - Existing user settings and configuration remain compatible.
 
