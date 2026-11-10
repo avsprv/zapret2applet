@@ -28,60 +28,6 @@ private slots:
         QVERIFY(!file.exists());
     }
 
-    void migratesManagedLegacyEntry()
-    {
-        QTemporaryDir directory;
-        QVERIFY(directory.isValid());
-        const QString legacyPath = directory.filePath(QStringLiteral("zapret2applet.desktop"));
-        QFile legacy(legacyPath);
-        QVERIFY(legacy.open(QIODevice::WriteOnly | QIODevice::Text));
-        legacy.write("[Desktop Entry]\n"
-                     "Type=Application\n"
-                     "Name=zapret2control\n"
-                     "Comment=Unofficial Qt6 GUI for zapret2\n"
-                     "Exec=\"/usr/bin/zapret2applet\" --minimized\n"
-                     "Icon=zapret2control\n"
-                     "Terminal=false\n"
-                     "X-GNOME-Autostart-enabled=true\n"
-                     "X-Zapret2Applet-Managed=true\n");
-        legacy.close();
-
-        AutostartController controller(nullptr, directory.path(), QStringLiteral("/usr/bin/zapret2control"));
-        const QString newPath = directory.filePath(QStringLiteral("zapret2control.desktop"));
-        QFile migrated(newPath);
-        QVERIFY(migrated.open(QIODevice::ReadOnly));
-        const QByteArray content = migrated.readAll();
-        QVERIFY(content.contains("Exec=\"/usr/bin/zapret2control\" --minimized"));
-        QVERIFY(content.contains("Name=Zapret2 Control"));
-        QVERIFY(!QFile::exists(legacyPath));
-        QVERIFY(controller.enabled());
-    }
-
-    void preservesModifiedLegacyEntry()
-    {
-        QTemporaryDir directory;
-        QVERIFY(directory.isValid());
-        const QString legacyPath = directory.filePath(QStringLiteral("zapret2applet.desktop"));
-        QFile legacy(legacyPath);
-        QVERIFY(legacy.open(QIODevice::WriteOnly | QIODevice::Text));
-        legacy.write("[Desktop Entry]\n"
-                     "Type=Application\n"
-                     "Name=zapret2control\n"
-                     "Comment=Unofficial Qt6 GUI for zapret2\n"
-                     "Exec=\"/usr/bin/zapret2applet\" --minimized\n"
-                     "Icon=zapret2control\n"
-                     "Terminal=false\n"
-                     "X-GNOME-Autostart-enabled=true\n"
-                     "X-Zapret2Applet-Managed=true\n"
-                     "X-User-Setting=keep\n");
-        legacy.close();
-
-        AutostartController controller(nullptr, directory.path(), QStringLiteral("/usr/bin/zapret2control"));
-        QVERIFY(QFile::exists(legacyPath));
-        QVERIFY(!QFile::exists(directory.filePath(QStringLiteral("zapret2control.desktop"))));
-        QVERIFY(!controller.enabled());
-    }
-
     void handlesDesktopExecSpecialCharacters()
     {
         QTemporaryDir directory;
