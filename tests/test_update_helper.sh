@@ -163,13 +163,13 @@ expect_untouched "unsafe installation permissions"
 make_base; make_release v9.9.9
 printf 'activating\n' > "$SERVICE_STATE_FILE"
 out=$(run_update_with_service v9.9.9); rc=$?
-[ $rc -eq 2 ] && echo "$out" | grep -q "cannot safely update" && ok "transitional service state rejected" || bad "transitional state rc=$rc: $out"
+[ $rc -eq 2 ] && echo "$out" | grep -q "unsafe state" && ok "transitional service state rejected" || bad "transitional state rc=$rc: $out"
 expect_untouched "transitional service state"
 
 make_base; make_release v9.9.9
 printf 'active\n' > "$SERVICE_STATE_FILE"
 out=$(QZAPRET_TEST_SYSTEMCTL_QUERY_FAIL=1 run_update_with_service v9.9.9); rc=$?
-[ $rc -eq 2 ] && echo "$out" | grep -q "cannot determine the current state" && ok "systemctl state query failure rejected" || bad "systemctl query failure rc=$rc: $out"
+[ $rc -eq 2 ] && echo "$out" | grep -q "cannot query service state" && ok "systemctl state query failure rejected" || bad "systemctl query failure rc=$rc: $out"
 expect_untouched "systemctl query failure"
 
 
