@@ -12,7 +12,7 @@ The archive contains ordinary files and directories; the helper rejects archive 
 - `ip2net/ip2net`
 - `mdig/mdig`
 
-The upstream selector probes `ip2net` with `0.0.0.0` input, then creates all three links from the selected architecture directory. The current clean-install path verifies all three links and executes both `nfqws2 --version` and the `ip2net` probe. The current update path verifies only `nfqws2`; this validation gap must be closed.
+The upstream selector probes `ip2net` with `0.0.0.0` input, then creates all three links from the selected architecture directory. The clean-install path verifies all three links and executes both `nfqws2 --version` and the `ip2net` probe. The updater hardening now also requires all three links to be executable, resolves each target and rejects targets outside `binaries/`, executes the `nfqws2` version check, and repeats the known-safe `ip2net` probe. It deliberately does not invent a `mdig` invocation.
 
 The service unit uses fixed paths under `/opt/zapret2`. Replacing the installation with a symlink-based version pointer would therefore require a broader security and path-resolution redesign. The preferred design keeps `/opt/zapret2` a real directory.
 
