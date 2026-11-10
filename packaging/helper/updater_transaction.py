@@ -177,6 +177,42 @@ def _sha256(path: Path) -> str:
     return digest.hexdigest()
 
 
+def _validate_preserved_user_data(child: os.DirEntry[str], relative: str) -> None:
+    """Inspect preserved user data without following links or accepting special files."""
+    try:
+        info = child.stat(follow_symlinks=False)
+    except OSError as exc:
+        _fail(f"cannot inspect preserved user data {relative}: {exc}")
+    mode = stat.S_IMODE(info.st_mode)
+    if mode & 0o022 or mode & ~0o777:
+        _fail(f"unsafe permissions on preserved user data: {relative}")
+
+    parts = relative.split("/")
+    if relative == "config" or (len(parts) == 2 and parts[0] == "ipset"):
+        if not stat.S_ISREG(info.st_mode) or info.st_nlink != 1:
+            _fail(f"preserved user data must be a single-link regular file: {relative}")
+        return
+    if len(parts) == 3 and parts[0] == "init.d" and parts[2] == "custom.d":
+        if not stat.S_ISDIR(info.st_mode):
+            _fail(f"custom.d must be a real directory: {relative}")
+    elif stat.S_ISREG(info.st_mode):
+        if info.st_nlink != 1:
+            _fail(f"hard-linked preserved file is not allowed: {relative}")
+        return
+    elif not stat.S_ISDIR(info.st_mode):
+        _fail(f"unsupported preserved user-data object: {relative}")
+
+    try:
+        with os.scandir(child.path) as iterator:
+            children = sorted(iterator, key=lambda item: item.name)
+    except OSError as exc:
+        _fail(f"cannot inspect preserved user-data directory {relative}: {exc}")
+    for nested in children:
+        nested_path = f"{relative}/{nested.name}"
+        _relative_path(nested_path)
+        _validate_preserved_user_data(nested, nested_path)
+
+
 def _walk_entries(root: Path) -> list[dict[str, Any]]:
     entries: list[dict[str, Any]] = []
     pending: list[tuple[Path, str]] = [(root, "")]
@@ -193,6 +229,8 @@ def _walk_entries(root: Path) -> list[dict[str, Any]]:
             if path == MANIFEST_NAME:
                 _fail("upstream tree contains the reserved manifest path")
             if is_user_data_path(path):
+                _relative_path(path)
+                _validate_preserved_user_data(child, path)
                 continue
             _relative_path(path)
             info = child.stat(follow_symlinks=False)
