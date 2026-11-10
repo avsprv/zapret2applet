@@ -37,10 +37,10 @@ private slots:
         QVERIFY(legacy.open(QIODevice::WriteOnly | QIODevice::Text));
         legacy.write("[Desktop Entry]\n"
                      "Type=Application\n"
-                     "Name=zapret2applet\n"
+                     "Name=zapret2control\n"
                      "Comment=Unofficial Qt6 GUI for zapret2\n"
-                     "Exec=\"/usr/bin/zapret2applet\"\n"
-                     "Icon=zapret2applet\n"
+                     "Exec=\"/usr/bin/zapret2applet\" --minimized\n"
+                     "Icon=zapret2control\n"
                      "Terminal=false\n"
                      "X-GNOME-Autostart-enabled=true\n"
                      "X-Zapret2Applet-Managed=true\n");
