@@ -19,7 +19,6 @@ from updater_transaction import (
     MANIFEST_NAME,
     ManifestError,
     _validate_root,
-    _walk_entries,
     build_manifest,
     is_user_data_path,
     verify_manifest,
@@ -65,7 +64,7 @@ def _copy_regular(source: Path, destination: Path, mode: int) -> None:
 
 def _copy_user_data(source_root: Path, stage: Path) -> None:
     """Copy only the explicit user-data allowlist, after the source was validated."""
-    # _walk_entries omits user data by design. Discover its roots explicitly,
+    # The caller validates all active paths first. Discover user-data roots explicitly,
     # but never traverse a symlinked container directory.
     candidates = [source_root / "config"]
     ipset = source_root / "ipset"
