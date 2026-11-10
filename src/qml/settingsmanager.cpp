@@ -1,7 +1,6 @@
 #include "settingsmanager.h"
 
 #include <QSettings>
-#include <QStringList>
 
 namespace {
 constexpr auto kThemeKey = "appearance/theme";
@@ -13,20 +12,6 @@ constexpr auto kCloseToTrayKey = "tray/closeToTray";
 SettingsManager::SettingsManager(QObject *parent)
     : QObject(parent)
 {
-    QSettings current;
-    QSettings legacy(QSettings::defaultFormat(), QSettings::UserScope,
-                     QString(), QStringLiteral("zapret2applet"));
-    const QStringList compatibleKeys{
-        QLatin1String(kThemeKey),
-        QLatin1String(kLanguageKey),
-        QLatin1String(kAutoCheckKey),
-        QLatin1String(kCloseToTrayKey)
-    };
-    for (const QString &key : compatibleKeys) {
-        if (!current.contains(key) && legacy.contains(key))
-            current.setValue(key, legacy.value(key));
-    }
-    current.sync();
 }
 
 QString SettingsManager::theme() const
