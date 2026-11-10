@@ -200,7 +200,7 @@ def _prepare_upstream(upstream: Path, release_tag: str, checksum_file: Path) -> 
         if not resolved.is_file() or not os.access(resolved, os.X_OK):
             raise ActivationError(f"runtime binary is not executable: {relative}")
     _run_checked([str(upstream / "nfq2/nfqws2"), "--version"])
-    probe = _run_checked([str(upstream / "ip2net/ip2net")], input_text="0.0.0.0\n")
+    probe = _run_checked([str(upstream / "ip2net/ip2net")], input_text="1.2.3.4\n")
     if not probe.stdout.strip():
         raise ActivationError("ip2net probe returned no output")
 
@@ -220,7 +220,7 @@ def _validate_staged(stage: Path, release_tag: str) -> None:
         except ValueError as exc:
             raise ActivationError(f"staged runtime link escapes binaries directory: {relative}") from exc
     _run_checked([str(stage / "nfq2/nfqws2"), "--version"])
-    probe = _run_checked([str(stage / "ip2net/ip2net")], input_text="0.0.0.0\n")
+    probe = _run_checked([str(stage / "ip2net/ip2net")], input_text="1.2.3.4\n")
     if not probe.stdout.strip():
         raise ActivationError("staged ip2net probe returned no output")
     unit = stage / "init.d/systemd/zapret2.service"
