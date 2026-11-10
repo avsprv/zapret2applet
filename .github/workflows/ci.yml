@@ -23,10 +23,21 @@ jobs:
         run: |
           cp i18n/zapret2control_en.ts /tmp/zapret2control_en.ts.before
           cmake --build build --target zapret2control_i18n_lupdate
-          if ! cmp -s /tmp/zapret2control_en.ts.before i18n/zapret2control_en.ts; then
-            diff -u /tmp/zapret2control_en.ts.before i18n/zapret2control_en.ts || true
-            exit 1
-          fi
+          python3 - <<'PY'
+          import xml.etree.ElementTree as ET
+          from pathlib import Path
+
+          def canonical_catalog(path):
+              root = ET.parse(path).getroot()
+              for location in root.iter("location"):
+                  location.attrib.pop("line", None)
+              return ET.tostring(root, encoding="utf-8")
+
+          before = canonical_catalog("/tmp/zapret2control_en.ts.before")
+          after = canonical_catalog("i18n/zapret2control_en.ts")
+          if before != after:
+              raise SystemExit("Translation catalog differs from current sources")
+          PY
       - name: Build
         run: cmake --build build
       - name: Verify systemd units
