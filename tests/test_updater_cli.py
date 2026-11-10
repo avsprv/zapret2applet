@@ -94,12 +94,30 @@ class UpdaterCliTests(unittest.TestCase):
         with self.assertRaisesRegex(ActivationError, "unexpected object"):
             recover_pending(self.state, self.active, "zapret2.service")
 
+    def test_install_script_cannot_modify_checksummed_binaries(self):
+        script = self.upstream / "install_bin.sh"
+        script.write_text(
+            "#!/bin/sh\\n"
+            "mkdir -p nfq2 ip2net mdig\\n"
+            "ln -s ../binaries/x86_64/nfqws2 nfq2/nfqws2\\n"
+            "ln -s ../binaries/x86_64/ip2net ip2net/ip2net\\n"
+            "ln -s ../binaries/x86_64/mdig mdig/mdig\\n"
+            "echo tampered >> binaries/x86_64/nfqws2\\n",
+            encoding="utf-8",
+        )
+        with self.assertRaisesRegex(ActivationError, "sha256sum"):
+            run_update(
+                self.upstream, self.active, self.state, "v1.2.3",
+                "zapret2.service", self.checksums, no_service=True,
+            )
+        self.assertFalse((self.active / ".zapret2control-upstream-manifest.json").exists())
+
     def test_invalid_upstream_does_not_change_active_installation(self):
         (self.upstream / "install_bin.sh").write_text("#!/bin/sh\nexit 9\n", encoding="utf-8")
         with self.assertRaises(ActivationError):
             run_update(
                 self.upstream, self.active, self.state, "v1.2.3",
-                "zapret2.service", no_service=True,
+                "zapret2.service", self.checksums, no_service=True,
             )
         self.assertFalse((self.active / ".zapret2control-upstream-manifest.json").exists())
         self.assertEqual((self.active / "legacy.txt").read_text(encoding="utf-8"), "retain")
