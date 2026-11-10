@@ -9,8 +9,7 @@ Describe what this change does and why.
 - [ ] Build / packaging / CI
 
 ## Scope
-- [ ] Qt Widgets production UI
-- [ ] QML/Kirigami preview
+- [ ] QML/Kirigami production UI
 - [ ] Backend / helper
 - [ ] Tests
 - [ ] Packaging / metadata
@@ -25,7 +24,8 @@ Describe what this change does and why.
 
 ## Safety and compatibility
 - [ ] No privileged operation was moved into the unprivileged GUI
-- [ ] Existing settings and user data remain compatible, or migration is documented and tested
+- [ ] No unsupported legacy aliases or migration paths are introduced
+- [ ] Current-version settings and runtime state remain safe across supported updates
 - [ ] No secrets, generated build output, or unrelated changes are included
 
 ## Screenshots / logs
