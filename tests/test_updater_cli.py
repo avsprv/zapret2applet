@@ -79,7 +79,7 @@ class UpdaterCliTests(unittest.TestCase):
         self.state.mkdir(parents=True, mode=0o700)
         (self.state / ".orphaned-journal.tmp").write_text("partial", encoding="utf-8")
         with self.assertRaisesRegex(ActivationError, "unexpected object"):
-            recover_pending(self.state, self.active.parent, "zapret2.service")
+            recover_pending(self.state, self.active, "zapret2.service")
 
     def test_invalid_upstream_does_not_change_active_installation(self):
         (self.upstream / "install_bin.sh").write_text("#!/bin/sh\nexit 9\n", encoding="utf-8")
