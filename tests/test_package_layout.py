@@ -50,6 +50,9 @@ def main() -> None:
 
     assert LEGACY_ID not in package_workflow
     assert "legacy-source" not in package_workflow
+    assert LEGACY_ID not in lifecycle_doc
+    assert f"/var/lib/{LEGACY_ID}" not in lifecycle_doc
+    assert f"/run/{LEGACY_ID}" not in lifecycle_doc
 
     for source in (preinst, spec.split("%changelog", 1)[0], control, cmake,
                    main_cpp, autostart, autostart_tests):
