@@ -54,6 +54,13 @@ jobs:
           dpkg-deb --info dist/*.deb
           dpkg-deb --contents dist/*.deb
           lintian -I dist/*.deb
+      - name: Remove build-only Qt development dependencies before runtime smoke test
+        run: |
+          set -eux
+          apt-get purge -y zapret2control-build-deps build-essential cmake debhelper devscripts equivs \
+            extra-cmake-modules libkirigami-dev qt6-declarative-dev qt6-base-dev qt6-tools-dev \
+            qt6-l10n-tools ninja-build desktop-file-utils lintian
+          apt-get autoremove -y
       - name: Smoke-test DEB clean installation and removal
         run: |
           set -eux
@@ -181,6 +188,13 @@ jobs:
           rpm -qpl dist/zapret2control-*.rpm
           rpm -qpR dist/zapret2control-*.rpm
           rpmlint dist/*.rpm
+      - name: Remove build-only Qt development dependencies before runtime smoke test
+        run: |
+          set -eux
+          dnf remove -y cmake extra-cmake-modules kf6-kirigami-devel qt6-qtbase-devel \
+            qt6-qtdeclarative-devel qt6-qttools-devel rpm-build rpmlint gcc-c++ \
+            desktop-file-utils systemd-rpm-macros
+          dnf autoremove -y
       - name: Smoke-test RPM clean installation and removal
         run: |
           set -eux
