@@ -190,7 +190,7 @@ Mocked systemd tests cover normal active-service updates, restart failure follow
 
 The transaction layers are now wired into the privileged `update-locked` helper through `updater_cli.py`:
 
-The helper uses a process-scoped `flock` descriptor rather than a persistent lock directory, so SIGKILL releases the lock automatically. A legacy empty lock directory is retired safely; a non-empty or unsafe one causes a fail-closed error. The transaction journal is written and fsynced before the service stop, closing the crash window between stopping the service and recording recovery state.
+The helper uses a process-scoped `flock` descriptor rather than a persistent lock directory, so SIGKILL releases the lock automatically. A legacy lock directory causes a fail-closed error because an older updater process may still own it; it must be removed manually only after confirming that no old updater is running. The transaction journal is written and fsynced before the service stop, closing the crash window between stopping the service and recording recovery state.
 
 
 1. The helper acquires its existing update lock and invokes persistent-journal recovery before downloading a new release.
