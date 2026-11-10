@@ -53,17 +53,6 @@ qt_add_translations(zapret2control_i18n
         src/backend/updatechecker.cpp
         src/backend/zapretupdater.cpp
         src/profileanalyzer.cpp
-        src/qml/applicationcontroller.cpp
-        src/qml/configcontroller.cpp
-        src/qml/profilecontroller.cpp
-        src/qml/settingsmanager.cpp
-        src/qml/logscontroller.cpp
-        src/qml/listscontroller.cpp
-        src/qml/blockcheckjobcontroller.cpp
-        src/qml/updatecontroller.cpp
-        src/qml/autostartcontroller.cpp
-        src/qml/traycontroller.cpp
-        src/qml/dbusmenu.cpp
         src/qml/Main.qml
         src/qml/pages/SettingsPage.qml
         src/qml/pages/ConfigPage.qml
