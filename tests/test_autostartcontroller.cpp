@@ -38,8 +38,11 @@ private slots:
         legacy.write("[Desktop Entry]\n"
                      "Type=Application\n"
                      "Name=zapret2applet\n"
+                     "Comment=Unofficial Qt6 GUI for zapret2\n"
                      "Exec=\"/usr/bin/zapret2applet\"\n"
                      "Icon=zapret2applet\n"
+                     "Terminal=false\n"
+                     "X-GNOME-Autostart-enabled=true\n"
                      "X-Zapret2Applet-Managed=true\n");
         legacy.close();
 
@@ -82,6 +85,24 @@ private slots:
         controller.setEnabled(false);
         QVERIFY(!controller.errorMessage().isEmpty());
         QVERIFY(file.exists());
+    }
+
+    void refusesToRemoveModifiedManagedEntry()
+    {
+        QTemporaryDir directory;
+        QVERIFY(directory.isValid());
+        AutostartController controller(nullptr, directory.path(), QStringLiteral("/usr/bin/zapret2control"));
+        controller.setEnabled(true);
+        QVERIFY2(controller.errorMessage().isEmpty(), qPrintable(controller.errorMessage()));
+        QFile file(directory.filePath(QStringLiteral("zapret2control.desktop")));
+        QVERIFY(file.open(QIODevice::Append | QIODevice::Text));
+        file.write("X-User-Setting=true\n");
+        file.close();
+
+        controller.setEnabled(false);
+        QVERIFY(!controller.errorMessage().isEmpty());
+        QVERIFY(file.exists());
+        QVERIFY(!controller.enabled());
     }
 
     void refusesToOverwriteUnmanagedEntry()
