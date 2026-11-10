@@ -25,7 +25,6 @@ signals:
 
 private:
     QString entryPath() const;
-    QString expectedExec() const;
     bool isManagedEntry() const;
     void setError(const QString &message);
 
