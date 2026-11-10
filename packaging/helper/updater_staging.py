@@ -83,7 +83,7 @@ def _copy_user_data(source_root: Path, stage: Path) -> None:
             raise ManifestError("init.d must be a real directory when preserving custom.d")
         for platform in sorted(init_root.iterdir()):
             if platform.is_symlink() or not platform.is_dir():
-                raise ManifestError(f"unsafe init.d platform directory: {platform.name}")
+                continue
             custom = platform / "custom.d"
             if custom.exists() or custom.is_symlink():
                 candidates.append(custom)
