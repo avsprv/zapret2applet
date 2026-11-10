@@ -220,7 +220,7 @@ def _validate_preserved_user_data(child: os.DirEntry[str], relative: str) -> Non
         _validate_preserved_user_data(nested, nested_path)
 
 
-def _walk_entries(root: Path) -> list[dict[str, Any]]:
+def _walk_entries(root: Path, *, allow_manifest: bool = False) -> list[dict[str, Any]]:
     entries: list[dict[str, Any]] = []
     pending: list[tuple[Path, str]] = [(root, "")]
 
@@ -234,6 +234,8 @@ def _walk_entries(root: Path) -> list[dict[str, Any]]:
         for child in children:
             path = f"{relative}/{child.name}" if relative else child.name
             if path == MANIFEST_NAME:
+                if allow_manifest:
+                    continue
                 _fail("upstream tree contains the reserved manifest path")
             if is_user_data_path(path):
                 _relative_path(path)
