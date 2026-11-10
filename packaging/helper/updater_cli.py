@@ -117,6 +117,60 @@ def _run_checked(
     return result
 
 
+def _validate_checksum_manifest(checksum_file: Path, upstream: Path, expected_uid: int) -> None:
+    try:
+        info = checksum_file.lstat()
+    except OSError as exc:
+        raise ActivationError(f"cannot inspect release checksum manifest: {exc}") from exc
+    mode = stat.S_IMODE(info.st_mode)
+    if (
+        not stat.S_ISREG(info.st_mode)
+        or info.st_uid != expected_uid
+        or info.st_nlink != 1
+        or mode & 0o022
+        or mode & ~0o777
+        or info.st_size > 1024 * 1024
+    ):
+        raise ActivationError("release checksum manifest has unsafe type, ownership, mode or size")
+    try:
+        lines = checksum_file.read_text(encoding="ascii").splitlines()
+    except (OSError, UnicodeError) as exc:
+        raise ActivationError(f"cannot read release checksum manifest: {exc}") from exc
+    seen: set[str] = set()
+    prefix = upstream.name + "/binaries/"
+    for line in lines:
+        match = re.fullmatch(r"([0-9a-f]{64})  ([^\\s]+)", line)
+        if not match:
+            raise ActivationError("invalid release checksum manifest entry")
+        relative = match.group(2)
+        if (
+            not relative.startswith(prefix)
+            or "\\" in relative
+            or any(ord(ch) < 32 or ord(ch) == 127 for ch in relative)
+            or any(part in ("", ".", "..") for part in relative.split("/"))
+            or relative in seen
+        ):
+            raise ActivationError(f"unsafe or duplicate checksum path: {relative}")
+        seen.add(relative)
+        binary = upstream.parent / relative
+        try:
+            binary_info = binary.lstat()
+        except OSError as exc:
+            raise ActivationError(f"cannot inspect checksummed binary {relative}: {exc}") from exc
+        binary_mode = stat.S_IMODE(binary_info.st_mode)
+        if (
+            not stat.S_ISREG(binary_info.st_mode)
+            or binary_info.st_uid != expected_uid
+            or binary_info.st_nlink != 1
+            or binary_mode & 0o022
+            or binary_mode & ~0o777
+            or not binary_mode & 0o400
+        ):
+            raise ActivationError(f"checksummed binary has unsafe type or metadata: {relative}")
+    if not seen:
+        raise ActivationError("release checksum manifest is empty")
+
+
 def _prepare_upstream(upstream: Path, release_tag: str, checksum_file: Path) -> None:
     if not re.fullmatch(r"v[0-9]+(?:\.[0-9]+)+", release_tag):
         raise ActivationError("invalid upstream release tag")
@@ -125,9 +179,9 @@ def _prepare_upstream(upstream: Path, release_tag: str, checksum_file: Path) -> 
         raise ActivationError("upstream install_bin.sh is missing or unsafe")
     # Validate the extracted tree before executing any upstream helper code.
     build_manifest(upstream, release_tag)
-    if not checksum_file.is_file() or checksum_file.is_symlink():
-        raise ActivationError("release checksum manifest is missing or unsafe")
+    _validate_checksum_manifest(checksum_file, upstream, os.geteuid())
     _run_checked(["/bin/sh", str(install_script)], cwd=upstream)
+    _validate_checksum_manifest(checksum_file, upstream, os.geteuid())
     # The selector script may only create links; verify it did not alter the
     # checksummed upstream binaries before constructing the new ownership manifest.
     _run_checked(["sha256sum", "-c", str(checksum_file)], cwd=upstream.parent)
