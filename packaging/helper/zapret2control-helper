@@ -730,6 +730,22 @@ update-locked)
     tmp=$(mktemp -d /var/tmp/zapret2control-update.XXXXXX) || { rmdir "$RUNDIR/update.lock"; die "mktemp failed"; }
     trap 'rm -rf "$tmp"; rmdir "$RUNDIR/update.lock" 2>/dev/null || true' EXIT
 
+    module_dir=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd) || die "cannot locate updater modules"
+    if [ ! -f "$module_dir/updater_cli.py" ]; then module_dir=/usr/share/zapret2control; fi
+    [ -f "$module_dir/updater_cli.py" ] || die "transactional updater modules are missing"
+
+    # Recover any interrupted transaction before starting a new download.
+    if [ "$TEST_MODE" = 1 ]; then
+        QZAPRET_TEST_MODE=1 python3 "$module_dir/updater_cli.py" recover \
+            --base "$BASE" --journal-dir "$STATE_DIR" --unit "$UNIT" \
+            || die "pending updater transaction recovery failed"
+    else
+        python3 "$module_dir/updater_cli.py" recover \
+            --base "$BASE" --journal-dir "$STATE_DIR" --unit "$UNIT" \
+            || die "pending updater transaction recovery failed"
+    fi
+
+
     fetch() {
         curl -fsSL --proto "$PROTO" --proto-redir '=https' --tlsv1.2 \
             --connect-timeout 20 --max-time 600 --max-filesize 300000000 -o "$2" "$1"
@@ -769,21 +785,6 @@ update-locked)
     done
     newver=$(grep -E '^[0-9]+(\.[0-9]+)+[[:space:]]*$' "$stage/docs/changes.txt" | tail -n 1 | tr -d '[:space:]')
     [ "$newver" = "${tag#v}" ] || die "version mismatch: archive says '$newver', expected '${tag#v}'"
-
-    module_dir=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd) || die "cannot locate updater modules"
-    if [ ! -f "$module_dir/updater_cli.py" ]; then module_dir=/usr/share/zapret2control; fi
-    [ -f "$module_dir/updater_cli.py" ] || die "transactional updater modules are missing"
-
-    # Recover any interrupted transaction before starting a new download.
-    if [ "$TEST_MODE" = 1 ]; then
-        QZAPRET_TEST_MODE=1 python3 "$module_dir/updater_cli.py" recover \
-            --base "$BASE" --journal-dir "$STATE_DIR" --unit "$UNIT" \
-            || die "pending updater transaction recovery failed"
-    else
-        python3 "$module_dir/updater_cli.py" recover \
-            --base "$BASE" --journal-dir "$STATE_DIR" --unit "$UNIT" \
-            || die "pending updater transaction recovery failed"
-    fi
 
     echo "Preparing and activating $tag transactionally ..."
     if [ "$TEST_MODE" = 1 ]; then
