@@ -12,7 +12,7 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 include(GNUInstallDirs)
 include(CTest)
 
-# KDE Frameworks / Kirigami dependencies for the parallel QML migration target.
+# KDE Frameworks / Kirigami dependencies for the production QML application.
 find_package(ECM 6.0.0 REQUIRED NO_MODULE)
 set(CMAKE_MODULE_PATH ${ECM_MODULE_PATH})
 include(ECMFindQmlModule)
