@@ -45,6 +45,28 @@ private slots:
         QVERIFY(!QSettings().value(QStringLiteral("tray/closeToTray")).toBool());
     }
 
+    void migratesLegacySettingsWithoutOverwritingCurrentValues()
+    {
+        QSettings current;
+        current.clear();
+        QSettings legacy(QSettings::defaultFormat(), QSettings::UserScope,
+                         QString(), QStringLiteral("zapret2applet"));
+        legacy.clear();
+        legacy.setValue(QStringLiteral("appearance/theme"), QStringLiteral("light"));
+        legacy.setValue(QStringLiteral("appearance/language"), QStringLiteral("en"));
+        legacy.setValue(QStringLiteral("update/autoCheck"), false);
+        legacy.setValue(QStringLiteral("tray/closeToTray"), false);
+        current.setValue(QStringLiteral("appearance/theme"), QStringLiteral("dark"));
+        current.sync();
+        legacy.sync();
+
+        SettingsManager settings;
+        QCOMPARE(settings.theme(), QStringLiteral("dark"));
+        QCOMPARE(settings.language(), QStringLiteral("en"));
+        QVERIFY(!settings.autoCheckUpdates());
+        QVERIFY(!settings.closeToTray());
+    }
+
     void themeChangesEmitSignal()
     {
         QSettings().clear();
