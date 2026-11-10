@@ -19,18 +19,18 @@ case "$1" in
                 cat "$QZAPRET_TEST_SERVICE_STATE_FILE"
                 ;;
             zapret2control-blockcheck.service|zapret2control-blockcheck-recovery.service)
-                printf 'LoadState=loaded\\nActiveState=inactive\\nSubState=dead\\nResult=success\\nExecMainStatus=0\\n'
+                printf 'LoadState=loaded\nActiveState=inactive\nSubState=dead\nResult=success\nExecMainStatus=0\n'
                 ;;
             *) exit 4 ;;
         esac
         ;;
     stop)
         [ "${QZAPRET_TEST_SYSTEMCTL_STOP_FAIL:-0}" != 1 ] || exit 1
-        printf 'inactive\\n' > "$QZAPRET_TEST_SERVICE_STATE_FILE"
+        printf 'inactive\n' > "$QZAPRET_TEST_SERVICE_STATE_FILE"
         ;;
     start)
         [ "${QZAPRET_TEST_SYSTEMCTL_START_FAIL:-0}" != 1 ] || exit 1
-        printf 'active\\n' > "$QZAPRET_TEST_SERVICE_STATE_FILE"
+        printf 'active\n' > "$QZAPRET_TEST_SERVICE_STATE_FILE"
         ;;
     *) exit 1 ;;
 esac
@@ -126,20 +126,20 @@ grep -q '^1.0.6$' "$W/opt/zapret2.bak/docs/changes.txt" && ok "backup of previou
 
 # --- 1a. active service is stopped and restored around the update
 make_base; make_release v9.9.9
-printf 'active\\n' > "$SERVICE_STATE_FILE"
+printf 'active\n' > "$SERVICE_STATE_FILE"
 out=$(run_update_with_service v9.9.9); rc=$?
 [ $rc -eq 0 ] && ok "active service update succeeds" || bad "active service update rc=$rc: $out"
 [ "$(cat "$SERVICE_STATE_FILE")" = active ] && ok "previously active service restored" || bad "service was not restored: $(cat "$SERVICE_STATE_FILE")"
 
 # --- 1b. uncertain or unavailable service state must fail closed
 make_base; make_release v9.9.9
-printf 'activating\\n' > "$SERVICE_STATE_FILE"
+printf 'activating\n' > "$SERVICE_STATE_FILE"
 out=$(run_update_with_service v9.9.9); rc=$?
 [ $rc -eq 2 ] && echo "$out" | grep -q "cannot safely update" && ok "transitional service state rejected" || bad "transitional state rc=$rc: $out"
 expect_untouched "transitional service state"
 
 make_base; make_release v9.9.9
-printf 'active\\n' > "$SERVICE_STATE_FILE"
+printf 'active\n' > "$SERVICE_STATE_FILE"
 out=$(QZAPRET_TEST_SYSTEMCTL_QUERY_FAIL=1 run_update_with_service v9.9.9); rc=$?
 [ $rc -eq 2 ] && echo "$out" | grep -q "cannot determine the current state" && ok "systemctl state query failure rejected" || bad "systemctl query failure rc=$rc: $out"
 expect_untouched "systemctl query failure"
