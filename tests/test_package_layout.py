@@ -54,6 +54,17 @@ def main() -> None:
     assert f"/var/lib/{LEGACY_ID}" not in lifecycle_doc
     assert f"/run/{LEGACY_ID}" not in lifecycle_doc
 
+    for path in ROOT.rglob("*"):
+        if not path.is_file() or any(part in {".git", "build", "dist", "__pycache__"} for part in path.parts):
+            continue
+        try:
+            content = path.read_text(encoding="utf-8")
+        except (UnicodeDecodeError, OSError):
+            continue
+        if path == ROOT / "packaging/fedora/zapret2control.spec":
+            content = content.split("%changelog", 1)[0]
+        assert LEGACY_ID not in content, f"Unsupported legacy identifier found in {path.relative_to(ROOT)}"
+
     for source in (preinst, spec.split("%changelog", 1)[0], control, cmake,
                    main_cpp, autostart, autostart_tests):
         assert LEGACY_ID not in source
