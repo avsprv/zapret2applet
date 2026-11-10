@@ -220,7 +220,10 @@ def _read_journal(path: Path, expected_uid: int) -> dict[str, Any]:
         _fail(f"cannot read transaction journal: {exc}")
     finally:
         os.close(fd)
-    return _validate_journal(document)
+    validated = _validate_journal(document)
+    if path.stem != validated["transaction_id"]:
+        _fail("transaction journal filename does not match its identifier")
+    return validated
 
 
 def _fsync_directory(path: Path) -> None:
@@ -298,12 +301,15 @@ def recover_transaction(
     parent: str | os.PathLike[str],
     *,
     expected_uid: int | None = None,
+    expected_active_name: str | None = None,
 ) -> str:
     """Recover a prepared transaction by matching recorded device/inode identities."""
     uid = os.geteuid() if expected_uid is None else expected_uid
     journal_path, parent_path = Path(journal), Path(parent)
     _safe_directory(parent_path, uid)
     document = _read_journal(journal_path, uid)
+    if expected_active_name is not None and document["active_name"] != expected_active_name:
+        _fail("transaction journal refers to a different active installation")
     if document["parent_dev"] != parent_path.stat().st_dev:
         _fail("transaction parent filesystem identity changed")
     active = parent_path / document["active_name"]
