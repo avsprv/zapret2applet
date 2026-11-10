@@ -197,7 +197,6 @@ def main(argv: Sequence[str] | None = None) -> int:
     recover_parser.add_argument("--base", required=True)
     recover_parser.add_argument("--journal-dir", required=True)
     recover_parser.add_argument("--unit", required=True)
-    recover_parser.add_argument("--no-service", action="store_true")
     update_parser = subparsers.add_parser("update")
     update_parser.add_argument("--upstream", required=True)
     update_parser.add_argument("--base", required=True)
