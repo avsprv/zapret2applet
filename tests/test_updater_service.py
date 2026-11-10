@@ -34,6 +34,7 @@ class UpdaterServiceTests(unittest.TestCase):
         self.journal = self.journal_dir / f"{self.transaction_id}.json"
         self.state = "active"
         self.fail_start = False
+        self.fail_stop = False
         self.calls = []
 
     def tearDown(self):
@@ -44,6 +45,9 @@ class UpdaterServiceTests(unittest.TestCase):
         if arguments[0] == "show":
             return subprocess.CompletedProcess(arguments, 0, self.state + "\n", "")
         if arguments[0] == "stop":
+            self.assertTrue(self.journal.exists(), "journal must be durable before service stop")
+            if self.fail_stop:
+                return subprocess.CompletedProcess(arguments, 1, "", "simulated stop failure")
             self.state = "inactive"
             return subprocess.CompletedProcess(arguments, 0, "", "")
         if arguments[0] == "start":
@@ -64,6 +68,20 @@ class UpdaterServiceTests(unittest.TestCase):
         self.assertEqual((self.backup / "old.txt").read_text(encoding="utf-8"), "old")
         self.assertFalse(self.journal.exists())
         self.assertEqual([call[0] for call in self.calls], ["show", "stop", "show", "start", "show"])
+
+    def test_failed_stop_discards_stage_and_keeps_service_running(self):
+        self.fail_stop = True
+        with patch("updater_service._systemctl", side_effect=self.fake_systemctl):
+            with self.assertRaisesRegex(ActivationError, "systemctl stop"):
+                activate_with_service(
+                    self.active, self.stage, self.backup, self.journal,
+                    "v1.2.3", "zapret2.service",
+                )
+        self.assertEqual(self.state, "active")
+        self.assertEqual((self.active / "old.txt").read_text(encoding="utf-8"), "old")
+        self.assertFalse(self.stage.exists())
+        self.assertFalse(self.backup.exists())
+        self.assertFalse(self.journal.exists())
 
     def test_failed_restart_keeps_journal_and_recovery_restarts_service(self):
         self.fail_start = True
