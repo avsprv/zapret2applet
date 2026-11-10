@@ -233,7 +233,7 @@ def build_staging_tree(
         raise ManifestError("staging parent must be privately owned and on the installation filesystem")
 
     new_manifest = build_manifest(upstream, release_tag)
-    active_entries = _walk_entries(active)
+    active_entries = _walk_entries(active, allow_manifest=True)
     previous_manifest_path = active / MANIFEST_NAME
     if previous_manifest_path.exists() or previous_manifest_path.is_symlink():
         from updater_transaction import load_manifest
