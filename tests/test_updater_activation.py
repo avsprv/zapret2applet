@@ -101,7 +101,7 @@ class UpdaterActivationTests(unittest.TestCase):
         replacement.rename(self.stage)
         with self.assertRaisesRegex(ActivationError, "manual recovery required"):
             recover_transaction(self.journal, self.base)
-        self.assertEqual(marker.read_text(encoding="utf-8"), "leave")
+        self.assertEqual((self.stage / marker.name).read_text(encoding="utf-8"), "leave")
         self.assertTrue(self.journal.exists())
 
     def test_existing_backup_blocks_activation_without_touching_trees(self):
