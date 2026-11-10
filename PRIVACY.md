@@ -2,9 +2,9 @@
 
 **Дата редакции / Last updated:** 2026-11-07
 
-Эта политика описывает сетевые взаимодействия и локальные настройки, выявленные в исходном коде zapret2applet. Она относится к приложению и не заменяет политики GitHub, upstream-проекта zapret2, DNS-провайдера, интернет-провайдера или проверяемых сайтов.
+Эта политика описывает сетевые взаимодействия и локальные настройки, выявленные в исходном коде zapret2control. Она относится к приложению и не заменяет политики GitHub, upstream-проекта zapret2, DNS-провайдера, интернет-провайдера или проверяемых сайтов.
 
-This policy describes the network interactions and local settings identified in the zapret2applet source code. It covers the application only and does not replace the policies of GitHub, the zapret2 upstream project, DNS providers, internet service providers, or tested websites.
+This policy describes the network interactions and local settings identified in the zapret2control source code. It covers the application only and does not replace the policies of GitHub, the zapret2 upstream project, DNS providers, internet service providers, or tested websites.
 
 ## 1. Сбор данных разработчиком / Data collection by the developer
 
@@ -22,17 +22,17 @@ This description applies to the application's behavior in the stated version and
 
 `https://github.com/bol-van/zapret2/releases/latest`
 
-В запросе используется User-Agent вида `zapret2applet/<версия>`. При ручном запуске обновления привилегированный helper загружает архив релиза и файл контрольных сумм с GitHub по HTTPS.
+В запросе используется User-Agent вида `zapret2control/<версия>`. При ручном запуске обновления привилегированный helper загружает архив релиза и файл контрольных сумм с GitHub по HTTPS.
 
-GitHub может получать IP-адрес устройства, время запроса, User-Agent и иные технические данные, предусмотренные его инфраструктурой и политиками. Эти данные передаются непосредственно GitHub; разработчик zapret2applet не получает их через отдельный сервер приложения.
+GitHub может получать IP-адрес устройства, время запроса, User-Agent и иные технические данные, предусмотренные его инфраструктурой и политиками. Эти данные передаются непосредственно GitHub; разработчик zapret2control не получает их через отдельный сервер приложения.
 
 Automatic update checks are enabled by default and run no more than once per day. The application sends an HTTPS HEAD request to:
 
 `https://github.com/bol-van/zapret2/releases/latest`
 
-The request uses a User-Agent in the form `zapret2applet/<version>`. When an update is initiated, the privileged helper downloads the release archive and checksum file from GitHub over HTTPS.
+The request uses a User-Agent in the form `zapret2control/<version>`. When an update is initiated, the privileged helper downloads the release archive and checksum file from GitHub over HTTPS.
 
-GitHub may receive the device's IP address, request time, User-Agent, and other technical data handled by its infrastructure and policies. This information is sent directly to GitHub; the zapret2applet developer does not receive it through an application-operated server.
+GitHub may receive the device's IP address, request time, User-Agent, and other technical data handled by its infrastructure and policies. This information is sent directly to GitHub; the zapret2control developer does not receive it through an application-operated server.
 
 ## 3. Сетевые тесты / Network diagnostics
 
@@ -68,11 +68,11 @@ Current-session results and logs are displayed in the application window. If a u
 
 При обращении к GitHub применяются условия и политика конфиденциальности GitHub: https://docs.github.com/en/site-policy/privacy-policies/github-privacy-statement
 
-При сетевых тестах применяются условия и политики соответствующих DNS-провайдеров, сетевых операторов и проверяемых ресурсов. Разработчик zapret2applet не контролирует их обработку данных.
+При сетевых тестах применяются условия и политики соответствующих DNS-провайдеров, сетевых операторов и проверяемых ресурсов. Разработчик zapret2control не контролирует их обработку данных.
 
 GitHub's terms and privacy statement apply when the application connects to GitHub: https://docs.github.com/en/site-policy/privacy-policies/github-privacy-statement
 
-The terms and privacy policies of the relevant DNS providers, network operators, and tested destinations apply to network tests. The zapret2applet developer does not control their data processing.
+The terms and privacy policies of the relevant DNS providers, network operators, and tested destinations apply to network tests. The zapret2control developer does not control their data processing.
 
 ## 6. Изменения политики / Policy changes
 

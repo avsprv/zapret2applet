@@ -26,4 +26,5 @@ private:
 
     QProcess *m_proc = nullptr;
     QByteArray m_buf;
+    bool m_discardingOversizedLine = false;
 };

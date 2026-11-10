@@ -1,8 +1,24 @@
 #include "systemdbackend.h"
 
 #include <QProcess>
+#include <QTimer>
+#include <memory>
 
 #include "helperpath.h"
+
+int SystemdBackend::processTimeoutMs(bool privileged) const
+{
+    return privileged ? 120000 : 15000;
+}
+
+void SystemdBackend::startProcess(QProcess *process, const QString &program,
+                                   const QStringList &arguments, bool privileged)
+{
+    if (privileged)
+        Helper::start(process, arguments);
+    else
+        process->start(program, arguments);
+}
 
 SystemdBackend::SystemdBackend(QObject *parent)
     : ZapretBackend(parent)
@@ -13,16 +29,39 @@ SystemdBackend::SystemdBackend(QObject *parent)
 void SystemdBackend::query(const QString &verb, const std::function<void(const QString &)> &onResult)
 {
     auto *proc = new QProcess(this);
-    connect(proc, &QProcess::finished, this, [proc, onResult] {
-        onResult(QString::fromUtf8(proc->readAllStandardOutput()).trimmed());
+    auto completed = std::make_shared<bool>(false);
+    auto timedOut = std::make_shared<bool>(false);
+    auto *timeout = new QTimer(proc);
+    timeout->setSingleShot(true);
+    connect(timeout, &QTimer::timeout, this, [this, proc, completed, timedOut] {
+        if (*completed)
+            return;
+        *timedOut = true;
+        emit errorOccurred(tr("Превышено время ожидания ответа systemctl."));
+        proc->kill();
+    });
+    connect(proc, &QProcess::finished, this, [proc, onResult, completed, timedOut, timeout] {
+        if (*completed)
+            return;
+        *completed = true;
+        timeout->stop();
+        const QString output = *timedOut
+            ? QString() : QString::fromUtf8(proc->readAllStandardOutput()).trimmed();
+        onResult(output);
         proc->deleteLater();
     });
-    connect(proc, &QProcess::errorOccurred, this, [this, proc, onResult] {
-        emit errorOccurred(tr("Не удалось запустить systemctl: %1").arg(proc->errorString()));
+    connect(proc, &QProcess::errorOccurred, this,
+            [this, proc, onResult, completed, timeout](QProcess::ProcessError error) {
+        if (error != QProcess::FailedToStart || *completed)
+            return;
+        *completed = true;
+        timeout->stop();
+        emit errorOccurred(tr("Ошибка systemctl: %1").arg(proc->errorString()));
         onResult(QString());
         proc->deleteLater();
     });
-    proc->start(QStringLiteral("systemctl"), {verb, m_unit});
+    startProcess(proc, QStringLiteral("systemctl"), {verb, m_unit}, false);
+    timeout->start(processTimeoutMs(false));
 }
 
 namespace {
@@ -40,49 +79,131 @@ ZapretBackend::State parseUnitState(const QString &out)
 
 void SystemdBackend::refresh()
 {
-    query(QStringLiteral("is-active"), [this](const QString &out) {
-        emit stateChanged(parseUnitState(out));
+    // Coalesce periodic refreshes while either systemctl query is still running.
+    if (m_refreshInProgress)
+        return;
+
+    m_refreshInProgress = true;
+    m_refreshQueriesPending = 2;
+    const quint64 generation = ++m_stateQueryGeneration;
+    query(QStringLiteral("is-active"), [this, generation](const QString &out) {
+        if (generation == m_stateQueryGeneration)
+            emit stateChanged(parseUnitState(out));
+        finishRefreshQuery();
     });
-    query(QStringLiteral("is-enabled"), [this](const QString &out) {
-        emit bootEnabledChanged(out == QLatin1String("enabled"));
+    query(QStringLiteral("is-enabled"), [this, generation](const QString &out) {
+        if (generation == m_stateQueryGeneration)
+            emit bootEnabledChanged(out == QLatin1String("enabled"));
+        finishRefreshQuery();
     });
+}
+
+void SystemdBackend::finishRefreshQuery()
+{
+    if (!m_refreshInProgress || m_refreshQueriesPending <= 0)
+        return;
+
+    --m_refreshQueriesPending;
+    if (m_refreshQueriesPending == 0)
+        m_refreshInProgress = false;
 }
 
 void SystemdBackend::verifyState()
 {
-    query(QStringLiteral("is-active"), [this](const QString &out) {
+    const quint64 verificationGeneration = ++m_verificationGeneration;
+    const quint64 stateGeneration = m_stateQueryGeneration;
+    query(QStringLiteral("is-active"), [this, verificationGeneration, stateGeneration](const QString &out) {
+        if (verificationGeneration != m_verificationGeneration)
+            return;
         const State state = parseUnitState(out);
-        emit stateChanged(state);
+        if (stateGeneration == m_stateQueryGeneration)
+            emit stateChanged(state);
         emit stateVerified(state);
     });
 }
 
+void SystemdBackend::verifyState(quint64 requestId)
+{
+    // Invalidate older refresh and lifecycle-verification results.
+    ++m_stateQueryGeneration;
+    const quint64 verificationGeneration = ++m_verificationGeneration;
+    // Lifecycle verification is private to its requesting operation. Publishing
+    // it as stateChanged would let a late response overwrite the application UI.
+    query(QStringLiteral("is-active"), [this, requestId, verificationGeneration](const QString &out) {
+        if (verificationGeneration == m_verificationGeneration)
+            emit stateVerifiedForRequest(requestId, parseUnitState(out));
+    });
+}
+
 void SystemdBackend::start() { runUnitAction(QStringLiteral("start")); }
+void SystemdBackend::start(quint64 requestId) { runUnitAction(QStringLiteral("start"), requestId); }
 void SystemdBackend::stop() { runUnitAction(QStringLiteral("stop")); }
+void SystemdBackend::stop(quint64 requestId) { runUnitAction(QStringLiteral("stop"), requestId); }
 
 void SystemdBackend::setBootEnabled(bool enabled)
 {
     runUnitAction(enabled ? QStringLiteral("enable") : QStringLiteral("disable"));
 }
 
-void SystemdBackend::runUnitAction(const QString &action)
+void SystemdBackend::runUnitAction(const QString &action, quint64 requestId)
 {
+    m_pendingActions.enqueue({action, requestId});
+    startNextUnitAction();
+}
+
+void SystemdBackend::startNextUnitAction()
+{
+    if (m_actionInProgress || m_pendingActions.isEmpty())
+        return;
+
+    m_actionInProgress = true;
+    ++m_stateQueryGeneration; // invalidate refreshes started before this action
+    ++m_verificationGeneration; // invalidate lifecycle checks started before this action
+    const PendingUnitAction pending = m_pendingActions.dequeue();
+    const QString action = pending.action;
+    const quint64 requestId = pending.requestId;
     auto *proc = new QProcess(this);
-    const auto reportResult = [this, action](bool success) {
-        query(QStringLiteral("is-active"), [this, action, success](const QString &out) {
+    auto completed = std::make_shared<bool>(false);
+    auto timedOut = std::make_shared<bool>(false);
+    auto *timeout = new QTimer(proc);
+    timeout->setSingleShot(true);
+    const auto reportResult = [this, action, requestId](bool success) {
+        // Discard lifecycle verification started while the privileged action was running.
+        ++m_verificationGeneration;
+        const quint64 generation = ++m_stateQueryGeneration;
+        query(QStringLiteral("is-active"), [this, action, success, requestId, generation](const QString &out) {
             const State state = parseUnitState(out);
-            emit stateChanged(state);
-            emit unitActionFinished(action, state, success);
+            if (generation == m_stateQueryGeneration)
+                emit stateChanged(state);
+            if (requestId == 0)
+                emit unitActionFinished(action, state, success);
+            else
+                emit unitActionFinishedForRequest(requestId, action, state, success);
+
+            m_actionInProgress = false;
+            startNextUnitAction();
         });
-        query(QStringLiteral("is-enabled"), [this](const QString &out) {
-            emit bootEnabledChanged(out == QLatin1String("enabled"));
+        query(QStringLiteral("is-enabled"), [this, generation](const QString &out) {
+            if (generation == m_stateQueryGeneration)
+                emit bootEnabledChanged(out == QLatin1String("enabled"));
         });
     };
 
+    connect(timeout, &QTimer::timeout, this,
+            [this, proc, action, completed, timedOut] {
+        if (*completed)
+            return;
+        *timedOut = true;
+        emit errorOccurred(tr("Операция systemd выполняется дольше ожидаемого: %1. Ожидается фактическое завершение команды.").arg(action));
+    });
     connect(proc, &QProcess::finished, this,
-            [this, proc, action, reportResult](int code, QProcess::ExitStatus status) {
-        const bool success = code == 0 && status == QProcess::NormalExit;
-        if (!success && !Helper::isAuthDismissed(code)) {
+            [this, proc, action, reportResult, completed, timedOut, timeout](int code, QProcess::ExitStatus status) {
+        if (*completed)
+            return;
+        *completed = true;
+        timeout->stop();
+        const bool success = !*timedOut && code == 0 && status == QProcess::NormalExit;
+        if (!*timedOut && !success && !Helper::isAuthDismissed(code)) {
             const QString err = QString::fromUtf8(proc->readAllStandardError()).trimmed();
             emit errorOccurred(tr("Операция не выполнена (код %1): %2").arg(code).arg(err));
         }
@@ -90,12 +211,15 @@ void SystemdBackend::runUnitAction(const QString &action)
         reportResult(success);
     });
     connect(proc, &QProcess::errorOccurred, this,
-            [this, proc, reportResult](QProcess::ProcessError e) {
-        if (e == QProcess::FailedToStart) {
-            emit errorOccurred(tr("Не удалось запустить pkexec/хелпер: %1").arg(proc->errorString()));
+            [this, proc, reportResult, completed, timeout](QProcess::ProcessError error) {
+        if (error == QProcess::FailedToStart && !*completed) {
+            timeout->stop();
+            emit errorOccurred(tr("Не удалось запустить операцию systemd: %1").arg(proc->errorString()));
+            *completed = true;
             proc->deleteLater(); // finished() после FailedToStart не приходит
             reportResult(false);
         }
     });
-    Helper::start(proc, {QStringLiteral("unit"), action});
+    startProcess(proc, QString(), {QStringLiteral("unit"), action}, true);
+    timeout->start(processTimeoutMs(true));
 }

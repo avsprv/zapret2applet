@@ -1,5 +1,7 @@
 #include <QCoreApplication>
+#include <QDir>
 #include <QFile>
+#include <QFileInfo>
 #include <QRegularExpression>
 #include <QTranslator>
 #include <QXmlStreamReader>
@@ -31,8 +33,8 @@ private slots:
     // плейсхолдеры %1, %2 … совпадают с исходной строкой.
     void tsFileIsComplete()
     {
-        QFile f(QStringLiteral(QZAPRET_I18N_DIR "/zapret2applet_en.ts"));
-        QVERIFY2(f.open(QIODevice::ReadOnly), "cannot open zapret2applet_en.ts");
+        QFile f(QStringLiteral(QZAPRET_I18N_DIR "/zapret2control_en.ts"));
+        QVERIFY2(f.open(QIODevice::ReadOnly), "cannot open zapret2control_en.ts");
 
         const QRegularExpression placeholder(QStringLiteral("%\\d+"));
         const QRegularExpression cyrillic(QStringLiteral("[А-Яа-яЁё]"));
@@ -46,10 +48,17 @@ private slots:
 
         QXmlStreamReader xml(&f);
         int messages = 0;
+        int locations = 0;
         QString source, translation, type;
         while (!xml.atEnd()) {
             xml.readNext();
-            if (xml.isStartElement() && xml.name() == u"source") {
+            if (xml.isStartElement() && xml.name() == u"location") {
+                const QString filename = xml.attributes().value(u"filename").toString();
+                const QString path = QDir(QStringLiteral(QZAPRET_I18N_DIR)).filePath(filename);
+                QVERIFY2(!filename.isEmpty() && QFileInfo::exists(path),
+                         qPrintable("missing translation source location: " + filename));
+                ++locations;
+            } else if (xml.isStartElement() && xml.name() == u"source") {
                 source = xml.readElementText();
             } else if (xml.isStartElement() && xml.name() == u"translation") {
                 type = xml.attributes().value(u"type").toString();
@@ -68,6 +77,7 @@ private slots:
         }
         QVERIFY2(!xml.hasError(), qPrintable(xml.errorString()));
         QVERIFY(messages > 0);
+        QVERIFY(locations > 0);
     }
 
     void englishLocale()
@@ -77,6 +87,11 @@ private slots:
         QCOMPARE(translate("MainWindow", "Выход"), QStringLiteral("Quit"));
         QCOMPARE(translate("main", "Запустить скрытым в системном трее"),
                  QStringLiteral("Start hidden in the system tray"));
+        QCOMPARE(translate("Main", "Статус"), QStringLiteral("Status"));
+        QCOMPARE(translate("AboutPage", "О программе"), QStringLiteral("About"));
+        QCOMPARE(translate("SettingsPage", "Внешний вид"), QStringLiteral("Appearance"));
+        QCOMPARE(translate("ConfigPage", "Прочитать"), QStringLiteral("Read"));
+        QCOMPARE(translate("ProfilesPage", "Новый профиль"), QStringLiteral("New profile"));
     }
 
     // Языка нет в переводах — показываем английский, а не русские исходники

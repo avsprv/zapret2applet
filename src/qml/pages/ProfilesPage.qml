@@ -1,0 +1,105 @@
+pragma ComponentBehavior: Bound
+
+import QtQuick
+import QtQuick.Controls as Controls
+import QtQuick.Layouts
+import org.kde.kirigami as Kirigami
+
+Kirigami.ScrollablePage {
+    id: page
+    required property var profileController
+    title: qsTr("Профили")
+    ColumnLayout {
+        width: parent.width
+        spacing: Kirigami.Units.largeSpacing
+        Kirigami.InlineMessage {
+            Layout.fillWidth: true
+            type: Kirigami.MessageType.Information
+            visible: true
+            text: qsTr("Профили извлекаются статически из NFQWS2_OPT. Shell-код и Lua не исполняются. Запись выполняется через helper с проверкой SHA-256, shell-синтаксиса и резервным копированием. Служба автоматически не перезапускается.")
+        }
+        Flow {
+            Layout.fillWidth: true
+            spacing: Kirigami.Units.smallSpacing
+            Controls.Button { text: page.profileController.dirty ? qsTr("Отменить изменения") : qsTr("Обновить"); icon.name: page.profileController.dirty ? "edit-undo" : "view-refresh"; enabled: !page.profileController.busy; onClicked: { if (page.profileController.dirty) discardDialog.open(); else page.profileController.read() } }
+            Controls.Button { text: qsTr("Создать"); icon.name: "list-add"; enabled: page.profileController.loaded && !page.profileController.busy && page.profileController.profiles.length < 128; onClicked: editor.openFor(-1, []) }
+            Controls.Button { text: qsTr("Сохранить"); icon.name: "document-save"; enabled: page.profileController.dirty && !page.profileController.busy; onClicked: saveDialog.open() }
+        }
+        Repeater {
+            model: page.profileController.profiles
+            delegate: Controls.ItemDelegate {
+                id: profileDelegate
+                required property var modelData
+                Layout.fillWidth: true
+                highlighted: page.profileController.selectedIndex === modelData.index
+                text: modelData.name + " — " + modelData.arguments.length + qsTr(" параметров")
+                onClicked: page.profileController.selectedIndex = modelData.index
+                contentItem: ColumnLayout {
+                    Controls.Label {
+                        Layout.fillWidth: true
+                        text: profileDelegate.modelData.name + " — " + profileDelegate.modelData.arguments.join(" ")
+                        wrapMode: Text.Wrap
+                    }
+                    Flow {
+                        Layout.fillWidth: true
+                        spacing: Kirigami.Units.smallSpacing
+                        Controls.Button { text: qsTr("Изменить"); enabled: !page.profileController.busy; onClicked: editor.openFor(profileDelegate.modelData.index, profileDelegate.modelData.arguments) }
+                        Controls.Button { text: qsTr("Копировать"); enabled: !page.profileController.busy && page.profileController.profiles.length < 128; onClicked: page.profileController.copy(profileDelegate.modelData.index) }
+                        Controls.Button { text: qsTr("Удалить"); enabled: !page.profileController.busy && page.profileController.profiles.length > 1; onClicked: { deleteDialog.indexToDelete = profileDelegate.modelData.index; deleteDialog.open() } }
+                    }
+                }
+            }
+        }
+        Kirigami.InlineMessage {
+            Layout.fillWidth: true
+            visible: page.profileController.status.length > 0
+            type: page.profileController.status.startsWith("Не удалось") || page.profileController.status.startsWith("Ошибка") || page.profileController.status.startsWith("config changed") || page.profileController.status.startsWith("stale config") ? Kirigami.MessageType.Error : Kirigami.MessageType.Information
+            text: page.profileController.status
+        }
+        Controls.ProgressBar { Layout.fillWidth: true; visible: page.profileController.busy; indeterminate: true }
+    }
+    Controls.Dialog {
+        id: editor
+        property int profileIndex: -1
+        title: profileIndex < 0 ? qsTr("Новый профиль") : qsTr("Изменить профиль")
+        modal: true
+        standardButtons: Controls.Dialog.Save | Controls.Dialog.Cancel
+        function openFor(index, args) { profileIndex = index; argumentEditor.text = args.join("\n"); open() }
+        onAccepted: {
+            const args = argumentEditor.text.split("\n").map(function(s) { return s.trim() }).filter(function(s) { return s.length > 0 })
+            if (profileIndex < 0) page.profileController.add(args)
+            else page.profileController.edit(profileIndex, args)
+        }
+        ColumnLayout {
+            width: Math.min(page.availableWidth, Kirigami.Units.gridUnit * 40)
+            Controls.Label { Layout.fillWidth: true; wrapMode: Text.WordWrap; text: qsTr("Один аргумент на строку. Не добавляйте --new, кавычки, shell-подстановки или пробелы внутри аргумента.") }
+            Controls.TextArea { id: argumentEditor; Layout.fillWidth: true; Layout.preferredHeight: Kirigami.Units.gridUnit * 18; Layout.minimumWidth: 0; wrapMode: TextEdit.NoWrap; font.family: "monospace"; selectByMouse: true; Accessible.name: qsTr("Аргументы профиля"); Accessible.description: qsTr("Один аргумент на строку.") }
+        }
+    }
+    Controls.Dialog {
+        id: discardDialog
+        title: qsTr("Отменить изменения?")
+        modal: true
+        standardButtons: Controls.Dialog.Yes | Controls.Dialog.No
+        onAccepted: page.profileController.read(true)
+        Controls.Label { width: parent.width; wrapMode: Text.WordWrap; text: qsTr("Все несохранённые изменения профилей будут потеряны. Конфигурация будет повторно загружена с диска.") }
+    }
+    Controls.Dialog {
+        id: saveDialog
+        title: qsTr("Сохранить профили?")
+        modal: true
+        standardButtons: Controls.Dialog.Yes | Controls.Dialog.No
+        onAccepted: page.profileController.save()
+        Controls.Label { width: parent.width; wrapMode: Text.WordWrap; text: qsTr("Helper проверит контрольную сумму и shell-синтаксис, создаст резервную копию и атомарно заменит конфигурацию. Служба не будет перезапущена.") }
+    }
+    Controls.Dialog {
+        id: deleteDialog
+        property int indexToDelete: -1
+        title: qsTr("Удалить профиль?")
+        modal: true
+        standardButtons: Controls.Dialog.Yes | Controls.Dialog.No
+        onAccepted: page.profileController.remove(indexToDelete)
+        Controls.Label { width: parent.width; wrapMode: Text.WordWrap; text: qsTr("Удалить выбранный профиль? Изменения можно отменить повторной загрузкой конфигурации.") }
+    }
+    Component.onCompleted: page.profileController.read()
+}

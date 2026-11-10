@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<component type="desktop-application">
+  <id>org.avsprv.zapret2control</id>
+  <name>Zapret2 Control</name>
+  <summary>Network Control for Linux</summary>
+  <metadata_license>CC0-1.0</metadata_license>
+  <project_license>MIT</project_license>
+  <description>
+    <p>
+      Zapret2 Control is an independent Qt-based graphical interface for managing an
+      already installed zapret2 service on Linux. It provides service control,
+      configuration and profile management, network diagnostics, and update support.
+    </p>
+    <p>
+      The application does not include zapret2. The upstream component must be
+      installed separately or installed using the application's supported workflow.
+    </p>
+  </description>
+  <launchable type="desktop-id">zapret2control.desktop</launchable>
+  <url type="homepage">https://github.com/avsprv/zapret2control</url>
+  <url type="bugtracker">https://github.com/avsprv/zapret2control/issues</url>
+  <url type="vcs-browser">https://github.com/avsprv/zapret2control</url>
+  <categories>
+    <category>Network</category>
+    <category>Utility</category>
+  </categories>
+  <provides>
+    <binary>zapret2control</binary>
+  </provides>
+</component>

@@ -1,3 +1,18 @@
+zapret2control (0.5.0) unstable; urgency=medium
+
+  * Complete the production GUI migration to Qt 6 and KDE Kirigami.
+  * Add centralized settings, theme and language selection, and adaptive tray icons.
+  * Rework Blockcheck around dedicated systemd worker and recovery units.
+  * Replace updater overlay with manifest-based staging and atomic directory exchange.
+    Add persistent transaction journaling and service-aware crash recovery.
+  * Harden archive validation and binary checksums; preserve user configuration,
+    hostlists, custom scripts, and unknown legacy files.
+  * Standardize application, executable, helper, desktop, Polkit, systemd, and
+    package identifiers.
+  * Expand regression coverage and Debian/Fedora package smoke tests.
+
+ -- avsprv <avsprv@users.noreply.github.com>  Tue, 10 Nov 2026 09:00:00 +0300
+
 zapret2applet (0.4.0) unstable; urgency=medium
 
   * Add safe configuration and profile management with validation and backups.

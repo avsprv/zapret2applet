@@ -1,0 +1,137 @@
+#include <QFile>
+#include <QFileInfo>
+#include <QTemporaryDir>
+#include <QtTest>
+#include "autostartcontroller.h"
+
+class TestAutostartController final : public QObject
+{
+    Q_OBJECT
+private slots:
+    void createsAndRemovesManagedEntry()
+    {
+        QTemporaryDir directory;
+        QVERIFY(directory.isValid());
+        AutostartController controller(nullptr, directory.path(), QStringLiteral("/usr/bin/zapret2control"));
+        QVERIFY(!controller.enabled());
+        controller.setEnabled(true);
+        QVERIFY2(controller.errorMessage().isEmpty(), qPrintable(controller.errorMessage()));
+        QVERIFY(controller.enabled());
+        QFile file(directory.filePath(QStringLiteral("zapret2control.desktop")));
+        QVERIFY(file.open(QIODevice::ReadOnly));
+        const QByteArray content = file.readAll();
+        QVERIFY(content.contains("Name=Zapret2 Control"));
+        QVERIFY(content.contains("Exec=\"/usr/bin/zapret2control\" --minimized"));
+        controller.setEnabled(false);
+        QVERIFY2(controller.errorMessage().isEmpty(), qPrintable(controller.errorMessage()));
+        QVERIFY(!controller.enabled());
+        QVERIFY(!file.exists());
+    }
+
+    void handlesDesktopExecSpecialCharacters()
+    {
+        QTemporaryDir directory;
+        QVERIFY(directory.isValid());
+        const QString executable = QString::fromLatin1(R"PATH(/opt/My App/$bin/100%/tool\part"quoted")PATH");
+        AutostartController controller(nullptr, directory.path(), executable);
+        controller.setEnabled(true);
+        QVERIFY2(controller.errorMessage().isEmpty(), qPrintable(controller.errorMessage()));
+        QVERIFY(controller.enabled());
+        QFile generated(directory.filePath(QStringLiteral("zapret2control.desktop")));
+        QVERIFY(generated.open(QIODevice::ReadOnly));
+        const QByteArray generatedContent = generated.readAll();
+        QVERIFY(generatedContent.contains("Exec=\"/opt/My App/\\$bin/100%%/tool\\\\part\\\"quoted\\\"\" --minimized"));
+        generated.close();
+        controller.setEnabled(false);
+        QVERIFY2(controller.errorMessage().isEmpty(), qPrintable(controller.errorMessage()));
+        QVERIFY(!controller.enabled());
+    }
+
+    void refusesDuplicateManagedKeys()
+    {
+        QTemporaryDir directory;
+        QVERIFY(directory.isValid());
+        QFile file(directory.filePath(QStringLiteral("zapret2control.desktop")));
+        QVERIFY(file.open(QIODevice::WriteOnly));
+        file.write("[Desktop Entry]\nType=Application\nType=Application\n"
+                   "Exec=\"/usr/bin/zapret2control\"\nX-Zapret2Control-Managed=true\n");
+        file.close();
+        AutostartController controller(nullptr, directory.path(), QStringLiteral("/usr/bin/zapret2control"));
+        QVERIFY(!controller.enabled());
+        controller.setEnabled(false);
+        QVERIFY(!controller.errorMessage().isEmpty());
+        QVERIFY(file.exists());
+    }
+
+    void refusesToRemoveModifiedManagedEntry()
+    {
+        QTemporaryDir directory;
+        QVERIFY(directory.isValid());
+        AutostartController controller(nullptr, directory.path(), QStringLiteral("/usr/bin/zapret2control"));
+        controller.setEnabled(true);
+        QVERIFY2(controller.errorMessage().isEmpty(), qPrintable(controller.errorMessage()));
+        QFile file(directory.filePath(QStringLiteral("zapret2control.desktop")));
+        QVERIFY(file.open(QIODevice::Append | QIODevice::Text));
+        file.write("X-User-Setting=true\n");
+        file.close();
+
+        controller.setEnabled(false);
+        QVERIFY(!controller.errorMessage().isEmpty());
+        QVERIFY(file.exists());
+        QVERIFY(!controller.enabled());
+    }
+
+    void refusesToOverwriteUnmanagedEntry()
+    {
+        QTemporaryDir directory;
+        QVERIFY(directory.isValid());
+        const QString path = directory.filePath(QStringLiteral("zapret2control.desktop"));
+        QFile file(path);
+        QVERIFY(file.open(QIODevice::WriteOnly));
+        const QByteArray original("[Desktop Entry]\nType=Application\nName=User entry\nExec=user-command\n");
+        QCOMPARE(file.write(original), qint64(original.size()));
+        file.close();
+        AutostartController controller(nullptr, directory.path(), QStringLiteral("/usr/bin/zapret2control"));
+        controller.setEnabled(true);
+        QVERIFY(!controller.errorMessage().isEmpty());
+        QVERIFY(file.open(QIODevice::ReadOnly));
+        QCOMPARE(file.readAll(), original);
+    }
+
+    void refusesToRemoveUnmanagedEntry()
+    {
+        QTemporaryDir directory;
+        QVERIFY(directory.isValid());
+        const QString path = directory.filePath(QStringLiteral("zapret2control.desktop"));
+        QFile file(path);
+        QVERIFY(file.open(QIODevice::WriteOnly));
+        const QByteArray original("[Desktop Entry]\nType=Application\nName=User entry\nExec=user-command\n");
+        QCOMPARE(file.write(original), qint64(original.size()));
+        file.close();
+        AutostartController controller(nullptr, directory.path(), QStringLiteral("/usr/bin/zapret2control"));
+        controller.setEnabled(false);
+        QVERIFY(!controller.errorMessage().isEmpty());
+        QVERIFY(file.exists());
+    }
+
+    void refusesSymlink()
+    {
+        QTemporaryDir directory;
+        QVERIFY(directory.isValid());
+        const QString target = directory.filePath(QStringLiteral("user.desktop"));
+        QFile targetFile(target);
+        QVERIFY(targetFile.open(QIODevice::WriteOnly));
+        targetFile.write("[Desktop Entry]\nType=Application\n");
+        targetFile.close();
+        const QString link = directory.filePath(QStringLiteral("zapret2control.desktop"));
+        if (!QFile::link(target, link))
+            QSKIP("Symlinks are unavailable on this platform");
+        AutostartController controller(nullptr, directory.path(), QStringLiteral("/usr/bin/zapret2control"));
+        controller.setEnabled(false);
+        QVERIFY(!controller.errorMessage().isEmpty());
+        QVERIFY(QFileInfo(link).isSymLink());
+        QVERIFY(targetFile.exists());
+    }
+};
+QTEST_GUILESS_MAIN(TestAutostartController)
+#include "test_autostartcontroller.moc"

@@ -7,7 +7,7 @@
 #include <QStringList>
 #include <optional>
 
-// Запускает blockcheck2.sh из апстрима (через zapret2applet-helper) в batch-режиме
+// Запускает blockcheck2.sh из апстрима (через zapret2control-helper) в batch-режиме
 // и разбирает найденные стратегии из его вывода.
 class BlockcheckRunner : public QObject
 {
@@ -40,10 +40,10 @@ public:
     // "!!!!! curl_test_https_tls12: working strategy found for ipv4 example.org : nfqws2 --opt !!!!!"
     static std::optional<Result> parseLine(const QString &line);
 
-    bool isRunning() const;
-    int errorCount() const { return m_errorCount; }
-    void start(const Options &opt);
-    void cancel();
+    virtual bool isRunning() const;
+    virtual int errorCount() const { return m_errorCount; }
+    virtual void start(const Options &opt);
+    virtual void cancel();
 
 signals:
     void logLine(const QString &line);
@@ -56,8 +56,10 @@ private:
     void handleLine(const QString &line);
 
     QProcess *m_proc = nullptr;
+    QProcess *m_cancelProc = nullptr;
     QByteArray m_buf;
     QSet<QString> m_seenResults;
     int m_errorCount = 0;
     bool m_cancelRequested = false;
+    bool m_discardingOversizedLine = false;
 };

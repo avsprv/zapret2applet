@@ -32,14 +32,16 @@ void ZapretUpdater::startOperation(const QString &operation, const QString &tag)
     }
 
     m_buf.clear();
+    m_discardingOversizedLine = false;
     m_proc = new QProcess(this);
     m_proc->setProcessChannelMode(QProcess::MergedChannels);
     connect(m_proc, &QProcess::readyReadStandardOutput, this, &ZapretUpdater::drain);
     connect(m_proc, &QProcess::finished, this, [this](int code, QProcess::ExitStatus st) {
         drain();
-        if (!m_buf.isEmpty())
-            emit logLine(QString::fromUtf8(m_buf));
+        if (!m_discardingOversizedLine && !m_buf.isEmpty())
+            emit logLine(QString::fromUtf8(m_buf.left(64 * 1024)));
         m_buf.clear();
+        m_discardingOversizedLine = false;
         QProcess *p = m_proc;
         m_proc = nullptr;
         p->deleteLater();
@@ -62,11 +64,42 @@ void ZapretUpdater::drain()
 {
     if (!m_proc)
         return;
+
+    constexpr qsizetype maxLineBytes = 64 * 1024;
+    const QByteArray truncationMarker = tr("… [строка журнала сокращена]").toUtf8();
     m_buf += m_proc->readAllStandardOutput();
-    int nl;
-    while ((nl = m_buf.indexOf('\n')) >= 0) {
-        QString line = QString::fromUtf8(m_buf.left(nl));
-        m_buf.remove(0, nl + 1);
+
+    while (true) {
+        const qsizetype newline = m_buf.indexOf('\n');
+        if (m_discardingOversizedLine) {
+            if (newline < 0) {
+                m_buf.clear();
+                return;
+            }
+            m_buf.remove(0, newline + 1);
+            m_discardingOversizedLine = false;
+            continue;
+        }
+
+        const qsizetype lineLength = newline >= 0 ? newline : m_buf.size();
+        if (lineLength > maxLineBytes) {
+            QByteArray bounded = m_buf.left(maxLineBytes);
+            bounded += truncationMarker;
+            emit logLine(QString::fromUtf8(bounded));
+            if (newline >= 0) {
+                m_buf.remove(0, newline + 1);
+                continue;
+            }
+            m_buf.clear();
+            m_discardingOversizedLine = true;
+            return;
+        }
+
+        if (newline < 0)
+            return;
+
+        QString line = QString::fromUtf8(m_buf.left(newline));
+        m_buf.remove(0, newline + 1);
         if (line.endsWith(u'\r'))
             line.chop(1);
         emit logLine(line);

@@ -79,7 +79,7 @@ void UpdateChecker::check()
     req.setAttribute(QNetworkRequest::RedirectPolicyAttribute, QNetworkRequest::ManualRedirectPolicy);
     req.setTransferTimeout(15000);
     req.setHeader(QNetworkRequest::UserAgentHeader,
-                  QStringLiteral("zapret2applet/%1").arg(QCoreApplication::applicationVersion()));
+                  QStringLiteral("zapret2control/%1").arg(QCoreApplication::applicationVersion()));
 
     QNetworkReply *reply = m_nam->head(req);
     connect(reply, &QNetworkReply::finished, this, [this, reply] {

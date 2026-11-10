@@ -1,0 +1,16 @@
+[Unit]
+Description=zapret2control Blockcheck boot recovery
+Documentation=https://github.com/avsprv/zapret2control
+
+[Service]
+Type=oneshot
+User=root
+Group=root
+UMask=0077
+ExecStart=@CMAKE_INSTALL_FULL_LIBEXECDIR@/zapret2control/zapret2control-helper blockcheck-recover
+TimeoutStartSec=180
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target
