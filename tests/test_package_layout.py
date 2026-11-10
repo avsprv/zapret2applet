@@ -63,6 +63,8 @@ def main() -> None:
             continue
         if path == ROOT / "packaging/fedora/zapret2control.spec":
             content = content.split("%changelog", 1)[0]
+        elif path == ROOT / "packaging/debian/changelog":
+            content = content.split("\\n\\n" + LEGACY_ID + " (", 1)[0]
         assert LEGACY_ID not in content, f"Unsupported legacy identifier found in {path.relative_to(ROOT)}"
 
     for source in (preinst, spec.split("%changelog", 1)[0], control, cmake,
