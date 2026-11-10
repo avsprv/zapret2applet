@@ -30,8 +30,8 @@ src/
     *controller.*       QObject-контроллеры
     Main.qml            корневой QML-интерфейс
     main.cpp            production-точка входа QGuiApplication / QQmlApplicationEngine
-  backend/              общие backend-компоненты и системные интеграции
-  main.cpp              точка входа production UI
+  i18n.*                загрузка переводов
+  profileanalyzer.*     анализ профилей
 tests/                  C++, Python и shell-тесты
 third_party/zapret2/    закреплённый Git submodule upstream-проекта
 ```
@@ -73,7 +73,7 @@ CI дополнительно проверяет desktop/AppStream metadata и �
 Исходные строки в коде — русские; английские переводы лежат в `i18n/*.ts` и компилируются Qt Linguist. После изменения строк обновите каталоги:
 
 ```bash
-cmake --build build --target update_translations
+cmake --build build --target zapret2control_i18n_lupdate
 ctest --test-dir build -R i18n
 ```
 
