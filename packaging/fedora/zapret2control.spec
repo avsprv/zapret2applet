@@ -14,7 +14,6 @@ BuildRequires:  kf6-kirigami-devel
 BuildRequires:  qt6-qtdeclarative-devel
 BuildRequires:  ninja-build
 BuildRequires:  gcc-c++
-BuildRequires:  cmake(Qt6Widgets) >= 6.8
 BuildRequires:  cmake(Qt6Network) >= 6.8
 BuildRequires:  cmake(Qt6DBus) >= 6.8
 BuildRequires:  cmake(Qt6LinguistTools) >= 6.8
