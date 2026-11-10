@@ -134,6 +134,9 @@ int main(int argc, char *argv[])
     if (engine.rootObjects().isEmpty())
         return EXIT_FAILURE;
 
+    if (qEnvironmentVariableIsSet("ZAPRET2CONTROL_QML_SMOKE_TEST"))
+        return EXIT_SUCCESS;
+
     QObject *rootWindow = engine.rootObjects().constFirst();
     if (auto *window = qobject_cast<QWindow *>(rootWindow)) {
         QObject::connect(&blockcheckController, &BlockcheckJobController::scanFinished,
