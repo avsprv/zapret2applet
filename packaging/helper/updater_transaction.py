@@ -185,7 +185,7 @@ def _walk_entries(root: Path) -> list[dict[str, Any]]:
             _relative_path(path)
             info = child.stat(follow_symlinks=False)
             mode = stat.S_IMODE(info.st_mode)
-            if mode & 0o022 or mode & ~0o777:
+            if not stat.S_ISLNK(info.st_mode) and (mode & 0o022 or mode & ~0o777):
                 _fail(f"unsafe permissions on {path}")
             if stat.S_ISDIR(info.st_mode):
                 entries.append({"path": path, "type": "directory", "mode": mode})
