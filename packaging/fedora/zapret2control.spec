@@ -100,8 +100,14 @@ appstream-util validate-relax --nonet %{buildroot}%{_datadir}/metainfo/org.avspr
 %{_datadir}/icons/hicolor/symbolic/apps/zapret2control-tray-symbolic.svg
 
 %changelog
-* Sun Nov 08 2026 avsprv <avsprv@users.noreply.github.com> - 0.5.0-1
-- Rename the application, executable, helper, desktop, Polkit and systemd identifiers
+* Tue Nov 10 2026 avsprv <avsprv@users.noreply.github.com> - 0.5.0-1
+- Complete the Qt 6 / KDE Kirigami production GUI migration
+- Add centralized settings, themes, language selection, and adaptive tray icons
+- Rework Blockcheck lifecycle around systemd worker and recovery units
+- Replace updater overlay with manifest-based staging, atomic exchange, journaling, and crash recovery
+- Harden archive validation, checksums, and preservation of user and unknown legacy data
+- Standardize application, executable, helper, desktop, Polkit, systemd, and package identifiers
+- Expand regression coverage and Debian/Fedora package smoke tests
 
 * Sat Nov 07 2026 avsprv <avsprv@users.noreply.github.com> - 0.4.0-1
 - Add safe configuration and profile management with validation and backups
