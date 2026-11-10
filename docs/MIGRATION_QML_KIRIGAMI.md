@@ -11,8 +11,8 @@
 ## Migration strategy
 
 The production executable is now built from `src/qml/main.cpp` and the Kirigami QML module.
-The old preview target has been removed. The Qt Widgets dependency is no longer linked to the
-production executable; it remains temporarily available only to legacy regression-test targets.
+The former preview target and the Qt Widgets dependency have been removed. No parallel
+Widgets implementation or Widgets-only regression target is maintained.
 The installed desktop entry and package executable name remain `zapret2control`.
 
 ## Current implementation status
@@ -47,7 +47,7 @@ package-level installation and runtime checks remain.
 7. Complete settings, theme, tray and desktop lifecycle integration. **Implemented; production CI verification pending**.
 8. Switch the production executable and QML lint target to Kirigami. **Complete**
 9. Remove obsolete Widgets-only implementation and tests after replacing coverage with QML/controller tests. **Complete**
-10. Validate clean installation, upgrade, runtime QML dependencies and package contents. **In progress**
+10. Validate clean installation, supported current-version updates, runtime QML dependencies and package contents. **In progress**
 
 ## Architectural boundaries
 
@@ -57,7 +57,7 @@ package-level installation and runtime checks remain.
   and helper invocation.
 - QML must never execute shell commands or invoke pkexec directly.
 - Privileged operations must use the fixed allowlisted helper actions.
-- Existing settings keys and user data formats must remain backward-compatible.
+- Preserve the current `zapret2control` settings schema and user data across supported updates; no migration from the unreleased predecessor is required.
 - Potentially long operations must be asynchronous, bounded and cancellable where supported.
 - Failure to confirm a service state must never be treated as a successful transition.
 
@@ -98,9 +98,9 @@ Each migrated page must have:
 - isolated regression tests for critical workflows;
 - documentation and CI coverage.
 
-## Production replacement gate
+## Production validation gate
 
-The Kirigami production application is considered fully migrated only when all of the following are true:
+The production implementation is considered fully validated for release only when all of the following are true:
 
 - all existing user-visible features have functional parity;
 - no navigation placeholders remain;
@@ -112,4 +112,4 @@ The Kirigami production application is considered fully migrated only when all o
 - accessibility, keyboard navigation and responsive layouts have been reviewed;
 - CI and package validation pass on the candidate release commit.
 
-The production executable is Kirigami, and the obsolete Widgets GUI sources and Widgets-only tests have been removed. Remaining gate items are package installation/runtime validation, CI, translations and accessibility review.
+The production executable is Kirigami, and the obsolete Widgets GUI sources and Widgets-only tests have been removed. Remaining release gates are package installation/runtime validation, CI, translation review and accessibility review.
