@@ -83,7 +83,9 @@ def recover_pending(
     return results
 
 
-def _run_checked(command: list[str], *, input_text: str | None = None) -> subprocess.CompletedProcess[str]:
+def _run_checked(
+    command: list[str], *, input_text: str | None = None, cwd: Path | None = None
+) -> subprocess.CompletedProcess[str]:
     try:
         result = subprocess.run(
             command,
@@ -94,6 +96,7 @@ def _run_checked(command: list[str], *, input_text: str | None = None) -> subpro
             text=True,
             check=False,
             timeout=60,
+            cwd=cwd,
             env={"PATH": "/usr/sbin:/usr/bin:/sbin:/bin", "HOME": "/root", "LANG": "C.UTF-8"},
         )
     except (OSError, subprocess.TimeoutExpired) as exc:
@@ -111,7 +114,7 @@ def _prepare_upstream(upstream: Path, release_tag: str) -> None:
     install_script = upstream / "install_bin.sh"
     if not install_script.is_file() or install_script.is_symlink():
         raise ActivationError("upstream install_bin.sh is missing or unsafe")
-    _run_checked(["/bin/sh", str(install_script)])
+    _run_checked(["/bin/sh", str(install_script)], cwd=upstream)
     for relative in ("nfq2/nfqws2", "ip2net/ip2net", "mdig/mdig"):
         binary = upstream / relative
         if not binary.is_symlink():
