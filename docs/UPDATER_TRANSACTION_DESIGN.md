@@ -155,3 +155,20 @@ A separate `updater_staging.py` module now builds a complete staging tree withou
 - the completed tree and its manifest are verified before the function returns.
 
 This module is deliberately **not connected to `update-locked`**. The existing overlay updater remains the production path until staging tests, atomic exchange, journaled recovery, service-state handling, and end-to-end transaction tests are complete. A staging failure leaves the active installation untouched; the caller must retain or inspect the failed private staging directory rather than treating it as activated.
+
+
+### Atomic activation implementation progress
+
+A separate `updater_activation.py` module now provides the next isolated transaction layer:
+
+- secure, bounded, root-owned transaction journal with atomic creation and fsync;
+- directory identity tracking by device and inode;
+- Linux `renameat2(RENAME_EXCHANGE)` for the active/staged directory swap;
+- Linux `renameat2(RENAME_NOREPLACE)` for moving the old tree to its backup without overwriting an existing path;
+- no fallback to a two-step or non-atomic replacement;
+- recovery for the pre-exchange, post-exchange/pre-backup, and post-backup/pre-journal-cleanup crash windows;
+- fail-closed handling when paths do not match the journal's recorded identities.
+
+Regression tests cover successful exchange, both principal recovery windows, unexpected inode replacement, existing backup paths, simulated unsupported exchange, and symlinked journals.
+
+This activation module is also **not connected to `update-locked`**. Service stop/start orchestration, service-state persistence and recovery, full production-helper integration, and VM-level crash testing remain prerequisites.
