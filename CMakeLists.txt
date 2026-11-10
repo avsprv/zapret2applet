@@ -28,48 +28,6 @@ qt_standard_project_setup(REQUIRES ${QZAPRET_QT_MIN})
 
 set(QZAPRET_HELPER "${CMAKE_INSTALL_FULL_LIBEXECDIR}/zapret2control/zapret2control-helper")
 
-set(QZAPRET_SOURCES
-    src/appsettings.cpp
-    src/appsettings.h
-    src/settingsmigration.cpp
-    src/settingsmigration.h
-    src/main.cpp
-    src/settingsdialog.cpp
-    src/settingsdialog.h
-    src/aboutpage.cpp
-    src/aboutpage.h
-    src/autostart.cpp
-    src/autostart.h
-    src/blockcheckpage.cpp
-    src/blockcheckpage.h
-    src/configpage.cpp
-    src/configpage.h
-    src/profileanalyzer.cpp
-    src/profileanalyzer.h
-    src/profilepage.cpp
-    src/profilepage.h
-    src/listsmanagerpage.cpp
-    src/listsmanagerpage.h
-    src/logmonitorpage.cpp
-    src/logmonitorpage.h
-    src/mainwindow.cpp
-    src/mainwindow.h
-    src/updatepage.cpp
-    src/updatepage.h
-    src/backend/blockcheckrunner.cpp
-    src/backend/blockcheckrunner.h
-    src/backend/helperpath.h
-    src/backend/systemdbackend.cpp
-    src/backend/systemdbackend.h
-    src/backend/updatechecker.cpp
-    src/backend/updatechecker.h
-    src/backend/zapretpaths.h
-    src/backend/zapretcompatibility.cpp
-    src/backend/zapretcompatibility.h
-    src/backend/zapretupdater.cpp
-    src/backend/zapretupdater.h
-    src/backend/zapretbackend.h
-)
 
 qt_add_library(zapret2control_i18n STATIC src/i18n.cpp src/i18n.h)
 target_include_directories(zapret2control_i18n PUBLIC src)
@@ -77,8 +35,25 @@ target_link_libraries(zapret2control_i18n PUBLIC Qt6::Core)
 qt_add_translations(zapret2control_i18n
     TS_FILES i18n/zapret2control_en.ts i18n/zapret2control_about_en.ts
     SOURCES
-        ${QZAPRET_SOURCES}
         src/i18n.cpp
+        src/qml/main.cpp
+        src/settingsmigration.cpp
+        src/qml/applicationcontroller.cpp
+        src/qml/configcontroller.cpp
+        src/qml/profilecontroller.cpp
+        src/qml/settingsmanager.cpp
+        src/qml/logscontroller.cpp
+        src/qml/listscontroller.cpp
+        src/qml/blockcheckjobcontroller.cpp
+        src/qml/updatecontroller.cpp
+        src/qml/autostartcontroller.cpp
+        src/qml/traycontroller.cpp
+        src/qml/dbusmenu.cpp
+        src/backend/blockcheckrunner.cpp
+        src/backend/systemdbackend.cpp
+        src/backend/updatechecker.cpp
+        src/backend/zapretupdater.cpp
+        src/profileanalyzer.cpp
         src/qml/applicationcontroller.cpp
         src/qml/configcontroller.cpp
         src/qml/profilecontroller.cpp
@@ -213,7 +188,7 @@ install(FILES data/icons/hicolor/symbolic/apps/zapret2control-tray-symbolic.svg
         DESTINATION ${CMAKE_INSTALL_DATADIR}/icons/hicolor/symbolic/apps)
 
 if(BUILD_TESTING)
-    find_package(Qt6 ${QZAPRET_QT_MIN} REQUIRED COMPONENTS Test Widgets)
+    find_package(Qt6 ${QZAPRET_QT_MIN} REQUIRED COMPONENTS Test)
     find_program(DBUS_RUN_SESSION_EXECUTABLE dbus-run-session REQUIRED)
     qt_add_executable(test_blockcheck tests/test_blockcheck.cpp
         src/backend/blockcheckrunner.cpp src/backend/blockcheckrunner.h)
@@ -230,33 +205,11 @@ if(BUILD_TESTING)
     target_compile_definitions(test_zapretcompatibility PRIVATE QZAPRET_HELPER_PATH="/nonexistent" QZAPRET_SOURCE_DIR="${CMAKE_CURRENT_SOURCE_DIR}" QZAPRET_UPSTREAM_SOURCE_DIR="${CMAKE_CURRENT_SOURCE_DIR}/third_party/zapret2")
     add_test(NAME zapretcompatibility COMMAND test_zapretcompatibility)
 
-    qt_add_executable(test_blockcheck_lifecycle tests/test_blockcheck_lifecycle.cpp
-        src/blockcheckpage.cpp src/blockcheckpage.h
-        src/backend/blockcheckrunner.cpp src/backend/blockcheckrunner.h
-        src/backend/zapretbackend.h src/backend/helperpath.h)
-    target_include_directories(test_blockcheck_lifecycle PRIVATE src)
-    target_link_libraries(test_blockcheck_lifecycle PRIVATE Qt6::Test Qt6::Widgets)
-    target_compile_definitions(test_blockcheck_lifecycle PRIVATE QZAPRET_HELPER_PATH="/nonexistent" QZAPRET_TEST_SKIP_COMPATIBILITY=1)
-    add_test(NAME blockcheck_lifecycle COMMAND test_blockcheck_lifecycle)
-    set_tests_properties(blockcheck_lifecycle PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen")
-
     qt_add_executable(test_settingsmigration tests/test_settingsmigration.cpp
         src/settingsmigration.cpp src/settingsmigration.h)
     target_include_directories(test_settingsmigration PRIVATE src)
     target_link_libraries(test_settingsmigration PRIVATE Qt6::Test Qt6::Core)
     add_test(NAME settingsmigration COMMAND test_settingsmigration)
-
-    qt_add_executable(test_autostart tests/test_autostart.cpp
-        src/autostart.cpp src/autostart.h)
-    target_include_directories(test_autostart PRIVATE src)
-    target_link_libraries(test_autostart PRIVATE Qt6::Test Qt6::Core)
-    add_test(NAME autostart_migration COMMAND test_autostart)
-
-    qt_add_executable(test_appsettings tests/test_appsettings.cpp
-        src/appsettings.cpp src/appsettings.h)
-    target_include_directories(test_appsettings PRIVATE src)
-    target_link_libraries(test_appsettings PRIVATE Qt6::Test Qt6::Core Qt6::Widgets)
-    add_test(NAME appsettings COMMAND test_appsettings)
 
     qt_add_executable(test_autostartcontroller tests/test_autostartcontroller.cpp
         src/qml/autostartcontroller.cpp src/qml/autostartcontroller.h)
@@ -329,14 +282,6 @@ if(BUILD_TESTING)
     target_link_libraries(test_blockcheckjobcontroller PRIVATE Qt6::Test Qt6::Core Qt6::Gui)
     target_compile_definitions(test_blockcheckjobcontroller PRIVATE QZAPRET_HELPER_PATH="/nonexistent")
     add_test(NAME blockcheck_job_controller COMMAND test_blockcheckjobcontroller)
-
-    qt_add_executable(test_aboutpage tests/test_aboutpage.cpp
-        src/aboutpage.cpp src/aboutpage.h)
-    target_include_directories(test_aboutpage PRIVATE src)
-    target_link_libraries(test_aboutpage PRIVATE Qt6::Test Qt6::Widgets)
-    target_compile_definitions(test_aboutpage PRIVATE QZAPRET_VERSION="${PROJECT_VERSION}")
-    add_test(NAME aboutpage COMMAND test_aboutpage)
-    set_tests_properties(aboutpage PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen")
 
     qt_add_executable(test_update tests/test_update.cpp
         src/backend/updatechecker.cpp src/backend/updatechecker.h)
