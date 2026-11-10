@@ -275,6 +275,7 @@ def build_staging_tree(
     if previous_manifest_path.exists() or previous_manifest_path.is_symlink():
         from updater_transaction import load_manifest
         previous_manifest = load_manifest(active)
+        verify_manifest(active, previous_manifest)
         previous_paths = {entry["path"] for entry in previous_manifest["entries"]}
     else:
         previous_paths = set()
