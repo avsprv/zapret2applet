@@ -14,6 +14,7 @@ private slots:
     void validatesOptionsBeforeConfirmation();
     void declineDoesNotSubmit();
     void submitsAndWaitsForVerifiedCompletion();
+    void submitsMultipleDomainsAsCommaSeparatedList();
     void failedRecoveryKeepsServiceOperationsLocked();
     void pendingRecoveryCanBeRetriedAfterSubmitRejection();
     void startupProbeFindsRecoveryWithoutAnOperationId();
@@ -49,6 +50,9 @@ case "$1" in
     fi
     ;;
   blockcheck-submit)
+    if [ -n "${QZAPRET_TEST_SUBMIT_ARGS_FILE:-}" ]; then
+      printf '%s\n' "$3" > "$QZAPRET_TEST_SUBMIT_ARGS_FILE"
+    fi
     if [ "${QZAPRET_TEST_PENDING_RECOVERY:-0}" = 1 ]; then
       echo 'a previous Blockcheck recovery is still pending (operation_id=123e4567-e89b-42d3-a456-426614174000)' >&2
       exit 2
@@ -157,6 +161,26 @@ void BlockcheckJobControllerTest::pendingRecoveryCanBeRetriedAfterSubmitRejectio
     QVERIFY(controller.busy());
     QTRY_VERIFY_WITH_TIMEOUT(!controller.busy(),5000);
     QVERIFY(!controller.recoveryRequired());
+}
+
+void BlockcheckJobControllerTest::submitsMultipleDomainsAsCommaSeparatedList()
+{
+    const QString argumentsFile=m_temp.filePath(QStringLiteral("submit-arguments"));
+    qputenv("QZAPRET_TEST_SUBMIT_ARGS_FILE",argumentsFile.toUtf8());
+    BlockcheckJobController controller;
+    QTRY_VERIFY_WITH_TIMEOUT(!controller.busy(),5000);
+    controller.setDomains(QStringLiteral("example.org other.example"));
+    controller.start();
+    controller.confirmStop(true);
+
+    QTRY_VERIFY_WITH_TIMEOUT(QFile::exists(argumentsFile),5000);
+    QFile file(argumentsFile);
+    QVERIFY(file.open(QIODevice::ReadOnly|QIODevice::Text));
+    const QString domains=QString::fromUtf8(file.readAll()).trimmed();
+    QCOMPARE(domains,QStringLiteral("example.org,other.example"));
+
+    QTRY_VERIFY_WITH_TIMEOUT(!controller.busy(),5000);
+    qunsetenv("QZAPRET_TEST_SUBMIT_ARGS_FILE");
 }
 
 void BlockcheckJobControllerTest::failedRecoveryKeepsServiceOperationsLocked()
