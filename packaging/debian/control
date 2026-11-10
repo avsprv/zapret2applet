@@ -1,4 +1,4 @@
-Source: zapret2applet
+Source: zapret2control
 Section: net
 Priority: optional
 Maintainer: avsprv <avsprv@users.noreply.github.com>
@@ -16,20 +16,28 @@ Build-Depends: debhelper-compat (= 13),
                tar,
                dbus-daemon
 Standards-Version: 4.7.0
-Homepage: https://github.com/avsprv/zapret2applet
+Homepage: https://github.com/avsprv/zapret2control
 Rules-Requires-Root: no
 
-Package: zapret2applet
+Package: zapret2control
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends},
-         pkexec | policykit-1,
+         pkexec,
+         qml6-module-org-kde-kirigami,
+         qml6-module-qtqml,
+         qml6-module-qtquick,
+         qml6-module-qtquick-controls,
+         qml6-module-qtquick-dialogs,
+         qml6-module-qtquick-layouts,
+         qml6-module-qtquick-window,
          curl,
          python3,
          systemd
 Recommends: qt6-translations-l10n
 Description: unofficial Qt6 GUI for zapret2
- Graphical front-end for zapret2 (bol-van): service and configuration management,
- profile and user hostlist editing, journal monitoring, DPI bypass strategy
- selection (blockcheck2), system tray applet, autostart, and installation/update
- of zapret2 from the latest GitHub release. Privileged operations go through a
- small polkit-protected helper. zapret2 itself is not bundled.
+ Graphical front-end for zapret2 (bol-van): service and configuration
+ management, profile and user hostlist editing, journal monitoring, DPI bypass
+ strategy selection (blockcheck2), system tray applet, autostart, and
+ installation/update of zapret2 from the latest GitHub release. Privileged
+ operations go through a small polkit-protected helper. zapret2 itself is not
+ bundled.

@@ -9,19 +9,55 @@ jobs:
     container: fedora:latest
     steps:
       - name: Install deps
-        run: dnf install -y git cmake ninja-build gcc-c++ extra-cmake-modules kf6-kirigami-devel qt6-qtbase-devel qt6-qtdeclarative-devel qt6-qttools-devel appstream desktop-file-utils util-linux-core dbus-daemon
-      - uses: actions/checkout@v4
+        run: dnf install -y git cmake ninja-build gcc-c++ extra-cmake-modules kf6-kirigami-devel qt6-qtbase-devel qt6-qtdeclarative-devel qt6-qttools-devel appstream desktop-file-utils util-linux-core dbus-daemon systemd
+      - uses: actions/checkout@v6
         with:
           submodules: recursive
       - name: Validate application metadata
         run: |
-          desktop-file-validate data/zapret2applet.desktop
-          appstreamcli validate --no-net data/org.avsprv.zapret2applet.metainfo.xml
+          desktop-file-validate data/zapret2control.desktop
+          appstreamcli validate --no-net data/org.avsprv.zapret2control.metainfo.xml
       - name: Configure
         run: cmake -S . -B build -G Ninja
+      - name: Verify translation catalog is up to date
+        run: |
+          cp i18n/zapret2control_en.ts /tmp/zapret2control_en.ts.before
+          cmake --build build --target zapret2control_i18n_lupdate
+          python3 - <<'PY'
+          import xml.etree.ElementTree as ET
+          from pathlib import Path
+
+          def canonical_catalog(path):
+              root = ET.parse(path).getroot()
+              for location in root.iter("location"):
+                  location.attrib.pop("line", None)
+              return ET.tostring(root, encoding="utf-8")
+
+          before = canonical_catalog("/tmp/zapret2control_en.ts.before")
+          after = canonical_catalog("i18n/zapret2control_en.ts")
+          if before != after:
+              raise SystemExit("Translation catalog differs from current sources")
+          PY
       - name: Build
         run: cmake --build build
+      - name: Verify systemd units
+        run: |
+          cmake --install build
+          systemd-analyze verify \
+            /usr/local/lib/systemd/system/zapret2control-blockcheck.service \
+            /usr/local/lib/systemd/system/zapret2control-blockcheck-recovery.service
       - name: Lint QML
-        run: cmake --build build --target zapret2applet-qml-preview_qmllint
+        run: cmake --build build --target zapret2control_qmllint
       - name: Test
         run: ctest --test-dir build --output-on-failure
+
+  systemd-e2e:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - name: Verify systemd VM
+        run: |
+          test "$(ps -p 1 -o comm= | tr -d '[:space:]')" = systemd
+          systemctl --version
+      - name: Run real Blockcheck lifecycle integration tests
+        run: sudo bash tests/test_systemd_lifecycle.sh "$GITHUB_WORKSPACE"

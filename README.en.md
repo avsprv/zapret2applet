@@ -1,20 +1,20 @@
-# zapret2applet
+# Zapret2 Control
 
 **An independent graphical frontend for managing an installed [zapret2](https://github.com/bol-van/zapret2) service on Linux.**
 
-[![CI](https://github.com/avsprv/zapret2applet/actions/workflows/ci.yml/badge.svg)](https://github.com/avsprv/zapret2applet/actions/workflows/ci.yml)
-[![Packages](https://github.com/avsprv/zapret2applet/actions/workflows/packages.yml/badge.svg)](https://github.com/avsprv/zapret2applet/actions/workflows/packages.yml)
-[![Latest release](https://img.shields.io/github/v/release/avsprv/zapret2applet)](https://github.com/avsprv/zapret2applet/releases)
-[![License: MIT](https://img.shields.io/github/license/avsprv/zapret2applet)](LICENSE)
+[![CI](https://github.com/avsprv/zapret2control/actions/workflows/ci.yml/badge.svg)](https://github.com/avsprv/zapret2control/actions/workflows/ci.yml)
+[![Packages](https://github.com/avsprv/zapret2control/actions/workflows/packages.yml/badge.svg)](https://github.com/avsprv/zapret2control/actions/workflows/packages.yml)
+[![Latest release](https://img.shields.io/github/v/release/avsprv/zapret2control)](https://github.com/avsprv/zapret2control/releases)
+[![License: MIT](https://img.shields.io/github/license/avsprv/zapret2control)](LICENSE)
 
 [Русский](README.md) · **English**
 
 The application provides a graphical interface for managing an existing zapret2 service, running blockcheck2 network diagnostics, and updating zapret2.
 
 > [!IMPORTANT]
-> **Independent project.** zapret2applet is not affiliated with the author or maintainers of [zapret2](https://github.com/bol-van/zapret2).
+> **Independent project.** zapret2control is not affiliated with the author or maintainers of [zapret2](https://github.com/bol-van/zapret2).
 >
-> The application does not perform the initial zapret2 installation. Strategies found by the app must be transferred to your zapret2 configuration and verified manually.
+> The application does not bundle zapret2. The **Updates** page supports a clean installation from an upstream release. Strategies found by Blockcheck are not applied automatically; transfer them to your zapret2 configuration and verify them manually.
 
 ## Contents
 
@@ -61,20 +61,20 @@ These versions reflect the baseline availability of Qt 6.8; they do not guarante
 
 ## Installation
 
-1. Download the zapret2applet package from [Releases](https://github.com/avsprv/zapret2applet/releases).
+1. Download the zapret2control package from [Releases](https://github.com/avsprv/zapret2control/releases).
 2. Install it:
 
 **Fedora (.rpm):**
 ```bash
-sudo dnf install ./zapret2applet-*.rpm
+sudo dnf install ./zapret2control-*.rpm
 ```
 
 **Debian / Ubuntu (.deb):**
 ```bash
-sudo apt install ./zapret2applet_*.deb
+sudo apt install ./zapret2control_*.deb
 ```
 
-3. Launch zapret2applet from your application menu. If zapret2 is not installed yet, open the Updates tab and perform a clean installation. Configure the service and its dependencies before starting it.
+3. Launch zapret2control from your application menu. If zapret2 is not installed yet, open the Updates tab and perform a clean installation. Configure the service and its dependencies before starting it.
 
 If a prebuilt package is unavailable, follow the [build from source](#building-from-source) instructions.
 
@@ -130,25 +130,25 @@ zapret2 release files are checked against the SHA-256 checksums in sha256sum.txt
 
 **Fedora:**
 ```bash
-sudo dnf install cmake ninja-build gcc-c++ qt6-qtbase-devel qt6-qttools-devel polkit
+sudo dnf install cmake ninja-build gcc-c++ extra-cmake-modules kf6-kirigami-devel qt6-qtbase-devel qt6-qtdeclarative-devel qt6-qttools-devel desktop-file-utils appstream util-linux-core dbus-daemon systemd curl tar python3 polkit
 ```
 
 **Debian / Ubuntu:**
 ```bash
-sudo apt install build-essential cmake ninja-build qt6-base-dev qt6-tools-dev qt6-l10n-tools pkexec
+sudo apt install build-essential cmake ninja-build extra-cmake-modules libkirigami-dev qt6-base-dev qt6-declarative-dev qt6-tools-dev qt6-l10n-tools desktop-file-utils appstream dbus-daemon systemd curl tar python3 pkexec
 ```
 
 ### Build and test
 
 ```bash
-git clone https://github.com/avsprv/zapret2applet.git
-cd zapret2applet
+git clone https://github.com/avsprv/zapret2control.git
+cd zapret2control
 cmake -S . -B build -G Ninja
 cmake --build build
 ctest --test-dir build --output-on-failure
 ```
 
-Run without installing: ./build/zapret2applet.
+Run without installing: ./build/zapret2control.
 
 Install system-wide:
 ```bash
@@ -161,7 +161,7 @@ When launched from the build directory, the authorization dialog may not include
 
 Manual instructions are available in [packaging/README.md](packaging/README.md).
 
-GitHub Actions builds packages for Debian 13 and Fedora on pushes to main and pull requests targeting main. The resulting files are available as workflow artifacts in [package build runs](https://github.com/avsprv/zapret2applet/actions/workflows/packages.yml). Artifacts are intended for build verification; use packages attached to [Releases](https://github.com/avsprv/zapret2applet/releases) for normal installation.
+GitHub Actions builds packages for Debian 13 and Fedora on pushes to branches configured in the workflow and on pull requests targeting main. The resulting files are available as workflow artifacts in [package build runs](https://github.com/avsprv/zapret2control/actions/workflows/packages.yml). Artifacts are intended for build verification; use packages attached to [Releases](https://github.com/avsprv/zapret2control/releases) for normal installation.
 
 ## Development and testing
 
@@ -175,9 +175,9 @@ Developer documentation: [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md).
 
 ## Report a bug
 
-Before opening a report, check [existing Issues](https://github.com/avsprv/zapret2applet/issues). Include the distribution and version, application and zapret2 versions, reproduction steps, expected and actual behavior, and relevant error messages with personal data removed.
+Before opening a report, check [existing Issues](https://github.com/avsprv/zapret2control/issues). Include the distribution and version, application and zapret2 versions, reproduction steps, expected and actual behavior, and relevant error messages with personal data removed.
 
-[Open an issue](https://github.com/avsprv/zapret2applet/issues/new).
+[Open an issue](https://github.com/avsprv/zapret2control/issues/new).
 
 ## Legal information
 
@@ -189,4 +189,4 @@ See the [Privacy Policy](PRIVACY.md) for information about network requests, loc
 
 ## License
 
-The zapret2applet source code is distributed under the [MIT License](LICENSE). This license applies to this application's code and does not replace licenses for third-party components. Information about the linked zapret2 project is available in [NOTICE.md](NOTICE.md).
+The zapret2control source code is distributed under the [MIT License](LICENSE). This license applies to this application's code and does not replace licenses for third-party components. Information about the linked zapret2 project is available in [NOTICE.md](NOTICE.md).

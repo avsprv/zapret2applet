@@ -52,7 +52,7 @@ echo "ok: caps returned journal output at 1 MiB"
 start_epoch=$(date +%s)
 "$H" blockcheck-job-logs 200 "$start_epoch" > "$tmp/blockcheck.out"
 grep -q 'fake zapret2 service log' "$tmp/blockcheck.out"
-grep -qx -- '--unit=zapret2applet-blockcheck.service' "$tmp/journal.args"
+grep -qx -- '--unit=zapret2control-blockcheck.service' "$tmp/journal.args"
 grep -qx -- '--lines=200' "$tmp/journal.args"
 grep -qx -- "--since=@$start_epoch" "$tmp/journal.args"
 echo "ok: reads only the fixed Blockcheck unit journal"

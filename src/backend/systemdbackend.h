@@ -8,7 +8,7 @@
 #include "zapretbackend.h"
 
 // Управляет апстримным юнитом zapret2.service.
-// Чтение статуса — без привилегий; start/stop/enable/disable — через zapret2applet-helper (polkit).
+// Чтение статуса — без привилегий; start/stop/enable/disable — через zapret2control-helper (polkit).
 class SystemdBackend : public ZapretBackend
 {
     Q_OBJECT
@@ -25,6 +25,7 @@ public:
     void setBootEnabled(bool enabled) override;
 
 protected:
+    virtual int processTimeoutMs(bool privileged) const;
     virtual void startProcess(QProcess *process, const QString &program,
                               const QStringList &arguments, bool privileged);
 
@@ -34,11 +35,15 @@ private:
         quint64 requestId = 0;
     };
     void startNextUnitAction();
+    void finishRefreshQuery();
     void runUnitAction(const QString &action, quint64 requestId = 0);
     void query(const QString &verb, const std::function<void(const QString &)> &onResult);
 
     QString m_unit;
     QQueue<PendingUnitAction> m_pendingActions;
     bool m_actionInProgress = false;
+    bool m_refreshInProgress = false;
+    int m_refreshQueriesPending = 0;
     quint64 m_stateQueryGeneration = 0;
+    quint64 m_verificationGeneration = 0;
 };

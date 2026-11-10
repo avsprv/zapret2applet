@@ -5,29 +5,35 @@ import org.kde.kirigami as Kirigami
 
 Kirigami.ScrollablePage {
     id: page
+    required property var logsController
 
     title: qsTr("Мониторинг")
 
     property bool autoRefresh: false
 
-    Component.onCompleted: logsController.readLogs(logsController.lineCount)
+    Component.onCompleted: page.logsController.readLogs(page.logsController.lineCount)
     onVisibleChanged: {
-        if (visible && autoRefresh)
-            refreshTimer.start()
-        else
+        if (visible) {
+            page.logsController.readLogs(page.logsController.lineCount)
+            if (autoRefresh)
+                refreshTimer.start()
+            else
+                refreshTimer.stop()
+        } else {
             refreshTimer.stop()
+        }
     }
 
     Timer {
         id: refreshTimer
         interval: 10000
         repeat: true
-        onTriggered: logsController.readLogs(logsController.lineCount)
+        onTriggered: page.logsController.readLogs(page.logsController.lineCount)
     }
 
     ColumnLayout {
         width: parent.width
-        spacing: Kirigami.Units.mediumSpacing
+        spacing: Kirigami.Units.largeSpacing
 
         Kirigami.InlineMessage {
             Layout.fillWidth: true
@@ -35,12 +41,13 @@ Kirigami.ScrollablePage {
             text: qsTr("Показывается журнал только фиксированной службы zapret2.service. Чтение выполняется через read-only действие Polkit; журнал не изменяет состояние службы.")
         }
 
-        RowLayout {
+        Flow {
             Layout.fillWidth: true
+            spacing: Kirigami.Units.smallSpacing
 
             Controls.ComboBox {
                 id: lineCountSelector
-                enabled: !logsController.busy
+                enabled: !page.logsController.busy
                 model: [
                     { text: qsTr("Последние 50 строк"), value: 50 },
                     { text: qsTr("Последние 100 строк"), value: 100 },
@@ -49,21 +56,19 @@ Kirigami.ScrollablePage {
                 ]
                 textRole: "text"
                 currentIndex: {
-                    const index = model.findIndex(item => item.value === logsController.lineCount)
+                    const index = model.findIndex(item => item.value === page.logsController.lineCount)
                     return Math.max(0, index)
                 }
                 Accessible.name: qsTr("Количество строк журнала")
-                onActivated: logsController.readLogs(model[currentIndex].value)
+                onActivated: page.logsController.readLogs(model[currentIndex].value)
             }
 
             Controls.Button {
                 text: qsTr("Обновить журнал")
                 icon.name: "view-refresh"
-                enabled: !logsController.busy
-                onClicked: logsController.readLogs(logsController.lineCount)
+                enabled: !page.logsController.busy
+                onClicked: page.logsController.readLogs(page.logsController.lineCount)
             }
-
-            Item { Layout.fillWidth: true }
 
             Controls.CheckBox {
                 text: qsTr("Автообновление каждые 10 секунд")
@@ -80,18 +85,18 @@ Kirigami.ScrollablePage {
 
         Controls.Label {
             Layout.fillWidth: true
-            text: logsController.status
+            text: page.logsController.status
             wrapMode: Text.WordWrap
         }
 
         Controls.Frame {
             Layout.fillWidth: true
             Layout.fillHeight: true
-            implicitHeight: 360
+            implicitHeight: Kirigami.Units.gridUnit * 20
 
             Controls.TextArea {
                 anchors.fill: parent
-                text: logsController.logText
+                text: page.logsController.logText
                 readOnly: true
                 wrapMode: TextEdit.NoWrap
                 selectByMouse: true

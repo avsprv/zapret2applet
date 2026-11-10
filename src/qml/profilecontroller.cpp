@@ -56,15 +56,32 @@ void ProfileController::read(bool discardChanges)
 {
     if (m_busy) return;
     if (m_dirty && !discardChanges) { setStatus(tr("Есть несохранённые изменения. Сохраните их или подтвердите отмену.")); return; }
+    m_output.clear(); m_error.clear();
     setBusy(true); setStatus(tr("Чтение конфигурации…"));
     auto *p = new QProcess(this); m_process = p;
+    connect(p, &QProcess::readyReadStandardOutput, this, [this, p] {
+        if (m_process != p) return;
+        m_output.append(p->readAllStandardOutput());
+        if (m_output.size() > 1024 * 1024)
+            p->kill();
+    });
+    connect(p, &QProcess::readyReadStandardError, this, [this, p] {
+        if (m_process != p) return;
+        m_error.append(p->readAllStandardError());
+        if (m_error.size() > 64 * 1024)
+            m_error = m_error.right(64 * 1024);
+    });
     connect(p, &QProcess::finished, this, [this,p](int code, QProcess::ExitStatus state) {
         if (m_process != p) return;
-        const QByteArray bytes = p->readAllStandardOutput();
-        const QString err = QString::fromUtf8(p->readAllStandardError()).trimmed();
+        m_output.append(p->readAllStandardOutput());
+        m_error.append(p->readAllStandardError());
+        if (m_error.size() > 64 * 1024)
+            m_error = m_error.right(64 * 1024);
+        const QByteArray bytes = m_output;
+        const QString err = QString::fromUtf8(m_error).trimmed();
         m_process = nullptr; p->deleteLater(); setBusy(false);
-        if (state != QProcess::NormalExit || code != 0) { setStatus(err.isEmpty() ? tr("Не удалось прочитать конфигурацию (код %1).").arg(code) : err); return; }
         if (bytes.size() > 1024 * 1024) { setStatus(tr("Конфигурация превышает 1 MiB.")); return; }
+        if (state != QProcess::NormalExit || code != 0) { setStatus(err.isEmpty() ? tr("Не удалось прочитать конфигурацию (код %1).").arg(code) : err); return; }
         const QString decoded = QString::fromUtf8(bytes);
         if (decoded.toUtf8() != bytes) { setStatus(tr("Конфигурация содержит некорректный UTF-8; анализ отменён.")); return; }
         const auto parsed = ProfileAnalyzer::parse(decoded);
@@ -146,13 +163,28 @@ void ProfileController::startWrite(const QString &content)
 {
     const QByteArray bytes=content.toUtf8();
     const QString hash=QString::fromLatin1(QCryptographicHash::hash(m_configBytes,QCryptographicHash::Sha256).toHex());
+    m_output.clear(); m_error.clear();
     setBusy(true); setStatus(tr("Проверка и безопасная запись профилей…"));
     auto *p=new QProcess(this); m_process=p;
     connect(p,&QProcess::started,this,[p,bytes]{ p->write(bytes); p->closeWriteChannel(); });
+    connect(p,&QProcess::readyReadStandardOutput,this,[this,p]{
+        if (m_process!=p) return;
+        m_output.append(p->readAllStandardOutput());
+        if (m_output.size()>64*1024) m_output=m_output.right(64*1024);
+    });
+    connect(p,&QProcess::readyReadStandardError,this,[this,p]{
+        if (m_process!=p) return;
+        m_error.append(p->readAllStandardError());
+        if (m_error.size()>64*1024) m_error=m_error.right(64*1024);
+    });
     connect(p,&QProcess::finished,this,[this,p,content,bytes](int code,QProcess::ExitStatus state){
         if (m_process!=p) return;
-        const QString out=QString::fromUtf8(p->readAllStandardOutput()).trimmed();
-        const QString err=QString::fromUtf8(p->readAllStandardError()).trimmed();
+        m_output.append(p->readAllStandardOutput());
+        m_error.append(p->readAllStandardError());
+        if (m_output.size()>64*1024) m_output=m_output.right(64*1024);
+        if (m_error.size()>64*1024) m_error=m_error.right(64*1024);
+        const QString out=QString::fromUtf8(m_output).trimmed();
+        const QString err=QString::fromUtf8(m_error).trimmed();
         m_process=nullptr; p->deleteLater(); setBusy(false);
         if (state!=QProcess::NormalExit || code!=0) { setStatus(err.isEmpty()?tr("Запись не выполнена (код %1).").arg(code):err); return; }
         m_config=content; m_configBytes=bytes; setDirty(false); emit profilesChanged();

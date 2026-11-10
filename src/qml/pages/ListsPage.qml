@@ -5,6 +5,7 @@ import org.kde.kirigami as Kirigami
 
 Kirigami.ScrollablePage {
     id: page
+    required property var listsController
 
     title: qsTr("Списки")
 
@@ -23,7 +24,16 @@ Kirigami.ScrollablePage {
         { label: qsTr("Результирующий IP-ban IPv6"), file: "zapret-ip-user-ipban6.txt" }
     ]
 
-    Component.onCompleted: listsController.readList(listEntries[selectedIndex].file)
+    Component.onCompleted: page.listsController.readList(listEntries[selectedIndex].file)
+
+    Connections {
+        target: page.listsController
+        function onContentChanged() {
+            if (editor.text !== page.listsController.content)
+                editor.text = page.listsController.content
+        }
+    }
+
 
     ColumnLayout {
         width: parent.width
@@ -43,18 +53,18 @@ Kirigami.ScrollablePage {
                 Layout.fillWidth: true
                 model: page.listEntries.map(entry => entry.label)
                 currentIndex: page.selectedIndex
-                enabled: !listsController.busy
+                enabled: !page.listsController.busy
                 Accessible.name: qsTr("Выбранный список")
                 onActivated: index => {
                     if (index === page.selectedIndex)
                         return
-                    if (listsController.dirty) {
+                    if (page.listsController.dirty) {
                         page.pendingIndex = index
                         switchDialog.open()
                     } else {
                         page.selectedIndex = index
                         listSelector.currentIndex = index
-                        listsController.readList(page.listEntries[index].file)
+                        page.listsController.readList(page.listEntries[index].file)
                     }
                 }
             }
@@ -62,13 +72,13 @@ Kirigami.ScrollablePage {
             Controls.Button {
                 text: qsTr("Прочитать")
                 icon.name: "view-refresh"
-                enabled: !listsController.busy
+                enabled: !page.listsController.busy
                 onClicked: {
-                    if (listsController.dirty) {
+                    if (page.listsController.dirty) {
                         page.pendingIndex = page.selectedIndex
                         switchDialog.open()
                     } else {
-                        listsController.readList(page.listEntries[page.selectedIndex].file)
+                        page.listsController.readList(page.listEntries[page.selectedIndex].file)
                     }
                 }
             }
@@ -79,8 +89,8 @@ Kirigami.ScrollablePage {
 
             Controls.Label {
                 Layout.fillWidth: true
-                text: listsController.loaded
-                      ? (listsController.editable ? qsTr("Исходный список · редактирование доступно")
+                text: page.listsController.loaded
+                      ? (page.listsController.editable ? qsTr("Исходный список · редактирование доступно")
                                                   : qsTr("Производный список · только чтение"))
                       : qsTr("Список не загружен")
                 wrapMode: Text.WordWrap
@@ -89,8 +99,8 @@ Kirigami.ScrollablePage {
             Controls.Button {
                 text: qsTr("Сохранить")
                 icon.name: "document-save"
-                enabled: listsController.loaded && listsController.editable &&
-                         listsController.dirty && !listsController.busy
+                enabled: page.listsController.loaded && page.listsController.editable &&
+                         page.listsController.dirty && !page.listsController.busy
                 onClicked: saveDialog.open()
             }
         }
@@ -99,27 +109,27 @@ Kirigami.ScrollablePage {
             id: editor
             Layout.fillWidth: true
             Layout.fillHeight: true
-            Layout.minimumHeight: 300
-            text: listsController.content
-            readOnly: !listsController.loaded || !listsController.editable || listsController.busy
+            Layout.minimumHeight: Kirigami.Units.gridUnit * 17
+            text: page.listsController.content
+            readOnly: !page.listsController.loaded || !page.listsController.editable || page.listsController.busy
             wrapMode: TextEdit.NoWrap
             selectByMouse: true
             font.family: "monospace"
             Accessible.name: qsTr("Содержимое пользовательского списка")
             Accessible.description: qsTr("Одна запись на строку. Допускаются домены ASCII или punycode, IP-адреса, CIDR и комментарии.")
-            onTextChanged: listsController.setContent(text)
+            onTextChanged: page.listsController.setContent(text)
         }
 
         Kirigami.InlineMessage {
             Layout.fillWidth: true
-            visible: listsController.status.length > 0
-            type: listsController.status.startsWith(qsTr("Не удалось")) ||
-                  listsController.status.startsWith(qsTr("Некоррект")) ||
-                  listsController.status.startsWith(qsTr("Файл превышает")) ||
-                  listsController.status.startsWith(qsTr("Слишком")) ||
-                  listsController.status.startsWith(qsTr("Строка"))
+            visible: page.listsController.status.length > 0
+            type: page.listsController.status.startsWith(qsTr("Не удалось")) ||
+                  page.listsController.status.startsWith(qsTr("Некоррект")) ||
+                  page.listsController.status.startsWith(qsTr("Файл превышает")) ||
+                  page.listsController.status.startsWith(qsTr("Слишком")) ||
+                  page.listsController.status.startsWith(qsTr("Строка"))
                   ? Kirigami.MessageType.Error : Kirigami.MessageType.Information
-            text: listsController.status
+            text: page.listsController.status
         }
     }
 
@@ -139,7 +149,7 @@ Kirigami.ScrollablePage {
             page.selectedIndex = page.pendingIndex
             listSelector.currentIndex = page.pendingIndex
             page.pendingIndex = -1
-            listsController.readList(page.listEntries[page.selectedIndex].file)
+            page.listsController.readList(page.listEntries[page.selectedIndex].file)
         }
         onRejected: {
             page.pendingIndex = -1
@@ -156,8 +166,8 @@ Kirigami.ScrollablePage {
             width: parent.width
             wrapMode: Text.WordWrap
             text: qsTr("Создать резервную копию и атомарно сохранить %1? Производные IP-списки будут обновлены штатными механизмами zapret2. Служба автоматически не перезапускается.")
-                    .arg(listsController.loadedName)
+                    .arg(page.listsController.loadedName)
         }
-        onAccepted: listsController.saveList()
+        onAccepted: page.listsController.saveList()
     }
 }

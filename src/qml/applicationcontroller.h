@@ -6,6 +6,7 @@
 #include "backend/zapretbackend.h"
 
 class SystemdBackend;
+class QTimer;
 
 class ApplicationController final : public QObject
 {
@@ -44,6 +45,7 @@ private:
     void setServiceActionBusy(bool busy);
 
     SystemdBackend *m_backend = nullptr;
+    QTimer *m_refreshTimer = nullptr;
     ZapretBackend::State m_state = ZapretBackend::State::Unknown;
     bool m_bootEnabled = false;
     bool m_operationsBusy = false;

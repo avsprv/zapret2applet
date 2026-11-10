@@ -103,12 +103,12 @@ class BlockcheckWorker:
 
 def main() -> int:
     import sys
-    state = StateStore("/var/lib/zapret2applet/blockcheck")
-    staged = StagedOptionsStore(state, "/run/zapret2applet/blockcheck")
+    state = StateStore("/var/lib/zapret2control/blockcheck")
+    staged = StagedOptionsStore(state, "/run/zapret2control/blockcheck")
     try:
         return BlockcheckWorker(state, staged).run()
     except StateError as exc:
-        print(f"zapret2applet blockcheck worker: {exc}", file=sys.stderr)
+        print(f"zapret2control blockcheck worker: {exc}", file=sys.stderr)
         return 1
 
 

@@ -1,6 +1,7 @@
 #pragma once
 
 #include <QObject>
+#include <QUrl>
 #include <QString>
 #include <QProcess>
 
@@ -24,6 +25,7 @@ public:
     Q_INVOKABLE void validate();
     Q_INVOKABLE void save();
     Q_INVOKABLE void rollback();
+    Q_INVOKABLE bool exportConfig(const QUrl &url);
 
 signals:
     void configTextChanged();

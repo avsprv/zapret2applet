@@ -16,8 +16,8 @@ from blockcheck_staging import StagedOptionsStore
 from blockcheck_state import StateError, StateStore
 from blockcheck_status import RECOVERY_UNIT, WORKER_UNIT, JobStatusError, _unit_properties
 
-STATE_DIRECTORY = "/var/lib/zapret2applet/blockcheck"
-RUNTIME_DIRECTORY = "/run/zapret2applet/blockcheck"
+STATE_DIRECTORY = "/var/lib/zapret2control/blockcheck"
+RUNTIME_DIRECTORY = "/run/zapret2control/blockcheck"
 SERVICE = "zapret2.service"
 GUARD_ENV = "QZAPRET_BLOCKCHECK_GUARD"
 GUARD_VALUE = "held-v1"
@@ -86,7 +86,7 @@ def _run_command(command: list[str], env: dict[str, str] | None = None) -> int:
     try:
         return subprocess.run(command, stdin=subprocess.DEVNULL, check=False, env=env).returncode
     except (OSError, subprocess.TimeoutExpired) as exc:
-        print(f"zapret2applet admission: cannot execute operation: {exc}", file=sys.stderr)
+        print(f"zapret2control admission: cannot execute operation: {exc}", file=sys.stderr)
         return 1
 
 
@@ -103,7 +103,7 @@ def main(argv: list[str] | None = None) -> int:
 
     if action == "unit":
         if value not in UNIT_ACTIONS:
-            print("zapret2applet admission: unsupported service action", file=sys.stderr)
+            print("zapret2control admission: unsupported service action", file=sys.stderr)
             return 2
         command = [systemctl, value, SERVICE]
         operation = lambda: _run_command(command)
@@ -111,11 +111,11 @@ def main(argv: list[str] | None = None) -> int:
         if (len(value) > 24 or not value.startswith("v")
                 or any(ch not in "0123456789.v" for ch in value)
                 or ".." in value or value.endswith(".") or "vv" in value):
-            print(f"zapret2applet admission: invalid {action} tag", file=sys.stderr)
+            print(f"zapret2control admission: invalid {action} tag", file=sys.stderr)
             return 2
-        helper = Path(__file__).with_name("zapret2applet-helper")
+        helper = Path(__file__).with_name("zapret2control-helper")
         if not helper.is_file():
-            print("zapret2applet admission: privileged helper is missing", file=sys.stderr)
+            print("zapret2control admission: privileged helper is missing", file=sys.stderr)
             return 1
         env = os.environ.copy()
         env[GUARD_ENV] = GUARD_VALUE
@@ -125,7 +125,7 @@ def main(argv: list[str] | None = None) -> int:
     try:
         return run_guarded(state, staged, operation)
     except AdmissionError as exc:
-        print(f"zapret2applet admission: {exc}", file=sys.stderr)
+        print(f"zapret2control admission: {exc}", file=sys.stderr)
         return 2
 
 

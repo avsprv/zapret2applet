@@ -66,8 +66,12 @@ UpdateController::UpdateController(SettingsManager *settings, QObject *parent)
     });
     connect(m_updater, &ZapretUpdater::logLine, this, &UpdateController::appendLog);
     connect(m_updater, &ZapretUpdater::failedToStart, this, [this](const QString &message) {
+        m_busy = false;
+        m_installing = false;
         appendLog(message);
         setStatus(message);
+        emit stateChanged();
+        emit operationFinished();
     });
     connect(m_updater, &ZapretUpdater::finished, this, &UpdateController::handleUpdateFinished);
 

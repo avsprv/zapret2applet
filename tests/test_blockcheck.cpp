@@ -54,6 +54,48 @@ private slots:
     }
 
     // Весь конвейер QProcess -> построчный разбор -> сигналы, с поддельным хелпером без pkexec.
+
+    void runnerRejectsReentrantStartWhileFinishing()
+    {
+        QTemporaryDir dir;
+        QVERIFY(dir.isValid());
+        const QString script = dir.filePath(QStringLiteral("fake-helper"));
+        const QString counter = dir.filePath(QStringLiteral("invocations"));
+        QFile f(script);
+        QVERIFY(f.open(QIODevice::WriteOnly));
+        const QByteArray scriptContent = QStringLiteral(
+            "#!/bin/sh\nprintf x >> '%1'\necho diagnostic\nexit 0\n")
+                .arg(counter).toUtf8();
+        f.write(scriptContent);
+        f.close();
+        f.setPermissions(f.permissions() | QFileDevice::ExeUser);
+
+        qputenv("QZAPRET_HELPER", script.toUtf8());
+        qputenv("QZAPRET_NO_PKEXEC", "1");
+
+        BlockcheckRunner runner;
+        QSignalSpy done(&runner, &BlockcheckRunner::finished);
+        bool reentrantAttempted = false;
+        connect(&runner, &BlockcheckRunner::logLine, &runner, [&] {
+            if (reentrantAttempted)
+                return;
+            reentrantAttempted = true;
+            runner.start({});
+        });
+
+        runner.start({});
+        QTRY_COMPARE_WITH_TIMEOUT(done.count(), 1, 5000);
+        QTest::qWait(100);
+        QVERIFY(reentrantAttempted);
+        QFile invocations(counter);
+        QVERIFY(invocations.open(QIODevice::ReadOnly));
+        QCOMPARE(invocations.readAll(), QByteArray("x"));
+        QVERIFY(!runner.isRunning());
+
+        qunsetenv("QZAPRET_HELPER");
+        qunsetenv("QZAPRET_NO_PKEXEC");
+    }
+
     void runnerPipeline()
     {
         QTemporaryDir dir;
@@ -163,6 +205,47 @@ private slots:
         QVERIFY(done.wait(5000));
         QCOMPARE(done.at(0).at(0).toInt(), -1);
         QCOMPARE(runner.errorCount(), 1);
+    }
+
+    void cancelHelperFailureIsReportedWithoutLosingScanState()
+    {
+        QTemporaryDir dir;
+        QVERIFY(dir.isValid());
+        const QString script = dir.filePath(QStringLiteral("fake-helper"));
+        QFile f(script);
+        QVERIFY(f.open(QIODevice::WriteOnly));
+        f.write("#!/bin/sh\n"
+                "if [ \"$1\" = blockcheck-cancel ]; then exit 7; fi\n"
+                "if [ \"$1\" = blockcheck ]; then sleep 5; exit 0; fi\n"
+                "exit 9\n");
+        f.close();
+        f.setPermissions(f.permissions() | QFileDevice::ExeUser);
+
+        qputenv("QZAPRET_HELPER", script.toUtf8());
+        qputenv("QZAPRET_NO_PKEXEC", "1");
+
+        BlockcheckRunner runner;
+        QSignalSpy lines(&runner, &BlockcheckRunner::logLine);
+        QSignalSpy done(&runner, &BlockcheckRunner::finished);
+        runner.start({});
+        QTRY_VERIFY_WITH_TIMEOUT(runner.isRunning(), 1000);
+        runner.cancel();
+
+        QTRY_VERIFY_WITH_TIMEOUT(!lines.isEmpty(), 1000);
+        bool reported = false;
+        for (const auto &line : lines) {
+            if (line.at(0).toString().contains(QStringLiteral("Не удалось подтвердить отправку запроса отмены")))
+                reported = true;
+        }
+        QVERIFY(reported);
+        QVERIFY(runner.isRunning());
+        QVERIFY(done.wait(7000));
+        QCOMPARE(done.count(), 1);
+        QCOMPARE(done.at(0).at(0).toInt(), 0);
+        QCOMPARE(done.at(0).at(1).toBool(), false);
+
+        qunsetenv("QZAPRET_HELPER");
+        qunsetenv("QZAPRET_NO_PKEXEC");
     }
 };
 

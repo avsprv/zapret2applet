@@ -2,17 +2,17 @@
 
 **Дата редакции / Last updated:** 2026-11-07
 
-Этот документ описывает условия предоставления и использования zapret2applet. Он не является юридической консультацией и не заменяет анализ законодательства юристом.
+Этот документ описывает условия предоставления и использования zapret2control. Он не является юридической консультацией и не заменяет анализ законодательства юристом.
 
-This document describes the terms under which zapret2applet is provided and used. It is not legal advice and does not replace a legal review by a qualified lawyer.
+This document describes the terms under which zapret2control is provided and used. It is not legal advice and does not replace a legal review by a qualified lawyer.
 
 ## 1. Назначение и характер программы / Purpose and nature of the software
 
-zapret2applet — независимое программное обеспечение с открытым исходным кодом для Linux. Оно предоставляет графический интерфейс управления уже установленной службой zapret2, запускает сетевые тесты с использованием upstream-скрипта blockcheck2 и позволяет обновлять отдельную установку zapret2.
+zapret2control — независимое программное обеспечение с открытым исходным кодом для Linux. Оно предоставляет графический интерфейс управления уже установленной службой zapret2, запускает сетевые тесты с использованием upstream-скрипта blockcheck2 и позволяет обновлять отдельную установку zapret2.
 
 Программа взаимодействует с сетевыми механизмами zapret2, которые могут изменять обработку сетевого трафика и влиять на работу механизмов DPI. Документирование этой функциональности не является призывом использовать программу для нарушения закона или получения доступа к ресурсам вопреки применимым ограничениям.
 
-zapret2applet is independent open-source software for Linux. It provides a graphical interface for an already installed zapret2 service, runs network tests using the upstream blockcheck2 script, and can update a separate zapret2 installation.
+zapret2control is independent open-source software for Linux. It provides a graphical interface for an already installed zapret2 service, runs network tests using the upstream blockcheck2 script, and can update a separate zapret2 installation.
 
 The application interacts with zapret2 networking mechanisms, which may alter network traffic handling and affect DPI systems. Describing this functionality is not an invitation to break the law or to access resources in violation of applicable restrictions.
 

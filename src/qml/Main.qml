@@ -1,4 +1,7 @@
+pragma ComponentBehavior: Bound
+
 import QtQuick
+import QtQuick.Window
 import QtQuick.Controls as Controls
 import QtQuick.Layouts
 import org.kde.kirigami as Kirigami
@@ -7,15 +10,46 @@ import "pages"
 Kirigami.ApplicationWindow {
     id: root
 
-    title: qsTr("zapret2applet")
-    width: 980
-    height: 680
-    minimumWidth: 640
-    minimumHeight: 480
+    required property bool startMinimized
+    required property var appController
+    required property var settingsManager
+    required property var autostartController
+    required property var trayController
+    required property var configController
+    required property var profileController
+    required property var logsController
+    required property var listsController
+    required property var blockcheckController
+    required property var updateController
+
+    title: qsTr("Zapret2 Control")
+    visible: !startMinimized
+    width: Kirigami.Units.gridUnit * 54
+    height: Kirigami.Units.gridUnit * 38
+    minimumWidth: Kirigami.Units.gridUnit * 36
+    minimumHeight: Kirigami.Units.gridUnit * 27
     pageStack.initialPage: dashboardPage
 
+    Kirigami.Dialog {
+        id: quitBlockedDialog
+        title: qsTr("Нельзя завершить приложение")
+        standardButtons: Controls.Dialog.Ok
+
+        Controls.Label {
+            Layout.fillWidth: true
+            wrapMode: Text.WordWrap
+            text: qsTr("Дождитесь завершения текущей операции или восстановления zapret2. Принудительное завершение может повредить установленную систему.")
+        }
+    }
+
     onClosing: function(close) {
-        if (settingsManager.closeToTray && trayController.registered) {
+        if (root.appController.operationsBusy) {
+            close.accepted = false
+            root.showWindow()
+            quitBlockedDialog.open()
+            return
+        }
+        if (root.settingsManager.closeToTray && root.trayController.registered) {
             close.accepted = false
             hide()
         }
@@ -27,15 +61,31 @@ Kirigami.ApplicationWindow {
         requestActivate()
     }
 
+    function toggleWindow() {
+        if (visible && visibility !== Window.Minimized)
+            hide()
+        else
+            showWindow()
+    }
+
+    function requestQuit() {
+        if (root.appController.operationsBusy) {
+            showWindow()
+            quitBlockedDialog.open()
+            return
+        }
+        Qt.quit()
+    }
+
     function openSettings() {
         showWindow()
         pageStack.push(settingsPageComponent)
     }
 
     globalDrawer: Kirigami.GlobalDrawer {
-        title: qsTr("zapret2applet")
-        titleIcon: "zapret2applet"
-        isMenu: true
+        title: qsTr("Zapret2 Control")
+        titleIcon: "zapret2control"
+        isMenu: false
         // Keep primary navigation visible on desktop, but use an overlay on narrow windows.
         modal: root.width < Kirigami.Units.gridUnit * 50
 
@@ -84,6 +134,11 @@ Kirigami.ApplicationWindow {
                 text: qsTr("О программе")
                 icon.name: "help-about"
                 onTriggered: root.pageStack.push(aboutPageComponent)
+            },
+            Kirigami.Action {
+                text: qsTr("Выход")
+                icon.name: "application-exit"
+                onTriggered: root.requestQuit()
             }
         ]
     }
@@ -97,7 +152,7 @@ Kirigami.ApplicationWindow {
                 Kirigami.Action {
                     text: qsTr("Обновить")
                     icon.name: "view-refresh"
-                    onTriggered: appController.refresh()
+                    onTriggered: root.appController.refresh()
                 }
             ]
 
@@ -115,24 +170,24 @@ Kirigami.ApplicationWindow {
 
                     ColumnLayout {
                         anchors.fill: parent
-                        spacing: Kirigami.Units.mediumSpacing
+                        spacing: Kirigami.Units.smallSpacing
 
                         RowLayout {
                             Layout.fillWidth: true
 
                             Kirigami.Heading {
                                 level: 2
-                                text: appController.serviceState
+                                text: root.appController.serviceState
                             }
 
                             Item { Layout.fillWidth: true }
 
                             Rectangle {
-                                width: 12
-                                height: 12
+                                Layout.preferredWidth: Kirigami.Units.smallSpacing * 3
+                                Layout.preferredHeight: Kirigami.Units.smallSpacing * 3
                                 radius: width / 2
-                                color: appController.serviceStateCode === "inactive" ? "#d79921"
-                                     : appController.serviceStateCode === "failed" ? Kirigami.Theme.negativeTextColor
+                                color: root.appController.serviceStateCode === "inactive" ? Kirigami.Theme.neutralTextColor
+                                     : root.appController.serviceStateCode === "failed" ? Kirigami.Theme.negativeTextColor
                                      : Kirigami.Theme.textColor
                                 Accessible.ignored: true
                             }
@@ -147,9 +202,9 @@ Kirigami.ApplicationWindow {
 
                         Controls.CheckBox {
                             text: qsTr("Запускать zapret2 при загрузке системы")
-                            checked: appController.bootEnabled
-                            onToggled: appController.setBootEnabled(checked)
-                            enabled: !appController.operationsBusy
+                            checked: root.appController.bootEnabled
+                            onToggled: root.appController.setBootEnabled(checked)
+                            enabled: !root.appController.operationsBusy
                         }
 
                         Flow {
@@ -159,22 +214,22 @@ Kirigami.ApplicationWindow {
                             Controls.Button {
                                 text: qsTr("Запустить")
                                 icon.name: "media-playback-start"
-                                enabled: !appController.serviceActive && !appController.operationsBusy
-                                onClicked: appController.startService()
+                                enabled: !root.appController.serviceActive && !root.appController.operationsBusy
+                                onClicked: root.appController.startService()
                             }
 
                             Controls.Button {
                                 text: qsTr("Остановить")
                                 icon.name: "media-playback-stop"
-                                enabled: appController.serviceActive && !appController.operationsBusy
-                                onClicked: appController.stopService()
+                                enabled: root.appController.serviceActive && !root.appController.operationsBusy
+                                onClicked: root.appController.stopService()
                             }
 
                             Controls.Button {
                                 text: qsTr("Обновить состояние")
                                 icon.name: "view-refresh"
-                                enabled: !appController.operationsBusy
-                                onClicked: appController.refresh()
+                                enabled: !root.appController.operationsBusy
+                                onClicked: root.appController.refresh()
                             }
                         }
                     }
@@ -203,14 +258,14 @@ Kirigami.ApplicationWindow {
                             Item { Layout.fillWidth: true }
 
                             Controls.Label {
-                                text: updateController.installedVersion
+                                text: root.updateController.installedVersion
                                 font.weight: Font.DemiBold
                             }
                         }
 
                         Controls.Label {
                             Layout.fillWidth: true
-                            text: updateController.installed
+                            text: root.updateController.installed
                                   ? qsTr("Проверить наличие новых версий можно в разделе «Обновления».")
                                   : qsTr("zapret2 пока не установлен. Перейдите в раздел «Обновления», чтобы выполнить установку.")
                             wrapMode: Text.WordWrap
@@ -227,34 +282,32 @@ Kirigami.ApplicationWindow {
 
                 Kirigami.InlineMessage {
                     Layout.fillWidth: true
-                    visible: appController.errorMessage.length > 0
+                    visible: root.appController.errorMessage.length > 0
                     type: Kirigami.MessageType.Error
-                    text: appController.errorMessage
+                    text: root.appController.errorMessage
                 }
 
-                Kirigami.InlineMessage {
-                    Layout.fillWidth: true
-                    visible: true
-                    type: Kirigami.MessageType.Information
-                    text: qsTr("QML-интерфейс находится в стадии поэтапной миграции. Для повседневного использования пока доступна стабильная версия приложения.")
-                }
             }
         }
     }
 
     Component {
         id: configPageComponent
-        ConfigPage {}
+        ConfigPage { configController: root.configController }
     }
 
     Component {
         id: profilesPageComponent
-        ProfilesPage {}
+        ProfilesPage { profileController: root.profileController }
     }
 
     Component {
         id: settingsPageComponent
-        SettingsPage {}
+        SettingsPage {
+            settingsManager: root.settingsManager
+            autostartController: root.autostartController
+            trayController: root.trayController
+        }
     }
 
     Component {
@@ -264,21 +317,21 @@ Kirigami.ApplicationWindow {
 
     Component {
         id: logsPageComponent
-        LogsPage {}
+        LogsPage { logsController: root.logsController }
     }
 
     Component {
         id: listsPageComponent
-        ListsPage {}
+        ListsPage { listsController: root.listsController }
     }
 
     Component {
         id: blockcheckPageComponent
-        BlockcheckPage {}
+        BlockcheckPage { blockcheckController: root.blockcheckController }
     }
 
     Component {
         id: updatePageComponent
-        UpdatePage {}
+        UpdatePage { updateController: root.updateController }
     }
 }

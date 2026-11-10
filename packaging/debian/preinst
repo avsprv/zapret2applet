@@ -1,0 +1,23 @@
+#!/bin/sh
+set -e
+
+unit_installed() {
+    [ -e "/usr/lib/systemd/system/$1" ] || [ -e "/lib/systemd/system/$1" ]
+}
+
+case "$1" in
+    install|upgrade)
+        for unit in \
+            zapret2control-blockcheck.service \
+            zapret2control-blockcheck-recovery.service
+        do
+            if unit_installed "$unit"; then
+                if ! command -v deb-systemd-invoke >/dev/null 2>&1; then
+                    echo "zapret2control: deb-systemd-invoke is required to stop $unit" >&2
+                    exit 1
+                fi
+                deb-systemd-invoke stop "$unit"
+            fi
+        done
+        ;;
+esac

@@ -28,16 +28,16 @@ class BlockcheckProbeTests(unittest.TestCase):
         self.state_dir.mkdir(mode=0o700)
         self.runtime_dir.mkdir(mode=0o700)
         self.states = {
-            "zapret2applet-blockcheck.service": ("loaded", "inactive", "dead", "success", "0"),
-            "zapret2applet-blockcheck-recovery.service": ("loaded", "inactive", "dead", "success", "0"),
+            "zapret2control-blockcheck.service": ("loaded", "inactive", "dead", "success", "0"),
+            "zapret2control-blockcheck-recovery.service": ("loaded", "inactive", "dead", "success", "0"),
             "zapret2.service": ("loaded", "inactive", "dead", "success", "0"),
         }
         self.systemctl = root / "systemctl"
         self.systemctl.write_text("""#!/usr/bin/env python3
 import os, sys
 states = {
-    "zapret2applet-blockcheck.service": ("loaded", "inactive", "dead", "success", "0"),
-    "zapret2applet-blockcheck-recovery.service": ("loaded", "inactive", "dead", "success", "0"),
+    "zapret2control-blockcheck.service": ("loaded", "inactive", "dead", "success", "0"),
+    "zapret2control-blockcheck-recovery.service": ("loaded", "inactive", "dead", "success", "0"),
     "zapret2.service": ("loaded", "inactive", "dead", "success", "0"),
 }
 try:
@@ -107,7 +107,7 @@ for key, value in zip(keys, states[unit]):
         self.assertEqual(self._probe()["state"], "busy")
 
     def test_active_worker_is_busy(self):
-        self.states["zapret2applet-blockcheck.service"] = ("loaded", "active", "running", "success", "0")
+        self.states["zapret2control-blockcheck.service"] = ("loaded", "active", "running", "success", "0")
         self._write_fixture()
         self.assertEqual(self._probe()["state"], "busy")
 

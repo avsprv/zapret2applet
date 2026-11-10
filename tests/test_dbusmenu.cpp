@@ -20,6 +20,11 @@ private slots:
         QCOMPARE(layout.children.size(), 7);
         const DBusMenuLayoutItem startItem =
             layout.children.at(2).variant().value<DBusMenuLayoutItem>();
+        const DBusMenuLayoutItem windowItem =
+            layout.children.at(0).variant().value<DBusMenuLayoutItem>();
+        QCOMPARE(windowItem.id, 1);
+        QCOMPARE(windowItem.properties.value(QStringLiteral("label")).toString(),
+                 QStringLiteral("Показать / скрыть окно"));
         QCOMPARE(startItem.id, 3);
         QCOMPARE(startItem.properties.value(QStringLiteral("label")).toString(),
                  QStringLiteral("Запустить zapret2"));
@@ -76,8 +81,12 @@ private slots:
     void eventsOnlyDispatchEnabledActions()
     {
         DBusMenu menu;
+        QSignalSpy activateSpy(&menu, &DBusMenu::activateRequested);
         QSignalSpy startSpy(&menu, &DBusMenu::startRequested);
         QSignalSpy stopSpy(&menu, &DBusMenu::stopRequested);
+
+        menu.Event(1, QStringLiteral("clicked"), QDBusVariant(), 0);
+        QCOMPARE(activateSpy.size(), 1);
 
         menu.Event(3, QStringLiteral("clicked"), QDBusVariant(), 0);
         QCOMPARE(startSpy.size(), 1);

@@ -111,7 +111,7 @@ void BlockcheckJobController::start()
     QStringList domains;
     if(!validateOptions(&domains)){setStatus(tr("Проверьте домены и параметры диагностики."),StatusType::Error);return;}
     m_results.clear();emit resultsChanged();m_logText.clear();emit logTextChanged();
-    m_operationId.clear();m_terminalPhase.clear();m_cancelRequested=false;m_finalLogsPending=false;m_found=0;m_pollTicks=0;
+    m_operationId.clear();m_terminalPhase.clear();m_cancelOperationId.clear();m_cancelRequested=false;m_cancelDispatched=false;m_finalLogsPending=false;m_found=0;m_pollTicks=0;
     setBusy(true);
     setStatus(tr("Диагностика может временно остановить службу zapret2. После завершения systemd попытается восстановить её работу."),StatusType::Information);
     emit confirmationRequired(tr("Запуск диагностики Blockcheck"),tr("Для проверки может потребоваться временная остановка zapret2. Продолжить?"));
@@ -125,7 +125,7 @@ void BlockcheckJobController::confirmStop(bool accepted)
     if(!validateOptions(&domains)){finish(false);return;}
     m_startedAtSecs=QDateTime::currentSecsSinceEpoch();
     launch(ProcessTask::Submit,{
-        QStringLiteral("blockcheck-submit"),QStringLiteral("--domains"),domains.join(QLatin1Char(' ')),
+        QStringLiteral("blockcheck-submit"),QStringLiteral("--domains"),domains.join(QLatin1Char(',')),
         QStringLiteral("--ipvs"),m_ipVersion,QStringLiteral("--http"),flag(m_http),
         QStringLiteral("--tls12"),flag(m_tls12),QStringLiteral("--tls13"),flag(m_tls13),
         QStringLiteral("--http3"),flag(m_http3),QStringLiteral("--repeats"),QString::number(m_repeats),
@@ -154,9 +154,11 @@ void BlockcheckJobController::launch(ProcessTask task,const QStringList &argumen
         if(m_process!=process)return;
         handleProcessFinished(process,code,state);
         process->deleteLater();
-        if (m_cancelRequested && !m_operationId.isEmpty()
-            && m_terminalPhase.isEmpty() && m_task == ProcessTask::None)
-            launch(ProcessTask::Cancel,{QStringLiteral("blockcheck-job-cancel")});
+        if (task != ProcessTask::Cancel && m_cancelRequested && !m_cancelOperationId.isEmpty()
+            && !m_cancelDispatched && m_terminalPhase.isEmpty() && m_task == ProcessTask::None) {
+            m_cancelDispatched=true;
+            launch(ProcessTask::Cancel,{QStringLiteral("blockcheck-job-cancel"),m_cancelOperationId});
+        }
     });
     connect(process,&QProcess::errorOccurred,this,[this,process](QProcess::ProcessError error){
         if(error!=QProcess::FailedToStart||m_process!=process)return;
@@ -190,7 +192,14 @@ void BlockcheckJobController::handleProcessFinished(QProcess *process,int exitCo
     if(task==ProcessTask::Probe){ processProbe(m_stdout); return; }
     if(exitStatus!=QProcess::NormalExit||exitCode!=0){
         appendLog(error.isEmpty()?tr("Helper завершился с кодом %1.").arg(exitCode):error);
-        if(task==ProcessTask::Recovery){
+        if(task==ProcessTask::Probe){
+            m_pollTimer->stop();
+            m_probePending=false;
+            setRecoveryRequired(true);
+            setBusy(false);
+            setStatus(tr("Не удалось проверить состояние восстановления Blockcheck. Операции заблокированы."),StatusType::Error);
+        }
+        else if(task==ProcessTask::Recovery){
             setBusy(false);
             setStatus(tr("Не удалось повторить восстановление службы. Маркер сохранён."),StatusType::Error);
         }
@@ -224,12 +233,20 @@ void BlockcheckJobController::handleProcessFinished(QProcess *process,int exitCo
         const QString id=QString::fromUtf8(m_stdout).trimmed();
         static const QRegularExpression uuidRe(QStringLiteral("^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"));
         if(!uuidRe.match(id).hasMatch()){appendLog(tr("Helper вернул некорректный идентификатор задания."));finish(false);return;}
-        m_operationId=id;m_pollTicks=0;m_pollTimer->start();setStatus(tr("Задание принято systemd; ожидание запуска worker…"));
+        m_operationId=id;
+        if(m_cancelRequested&&m_cancelOperationId.isEmpty())m_cancelOperationId=id;
+        m_pollTicks=0;m_pollTimer->start();setStatus(tr("Задание принято systemd; ожидание запуска worker…"));
         return;
     }
     if(task==ProcessTask::Status)processStatus(m_stdout);
     else if(task==ProcessTask::Logs){processLogs(m_stdout);if(!m_terminalPhase.isEmpty())finish(m_terminalPhase==QLatin1String("completed"),m_cancelRequested&&m_terminalPhase!=QLatin1String("completed"));}
-    else if(task==ProcessTask::Cancel)setStatus(tr("Запрос отмены отправлен. Ожидается завершение worker и восстановление службы."),StatusType::Warning);
+    else if(task==ProcessTask::Cancel){
+        const QString cancelResult=QString::fromUtf8(m_stdout).trimmed();
+        if(cancelResult==QLatin1String("stale"))
+            setStatus(tr("Задание уже завершено или заменено; новое задание не затронуто."),StatusType::Warning);
+        else
+            setStatus(tr("Запрос отмены отправлен. Ожидается завершение worker и восстановление службы."),StatusType::Warning);
+    }
 }
 
 void BlockcheckJobController::poll()
@@ -312,18 +329,37 @@ void BlockcheckJobController::processStatus(const QByteArray &output)
     if(phase==QLatin1String("recovery_pending")){setStatus(tr("Восстановление службы ещё не подтверждено; задание остаётся активным."),StatusType::Warning);return;}
     if(phase==QLatin1String("recovery_failed")){m_terminalPhase=phase;setStatus(tr("Ошибка восстановления службы. Маркер восстановления сохранён."),StatusType::Error);m_pollTimer->stop();launch(ProcessTask::Logs,{QStringLiteral("blockcheck-job-logs"),QStringLiteral("500"),QString::number(m_startedAtSecs)});return;}
     if(phase==QLatin1String("stale")){
-        const QString recoveryOperationId=object.value(QStringLiteral("recovery_operation_id")).toString();
         static const QRegularExpression uuidRe(
             QStringLiteral("^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"));
-        if(uuidRe.match(recoveryOperationId).hasMatch()){
-            m_operationId=recoveryOperationId;
-            m_startedAtSecs=QDateTime::currentSecsSinceEpoch();
-            emit recoveryRequiredChanged();
-            emit recoveryRetryAvailableChanged();
+        if(object.value(QStringLiteral("recovery_marker")).toBool()){
+            const QString recoveryOperationId=object.value(QStringLiteral("recovery_operation_id")).toString();
+            if(uuidRe.match(recoveryOperationId).hasMatch()){
+                m_operationId=recoveryOperationId;
+                m_startedAtSecs=QDateTime::currentSecsSinceEpoch();
+                setRecoveryRequired(true);
+                m_terminalPhase=phase;
+                m_pollTimer->stop();
+                setStatus(tr("Идентификатор задания устарел; обнаружено незавершённое восстановление. Журнал другой операции не будет прочитан."),StatusType::Error);
+                finish(false);
+                return;
+            }
+        } else if(object.value(QStringLiteral("staged_options")).toBool()){
+            const QString stagedOperationId=object.value(QStringLiteral("staged_operation_id")).toString();
+            if(uuidRe.match(stagedOperationId).hasMatch()){
+                // A different request is queued, not awaiting recovery. Adopt its
+                // UUID and continue polling without exposing the recovery action.
+                m_operationId=stagedOperationId;
+                m_startedAtSecs=QDateTime::currentSecsSinceEpoch();
+                setRecoveryRequired(false);
+                m_terminalPhase.clear();
+                setStatus(tr("Обнаружено другое задание Blockcheck в очереди; отслеживание продолжено."),StatusType::Warning);
+                return;
+            }
         }
+        setRecoveryRequired(true);
         m_terminalPhase=phase;
         m_pollTimer->stop();
-        setStatus(tr("Идентификатор задания устарел; журнал другой операции не будет прочитан."),StatusType::Error);
+        setStatus(tr("Идентификатор задания устарел; состояние новой операции не удалось проверить. Операции заблокированы."),StatusType::Error);
         finish(false);
         return;
     }
@@ -356,6 +392,8 @@ void BlockcheckJobController::processLogs(const QByteArray &output)
 
 void BlockcheckJobController::finish(bool success,bool canceled)
 {
+    if(canceled&&!m_cancelOperationId.isEmpty()&&m_operationId!=m_cancelOperationId)
+        canceled=false;
     m_pollTimer->stop();m_terminalPhase.clear();if(!m_recoveryRequired)m_operationId.clear();m_task=ProcessTask::None;
     setBusy(false);
     if(canceled)setStatus(tr("Подбор отменён."),StatusType::Warning);
@@ -371,14 +409,27 @@ void BlockcheckJobController::cancel()
         if(m_task==ProcessTask::None)finish(false,true);
         else if(m_task==ProcessTask::Submit){
             m_cancelRequested=true;
+            m_cancelOperationId.clear();
+            m_cancelDispatched=false;
             setStatus(tr("Отмена будет отправлена после получения идентификатора задания."),StatusType::Warning);
         }
         return;
     }
     if(m_terminalPhase.isEmpty()){
         m_cancelRequested=true;
-        if(m_task==ProcessTask::None)
-            launch(ProcessTask::Cancel,{QStringLiteral("blockcheck-job-cancel")});
+        // A new explicit click may target a newly adopted operation, but an
+        // earlier asynchronous cancellation must never retarget itself.
+        if(m_cancelOperationId!=m_operationId){
+            m_cancelOperationId=m_operationId;
+            m_cancelDispatched=false;
+        } else if(m_task!=ProcessTask::Cancel) {
+            // An explicit second click retries the same UUID-bound request.
+            m_cancelDispatched=false;
+        }
+        if(m_task==ProcessTask::None&&!m_cancelDispatched){
+            m_cancelDispatched=true;
+            launch(ProcessTask::Cancel,{QStringLiteral("blockcheck-job-cancel"),m_cancelOperationId});
+        }
     }
 }
 

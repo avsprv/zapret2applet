@@ -73,7 +73,8 @@ private slots:
             "[ \"$1\" = lists-write ] || exit 8\n"
             "[ \"$2\" = zapret-hosts-user.txt ] || exit 9\n"
             "cat > \"$QZAPRET_CAPTURE\"\n"
-            "printf 'OK: list updated; backup: test-backup\\n'\n");
+            "printf 'OK: list updated; backup: test-backup\\n'\n"
+            "yes X | head -c 100000\n");
         QVERIFY(!helper.isEmpty());
         const QString capture = directory.filePath(QStringLiteral("captured-list"));
         qputenv("QZAPRET_HELPER", helper.toUtf8());
@@ -88,6 +89,7 @@ private slots:
         controller.saveList();
         QTRY_VERIFY_WITH_TIMEOUT(!controller.busy(), 5000);
         QVERIFY(!controller.dirty());
+        QVERIFY(controller.status().size() <= 64 * 1024);
         QFile saved(capture);
         QVERIFY(saved.open(QIODevice::ReadOnly));
         QCOMPARE(saved.readAll(), QByteArray("valid.example\n192.0.2.1/24\n"));
@@ -102,6 +104,42 @@ private slots:
         qunsetenv("QZAPRET_NO_PKEXEC");
         qunsetenv("QZAPRET_CAPTURE");
     }
+
+    void resetsBusyStateWhenHelperCannotStart()
+    {
+        QTemporaryDir directory;
+        QVERIFY(directory.isValid());
+        const QString helper = createHelper(directory,
+            "[ \"$1\" = lists-read ] || exit 8\n"
+            "printf 'initial.example\\n'\n");
+        QVERIFY(!helper.isEmpty());
+
+        const QString missingHelper = directory.filePath(QStringLiteral("missing-helper"));
+        qputenv("QZAPRET_NO_PKEXEC", "1");
+        qputenv("QZAPRET_HELPER", missingHelper.toUtf8());
+
+        ListsController controller;
+        controller.readList(QStringLiteral("zapret-hosts-user.txt"));
+        QTRY_VERIFY_WITH_TIMEOUT(!controller.busy(), 5000);
+        QVERIFY(!controller.loaded());
+        QVERIFY(controller.status().contains(QStringLiteral("Не удалось запустить helper")));
+
+        qputenv("QZAPRET_HELPER", helper.toUtf8());
+        controller.readList(QStringLiteral("zapret-hosts-user.txt"));
+        QTRY_VERIFY_WITH_TIMEOUT(controller.loaded(), 5000);
+        controller.setContent(QStringLiteral("changed.example\n"));
+        QVERIFY(controller.dirty());
+
+        qputenv("QZAPRET_HELPER", missingHelper.toUtf8());
+        controller.saveList();
+        QTRY_VERIFY_WITH_TIMEOUT(!controller.busy(), 5000);
+        QVERIFY(controller.dirty());
+        QVERIFY(controller.status().contains(QStringLiteral("Не удалось запустить helper")));
+
+        qunsetenv("QZAPRET_HELPER");
+        qunsetenv("QZAPRET_NO_PKEXEC");
+    }
+
 };
 
 QTEST_GUILESS_MAIN(TestListsController)

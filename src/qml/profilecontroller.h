@@ -46,6 +46,8 @@ private:
     bool validArguments(const QStringList &arguments, QString *error) const;
     void startWrite(const QString &content);
     QByteArray m_configBytes;
+    QByteArray m_output;
+    QByteArray m_error;
     QString m_config;
     QVector<ProfileAnalyzer::Profile> m_profiles;
     QString m_status;

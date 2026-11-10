@@ -74,6 +74,21 @@ esac
         m_dir.reset();
     }
 
+    void rejectsOversizedConfigOutput()
+    {
+        QFile config(m_configPath);
+        QVERIFY(config.open(QIODevice::WriteOnly | QIODevice::Truncate));
+        const QByteArray oversized(1024 * 1024 + 1, 'x');
+        QCOMPARE(config.write(oversized), oversized.size());
+        config.close();
+
+        ProfileController controller;
+        controller.read();
+        QTRY_VERIFY_WITH_TIMEOUT(!controller.busy(), 5000);
+        QVERIFY(!controller.loaded());
+        QVERIFY(controller.status().contains(QStringLiteral("превышает 1 MiB")));
+    }
+
     void loadsAndSavesProfileMutations()
     {
         ProfileController controller;

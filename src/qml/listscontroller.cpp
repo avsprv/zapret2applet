@@ -248,7 +248,11 @@ void ListsController::saveList()
         process->closeWriteChannel();
     });
     connect(process, &QProcess::readyReadStandardOutput, this, [this, process] {
-        if (m_process == process) m_output.append(process->readAllStandardOutput());
+        if (m_process == process) {
+            m_output.append(process->readAllStandardOutput());
+            if (m_output.size() > 64 * 1024)
+                m_output = m_output.right(64 * 1024);
+        }
     });
     connect(process, &QProcess::readyReadStandardError, this, [this, process] {
         if (m_process == process) {
@@ -261,6 +265,10 @@ void ListsController::saveList()
         if (m_process != process) return;
         m_output.append(process->readAllStandardOutput());
         m_error.append(process->readAllStandardError());
+        if (m_output.size() > 64 * 1024)
+            m_output = m_output.right(64 * 1024);
+        if (m_error.size() > 64 * 1024)
+            m_error = m_error.right(64 * 1024);
         const QString output = QString::fromUtf8(m_output).trimmed();
         const QString error = QString::fromUtf8(m_error).trimmed();
         m_process = nullptr;

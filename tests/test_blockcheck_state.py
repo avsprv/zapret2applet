@@ -14,6 +14,7 @@ import uuid
 
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parents[1] / "packaging" / "helper"))
 from blockcheck_state import StateError, StateStore
+from blockcheck_recovery import recover
 
 class StateTests(unittest.TestCase):
     def setUp(self):
@@ -212,6 +213,50 @@ class StateTests(unittest.TestCase):
                 with contender.locked(blocking=False):
                     pass
 
+    def test_queue_lock_serializes_threads(self):
+        self.state.mkdir(mode=0o700)
+        entered = threading.Event()
+        release = threading.Event()
+        finished = threading.Event()
+
+        def holder():
+            with self.store.queue_locked():
+                entered.set()
+                release.wait(3)
+
+        def contender():
+            with self.store.queue_locked():
+                finished.set()
+
+        first = threading.Thread(target=holder)
+        first.start()
+        self.assertTrue(entered.wait(2))
+        second = threading.Thread(target=contender)
+        second.start()
+        time.sleep(0.25)
+        self.assertFalse(finished.is_set())
+        release.set()
+        first.join(2)
+        second.join(2)
+        self.assertTrue(finished.is_set())
+        self.assertEqual(stat.S_IMODE((self.state / "queue.lock").stat().st_mode), 0o600)
+
+    def test_queue_lock_must_precede_lifecycle_lock(self):
+        self.state.mkdir(mode=0o700)
+        with self.store.locked():
+            with self.assertRaisesRegex(StateError, "queue lock must be acquired before"):
+                with self.store.queue_locked():
+                    pass
+
+    def test_queue_lock_symlink_is_rejected(self):
+        self.state.mkdir(mode=0o700)
+        target = self.root / "outside-queue-lock"
+        target.write_text("")
+        (self.state / "queue.lock").symlink_to(target)
+        with self.assertRaises(StateError):
+            with self.store.queue_locked():
+                pass
+
     def test_lock_serializes_threads(self):
         self.store.directory.mkdir(mode=0o700)
         # Reuse one StateStore instance to verify per-thread descriptor ownership.
@@ -235,6 +280,25 @@ class StateTests(unittest.TestCase):
         thread.join()
         unlocker.join()
         self.assertGreaterEqual(elapsed, 0.20)
+
+
+    def test_recovery_fails_fast_when_queue_lock_is_busy(self):
+        self.prepare(True)
+        contender = StateStore(self.state, str(self.fake))
+        with contender.queue_locked():
+            with self.assertRaisesRegex(StateError, "another Blockcheck queue operation is active"):
+                recover(self.store)
+        self.assertTrue((self.state / "state.json").exists())
+        self.assertTrue(self.active.exists())
+
+    def test_recovery_fails_fast_when_lifecycle_lock_is_busy(self):
+        self.prepare(True)
+        contender = StateStore(self.state, str(self.fake))
+        with contender.locked():
+            with self.assertRaisesRegex(StateError, "another Blockcheck lifecycle operation is active"):
+                recover(self.store)
+        self.assertTrue((self.state / "state.json").exists())
+        self.assertTrue(self.active.exists())
 
 if __name__ == "__main__":
     unittest.main(verbosity=2)

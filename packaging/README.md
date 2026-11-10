@@ -1,4 +1,4 @@
-# Сборка пакетов zapret2applet
+# Сборка пакетов zapret2control
 
 Минимум для сборки — **Qt 6.8** (см. `QZAPRET_QT_MIN` в `CMakeLists.txt`). Подходят дистрибутивы с Qt >= 6.8:
 Fedora 41+, Debian 13 (trixie)+, Ubuntu 25.04+. На Ubuntu 24.04 LTS и Debian 12 в репозиториях Qt 6.4 —
@@ -11,15 +11,15 @@ Fedora 41+, Debian 13 (trixie)+, Ubuntu 25.04+. На Ubuntu 24.04 LTS и Debian 
 ```bash
 sudo dnf install rpm-build rpmdevtools mock
 rpmdev-setuptree
-packaging/make-dist.sh                      # нужен тег v<версия>: git tag -a v0.4.0 -m v0.4.0
-cp zapret2applet-0.4.0.tar.gz ~/rpmbuild/SOURCES/
-cp packaging/fedora/zapret2applet.spec ~/rpmbuild/SPECS/
-rpmbuild -ba ~/rpmbuild/SPECS/zapret2applet.spec
+packaging/make-dist.sh                      # нужен тег v<версия>: git tag -a v0.5.0 -m v0.5.0
+cp zapret2control-0.5.0.tar.gz ~/rpmbuild/SOURCES/
+cp packaging/fedora/zapret2control.spec ~/rpmbuild/SPECS/
+rpmbuild -ba ~/rpmbuild/SPECS/zapret2control.spec
 
 # чистая сборка в chroot (как в COPR)
-mock -r fedora-$(rpm -E %fedora)-x86_64 ~/rpmbuild/SRPMS/zapret2applet-0.4.0-1.*.src.rpm
+mock -r fedora-$(rpm -E %fedora)-x86_64 ~/rpmbuild/SRPMS/zapret2control-0.5.0-1.*.src.rpm
 ```
-Если тег уже на GitHub, архив можно скачать вместо `make-dist.sh`: `spectool -g -R packaging/fedora/zapret2applet.spec`.
+Если тег уже на GitHub, архив можно скачать вместо `make-dist.sh`: `spectool -g -R packaging/fedora/zapret2control.spec`.
 
 ## DEB (Debian / Ubuntu)
 
@@ -33,7 +33,7 @@ docker run --rm -v "$PWD":/src -w /src debian:trixie bash -euxc '
   apt-get install -y --no-install-recommends build-essential devscripts equivs
   mk-build-deps -ir -t "apt-get -y --no-install-recommends" debian/control
   dpkg-buildpackage -us -uc -b
-  mkdir -p out && cp ../zapret2applet_*.deb out/'
+  mkdir -p out && cp ../zapret2control_*.deb out/'
 ```
 Или на самой машине (Debian 13 / Ubuntu 25.04+):
 ```bash
@@ -49,19 +49,19 @@ dpkg-buildpackage -us -uc -b                # .deb окажется на уро�
 
 ```bash
 # deb
-dpkg -I out/zapret2applet_*.deb              # зависимости
-dpkg -c out/zapret2applet_*.deb              # состав: bin, libexec, polkit, desktop
-lintian -I out/zapret2applet_*.deb
-sudo apt install ./out/zapret2applet_*.deb   # установка с зависимостями
+dpkg -I out/zapret2control_*.deb              # зависимости
+dpkg -c out/zapret2control_*.deb              # состав: bin, libexec, polkit, desktop
+lintian -I out/zapret2control_*.deb
+sudo apt install ./out/zapret2control_*.deb   # установка с зависимостями
 
 # rpm
-rpm -qpl ~/rpmbuild/RPMS/x86_64/zapret2applet-*.rpm
-rpm -qpR ~/rpmbuild/RPMS/x86_64/zapret2applet-*.rpm
-rpmlint ~/rpmbuild/RPMS/x86_64/zapret2applet-*.rpm ~/rpmbuild/SRPMS/*.src.rpm
-sudo dnf install ~/rpmbuild/RPMS/x86_64/zapret2applet-*.rpm
+rpm -qpl ~/rpmbuild/RPMS/x86_64/zapret2control-*.rpm
+rpm -qpR ~/rpmbuild/RPMS/x86_64/zapret2control-*.rpm
+rpmlint ~/rpmbuild/RPMS/x86_64/zapret2control-*.rpm ~/rpmbuild/SRPMS/*.src.rpm
+sudo dnf install ~/rpmbuild/RPMS/x86_64/zapret2control-*.rpm
 
 # после установки (любой дистрибутив)
-pkaction | grep zapret2applet                # два действия: helper и update
-zapret2applet --version
-ls -l /usr/libexec/zapret2applet/ /usr/lib/*/zapret2applet/ 2>/dev/null   # хелпер root:root 0755
+pkaction | grep zapret2control                # два действия: helper и update
+zapret2control --version
+ls -l /usr/libexec/zapret2control/ /usr/lib/*/zapret2control/ 2>/dev/null   # хелпер root:root 0755
 ```

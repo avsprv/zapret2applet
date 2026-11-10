@@ -125,8 +125,11 @@ class StagedOptionsStore:
                 pass
             os.close(directory_fd)
 
-    def _read_document_locked(self, expected_operation_id: str | None = None, missing_ok: bool = False) -> tuple[str, BlockcheckOptions] | None:
-        self._require_lock()
+    def _read_document_locked(self, expected_operation_id: str | None = None,
+                              missing_ok: bool = False,
+                              require_lifecycle_lock: bool = True) -> tuple[str, BlockcheckOptions] | None:
+        if require_lifecycle_lock:
+            self._require_lock()
         if expected_operation_id is not None:
             expected_operation_id = self._operation_id(expected_operation_id)
         try:
@@ -196,6 +199,19 @@ class StagedOptionsStore:
     def read_pending_locked(self, missing_ok: bool = False) -> tuple[str, BlockcheckOptions] | None:
         # Read the next queued request without requiring a unit argument.
         return self._read_document_locked(missing_ok=missing_ok)
+
+    def read_pending_operation_id_snapshot(self) -> str | None:
+        """Read the queued UUID while holding queue.lock, without lifecycle lock.
+
+        The worker publishes its recovery marker before consuming this file.
+        Callers should re-read the marker after this snapshot to cover that
+        transition without ever acting on a different operation.
+        """
+        self.state_store._require_queue_lock()
+        pending = self._read_document_locked(
+            missing_ok=True, require_lifecycle_lock=False
+        )
+        return pending[0] if pending is not None else None
 
     def discard_locked(self, expected_operation_id: str) -> None:
         """Discard a failed submission only when no durable recovery marker exists."""

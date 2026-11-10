@@ -13,6 +13,7 @@
 #include <QDBusMetaType>
 #include <QCoreApplication>
 #include <QDebug>
+#include <QEvent>
 #include <QColor>
 #include <QImage>
 #include <QGuiApplication>
@@ -92,11 +93,8 @@ TrayImageList renderTrayPixmap(int size, const QColor &indicator)
     QPainter painter(&image);
     painter.setRenderHint(QPainter::Antialiasing, true);
     const qreal scale = size / 32.0;
-    QColor foreground;
-    if (qGuiApp)
-        foreground = qGuiApp->palette().color(QPalette::WindowText);
-    if (!foreground.isValid())
-        foreground = QColor(QStringLiteral("#232629"));
+    const QPalette palette = qGuiApp ? qGuiApp->palette() : QPalette();
+    const QColor foreground = palette.color(QPalette::WindowText);
     QPen pen(foreground, 2.5 * scale, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin);
     painter.setPen(pen);
     painter.setBrush(Qt::NoBrush);
@@ -116,7 +114,8 @@ TrayImageList renderTrayPixmap(int size, const QColor &indicator)
         painter.setPen(Qt::NoPen);
         painter.setBrush(indicator);
         painter.drawEllipse(QPointF(25.5 * scale, 6.5 * scale), 4.0 * scale, 4.0 * scale);
-        painter.setPen(QPen(QColor(QStringLiteral("#232629")), 1.0 * scale));
+        const QPalette palette = qGuiApp ? qGuiApp->palette() : QPalette();
+        painter.setPen(QPen(palette.color(QPalette::WindowText), 1.0 * scale));
         painter.setBrush(Qt::NoBrush);
         painter.drawEllipse(QPointF(25.5 * scale, 6.5 * scale), 4.0 * scale, 4.0 * scale);
     }
@@ -143,6 +142,37 @@ TrayImageList renderTrayPixmaps(const QColor &indicator)
         result.append(renderTrayPixmap(size, indicator).constFirst());
     return result;
 }
+
+TrayImageList renderIndicatorPixmaps(const QColor &indicator)
+{
+    TrayImageList result;
+    for (const int size : {16, 22, 24, 32, 48}) {
+        QImage image(size, size, QImage::Format_ARGB32);
+        image.fill(Qt::transparent);
+        QPainter painter(&image);
+        painter.setRenderHint(QPainter::Antialiasing, true);
+        const qreal scale = size / 32.0;
+        const QPalette palette = qGuiApp ? qGuiApp->palette() : QPalette();
+        painter.setPen(QPen(palette.color(QPalette::WindowText), 1.0 * scale));
+        painter.setBrush(indicator);
+        painter.drawEllipse(QPointF(25.5 * scale, 6.5 * scale), 4.0 * scale, 4.0 * scale);
+        painter.end();
+
+        QByteArray bytes;
+        bytes.reserve(size * size * 4);
+        for (int y = 0; y < size; ++y) {
+            for (int x = 0; x < size; ++x) {
+                const QRgb pixel = image.pixel(x, y);
+                bytes.append(static_cast<char>(qAlpha(pixel)));
+                bytes.append(static_cast<char>(qRed(pixel)));
+                bytes.append(static_cast<char>(qGreen(pixel)));
+                bytes.append(static_cast<char>(qBlue(pixel)));
+            }
+        }
+        result.append({size, size, bytes});
+    }
+    return result;
+}
 } // namespace
 
 class StatusNotifierItem final : public QObject
@@ -160,32 +190,36 @@ public:
     }
 
     QString category() const { return QStringLiteral("ApplicationStatus"); }
-    QString id() const { return QStringLiteral("zapret2applet"); }
+    QString id() const { return QStringLiteral("zapret2control"); }
     QString title() const { return QCoreApplication::applicationName(); }
     uint windowId() const { return 0; }
     QString status() const { return m_failed ? QStringLiteral("NeedsAttention") : QStringLiteral("Active"); }
-    QString iconName() const { return QStringLiteral("zapret2applet-tray-symbolic"); }
+    QString iconName() const { return QStringLiteral("zapret2control-tray-symbolic"); }
     TrayImageList iconPixmap() const { return renderTrayPixmaps(QColor{}); }
     TrayImageList overlayIconPixmap() const
     {
-        return m_inactive ? renderTrayPixmaps(QColor(QStringLiteral("#fdbc4b"))) : TrayImageList{};
+        const QPalette palette = qGuiApp ? qGuiApp->palette() : QPalette();
+        return m_inactive ? renderIndicatorPixmaps(palette.color(QPalette::Highlight)) : TrayImageList{};
     }
     TrayImageList attentionIconPixmap() const
     {
-        return m_failed ? renderTrayPixmaps(QColor(QStringLiteral("#da4453"))) : TrayImageList{};
+        const QPalette palette = qGuiApp ? qGuiApp->palette() : QPalette();
+        return m_failed ? renderIndicatorPixmaps(palette.color(QPalette::BrightText)) : TrayImageList{};
     }
     QString overlayIconName() const { return {}; }
     QString attentionIconName() const { return {}; }
     QString attentionMovieName() const { return {}; }
     TrayToolTip toolTip() const
     {
-        return {iconName(), {}, title(), QStringLiteral("Управление zapret2")};
+        return {iconName(), {}, title(), tr("Управление zapret2")};
     }
     bool itemIsMenu() const { return false; }
 
     void refreshTheme()
     {
         emit NewIcon();
+        emit NewOverlayIcon();
+        emit NewAttentionIcon();
     }
 
     void setServiceState(const QString &stateCode)
@@ -341,10 +375,8 @@ TrayController::TrayController(QObject *parent)
     });
     connect(m_item, &StatusNotifierItem::activateRequested,
             this, &TrayController::activateRequested);
-    if (qGuiApp) {
-        connect(qGuiApp, &QGuiApplication::paletteChanged,
-                m_item, &StatusNotifierItem::refreshTheme);
-    }
+    if (qGuiApp)
+        qGuiApp->installEventFilter(this);
     connect(m_menu, &DBusMenu::activateRequested, this, &TrayController::activateRequested);
     connect(m_menu, &DBusMenu::startRequested, this, &TrayController::startRequested);
     connect(m_menu, &DBusMenu::stopRequested, this, &TrayController::stopRequested);
@@ -354,11 +386,48 @@ TrayController::TrayController(QObject *parent)
     refreshWatcherAvailability();
 }
 
+bool TrayController::eventFilter(QObject *watched, QEvent *event)
+{
+    if (watched == qGuiApp && event->type() == QEvent::ApplicationPaletteChange)
+        m_item->refreshTheme();
+
+    return QObject::eventFilter(watched, event);
+}
+
 void TrayController::setServiceState(const QString &state, const QString &stateCode,
                                      bool active, bool busy)
 {
     m_menu->setServiceState(state, active, busy);
     m_item->setServiceState(stateCode);
+}
+
+void TrayController::showNotification(const QString &title, const QString &message)
+{
+    if (title.isEmpty() || message.isEmpty() || !m_bus.isConnected())
+        return;
+
+    QDBusMessage request = QDBusMessage::createMethodCall(
+        QStringLiteral("org.freedesktop.Notifications"),
+        QStringLiteral("/org/freedesktop/Notifications"),
+        QStringLiteral("org.freedesktop.Notifications"),
+        QStringLiteral("Notify"));
+    request << QCoreApplication::applicationName()
+            << uint{0}
+            << QStringLiteral("zapret2control")
+            << title
+            << message
+            << QStringList{}
+            << QVariantMap{}
+            << -1;
+
+    auto *call = new QDBusPendingCallWatcher(m_bus.asyncCall(request), this);
+    connect(call, &QDBusPendingCallWatcher::finished, this,
+            [](QDBusPendingCallWatcher *watcher) {
+        const QDBusPendingReply<uint> reply = *watcher;
+        if (reply.isError())
+            qDebug() << "Desktop notification was not delivered:" << reply.error().message();
+        watcher->deleteLater();
+    });
 }
 
 bool TrayController::watcherAvailable() const
@@ -369,6 +438,19 @@ bool TrayController::watcherAvailable() const
 bool TrayController::registered() const
 {
     return m_registered;
+}
+
+bool TrayController::registrationFailed() const
+{
+    return m_registrationFailed;
+}
+
+void TrayController::setRegistrationFailed(bool failed)
+{
+    if (m_registrationFailed == failed)
+        return;
+    m_registrationFailed = failed;
+    emit registrationFailedChanged();
 }
 
 void TrayController::setRegistered(bool registered)
@@ -410,8 +492,10 @@ void TrayController::registerWithWatcher()
         || m_registered || m_registrationPending)
         return;
 
+    setRegistrationFailed(false);
     if (!m_exported) {
         if (!m_bus.registerService(m_serviceName)) {
+            setRegistrationFailed(true);
             qWarning() << "Unable to own StatusNotifierItem service:"
                        << m_bus.lastError().message();
             return;
@@ -420,6 +504,7 @@ void TrayController::registerWithWatcher()
                                  | QDBusConnection::ExportAllSignals
                                  | QDBusConnection::ExportAllProperties;
         if (!m_bus.registerObject(QString::fromLatin1(menuPath), m_menu, exportFlags)) {
+            setRegistrationFailed(true);
             qWarning() << "Unable to export DBusMenu:" << m_bus.lastError().message();
             m_bus.unregisterService(m_serviceName);
             return;
@@ -428,6 +513,7 @@ void TrayController::registerWithWatcher()
             new StatusNotifierItemAdaptor(m_item);
         if (!m_bus.registerObject(QString::fromLatin1(itemPath), m_item,
                                   QDBusConnection::ExportAdaptors)) {
+            setRegistrationFailed(true);
             qWarning() << "Unable to export StatusNotifierItem:"
                        << m_bus.lastError().message();
             m_bus.unregisterObject(QString::fromLatin1(menuPath));
@@ -454,6 +540,7 @@ void TrayController::registerWithWatcher()
         QDBusPendingReply<> reply = *watcher;
         if (reply.isError()) {
             setRegistered(false);
+            setRegistrationFailed(true);
             qWarning() << "StatusNotifierItem registration failed:"
                        << reply.error().message();
         } else {

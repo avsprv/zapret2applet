@@ -27,15 +27,15 @@ class BlockcheckStatusTests(unittest.TestCase):
         self.state_dir.mkdir(mode=0o700)
         self.runtime_dir.mkdir(mode=0o700)
         self.states = {
-            "zapret2applet-blockcheck.service": ("loaded", "inactive", "dead", "success", "0"),
-            "zapret2applet-blockcheck-recovery.service": ("loaded", "inactive", "dead", "success", "0"),
+            "zapret2control-blockcheck.service": ("loaded", "inactive", "dead", "success", "0"),
+            "zapret2control-blockcheck-recovery.service": ("loaded", "inactive", "dead", "success", "0"),
         }
         self.systemctl = root / "systemctl"
         self.systemctl.write_text("""#!/usr/bin/env python3
 import os, sys
 states = {
-    "zapret2applet-blockcheck.service": ("loaded", "inactive", "dead", "success", "0"),
-    "zapret2applet-blockcheck-recovery.service": ("loaded", "inactive", "dead", "success", "0"),
+    "zapret2control-blockcheck.service": ("loaded", "inactive", "dead", "success", "0"),
+    "zapret2control-blockcheck-recovery.service": ("loaded", "inactive", "dead", "success", "0"),
 }
 try:
     with open(os.environ["QZAPRET_STATUS_FIXTURE"], encoding="ascii") as f:
@@ -84,14 +84,14 @@ for key, value in zip(keys, states[unit]):
     def test_active_worker_with_staged_options_is_running(self):
         with self.state.locked():
             self.staged.stage_locked(self.operation_id, BlockcheckOptions())
-        self.states["zapret2applet-blockcheck.service"] = ("loaded", "active", "start", "success", "0")
+        self.states["zapret2control-blockcheck.service"] = ("loaded", "active", "start", "success", "0")
         self._write_fixture()
         self.assertEqual(self._status()["phase"], "running")
 
     def test_worker_lock_contention_still_reports_running_unit(self):
         with self.state.locked():
             self.state.prepare_locked(self.operation_id)
-        self.states["zapret2applet-blockcheck.service"] = ("loaded", "active", "running", "success", "0")
+        self.states["zapret2control-blockcheck.service"] = ("loaded", "active", "running", "success", "0")
         self._write_fixture()
         acquired = threading.Event()
         release = threading.Event()
@@ -121,48 +121,48 @@ for key, value in zip(keys, states[unit]):
     def test_active_recovery_is_reported(self):
         with self.state.locked():
             self.state.prepare_locked(self.operation_id)
-        self.states["zapret2applet-blockcheck-recovery.service"] = ("loaded", "active", "start", "success", "0")
+        self.states["zapret2control-blockcheck-recovery.service"] = ("loaded", "active", "start", "success", "0")
         self._write_fixture()
         self.assertEqual(self._status()["phase"], "recovering")
 
     def test_worker_exec_stop_post_is_reported_as_recovering(self):
         with self.state.locked():
             self.state.prepare_locked(self.operation_id)
-        self.states["zapret2applet-blockcheck.service"] = ("loaded", "deactivating", "stop-post", "success", "0")
+        self.states["zapret2control-blockcheck.service"] = ("loaded", "deactivating", "stop-post", "success", "0")
         self._write_fixture()
         self.assertEqual(self._status()["phase"], "recovering")
 
     def test_failed_exec_stop_post_with_marker_is_recovery_failed(self):
         with self.state.locked():
             self.state.prepare_locked(self.operation_id)
-        self.states["zapret2applet-blockcheck.service"] = ("loaded", "failed", "failed", "exit-code", "1")
+        self.states["zapret2control-blockcheck.service"] = ("loaded", "failed", "failed", "exit-code", "1")
         self._write_fixture()
         self.assertEqual(self._status()["phase"], "recovery_failed")
 
     def test_failed_recovery_retains_failed_state(self):
         with self.state.locked():
             self.state.prepare_locked(self.operation_id)
-        self.states["zapret2applet-blockcheck-recovery.service"] = ("loaded", "failed", "failed", "exit-code", "1")
+        self.states["zapret2control-blockcheck-recovery.service"] = ("loaded", "failed", "failed", "exit-code", "1")
         self._write_fixture()
         self.assertEqual(self._status()["phase"], "recovery_failed")
 
     def test_completed_requires_both_units_successful(self):
         self._write_fixture()
         self.assertEqual(self._status()["phase"], "completed")
-        self.states["zapret2applet-blockcheck.service"] = ("loaded", "failed", "failed", "exit-code", "1")
+        self.states["zapret2control-blockcheck.service"] = ("loaded", "failed", "failed", "exit-code", "1")
         self._write_fixture()
         self.assertEqual(self._status()["phase"], "failed")
 
     def test_never_run_recovery_unit_with_empty_result_does_not_fail_successful_job(self):
-        self.states["zapret2applet-blockcheck-recovery.service"] = ("loaded", "inactive", "dead", "", "0")
+        self.states["zapret2control-blockcheck-recovery.service"] = ("loaded", "inactive", "dead", "", "0")
         self._write_fixture()
         self.assertEqual(self._status()["phase"], "completed")
 
     def test_persistent_marker_with_empty_unit_results_is_pending_not_failed(self):
         with self.state.locked():
             self.state.prepare_locked(self.operation_id)
-        self.states["zapret2applet-blockcheck.service"] = ("loaded", "inactive", "dead", "", "0")
-        self.states["zapret2applet-blockcheck-recovery.service"] = ("loaded", "inactive", "dead", "", "0")
+        self.states["zapret2control-blockcheck.service"] = ("loaded", "inactive", "dead", "", "0")
+        self.states["zapret2control-blockcheck-recovery.service"] = ("loaded", "inactive", "dead", "", "0")
         self._write_fixture()
         self.assertEqual(self._status()["phase"], "recovery_pending")
 

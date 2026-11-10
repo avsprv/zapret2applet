@@ -1,11 +1,14 @@
 #include <cstdlib>
 
+#include <QCommandLineOption>
+#include <QCommandLineParser>
 #include <QGuiApplication>
 #include <QLocale>
 #include <QQmlApplicationEngine>
-#include <QQmlContext>
+#include <QVariant>
 #include <QTranslator>
 #include <QStyleHints>
+#include <QWindow>
 
 #include "applicationcontroller.h"
 #include "configcontroller.h"
@@ -33,9 +36,17 @@ QLocale localeForLanguage(const QString &language)
 int main(int argc, char *argv[])
 {
     QGuiApplication app(argc, argv);
-    QCoreApplication::setApplicationName(QStringLiteral("zapret2applet"));
+    QCoreApplication::setApplicationName(QStringLiteral("zapret2control"));
     QCoreApplication::setApplicationVersion(QStringLiteral(QZAPRET_VERSION));
-    QGuiApplication::setDesktopFileName(QStringLiteral("zapret2applet"));
+    QGuiApplication::setDesktopFileName(QStringLiteral("zapret2control"));
+
+    QCommandLineParser parser;
+    parser.addHelpOption();
+    parser.addVersionOption();
+    const QCommandLineOption minimizedOption(QStringLiteral("minimized"));
+    parser.addOption(minimizedOption);
+    parser.process(app);
+    const bool startMinimized = parser.isSet(minimizedOption);
 
     ApplicationController controller;
     SettingsManager settingsManager;
@@ -103,33 +114,68 @@ int main(int argc, char *argv[])
     QLocale::setDefault(initialLocale);
     QList<QTranslator *> translators = I18n::install(app, initialLocale);
     QQmlApplicationEngine engine;
-    engine.rootContext()->setContextProperty(QStringLiteral("appController"), &controller);
-    engine.rootContext()->setContextProperty(QStringLiteral("settingsManager"), &settingsManager);
-    engine.rootContext()->setContextProperty(QStringLiteral("autostartController"), &autostartController);
-    engine.rootContext()->setContextProperty(QStringLiteral("trayController"), &trayController);
-    engine.rootContext()->setContextProperty(QStringLiteral("configController"), &configController);
-    engine.rootContext()->setContextProperty(QStringLiteral("profileController"), &profileController);
-    engine.rootContext()->setContextProperty(QStringLiteral("logsController"), &logsController);
-    engine.rootContext()->setContextProperty(QStringLiteral("listsController"), &listsController);
-    engine.rootContext()->setContextProperty(QStringLiteral("blockcheckController"), &blockcheckController);
-    engine.rootContext()->setContextProperty(QStringLiteral("updateController"), &updateController);
-    engine.loadFromModule(QStringLiteral("org.avsprv.zapret2applet"), QStringLiteral("Main"));
+    engine.setInitialProperties({
+        {QStringLiteral("startMinimized"), startMinimized},
+        {QStringLiteral("appController"), QVariant::fromValue(static_cast<QObject *>(&controller))},
+        {QStringLiteral("settingsManager"), QVariant::fromValue(static_cast<QObject *>(&settingsManager))},
+        {QStringLiteral("autostartController"), QVariant::fromValue(static_cast<QObject *>(&autostartController))},
+        {QStringLiteral("trayController"), QVariant::fromValue(static_cast<QObject *>(&trayController))},
+        {QStringLiteral("configController"), QVariant::fromValue(static_cast<QObject *>(&configController))},
+        {QStringLiteral("profileController"), QVariant::fromValue(static_cast<QObject *>(&profileController))},
+        {QStringLiteral("logsController"), QVariant::fromValue(static_cast<QObject *>(&logsController))},
+        {QStringLiteral("listsController"), QVariant::fromValue(static_cast<QObject *>(&listsController))},
+        {QStringLiteral("blockcheckController"), QVariant::fromValue(static_cast<QObject *>(&blockcheckController))},
+        {QStringLiteral("updateController"), QVariant::fromValue(static_cast<QObject *>(&updateController))}
+    });
+    engine.loadFromModule(QStringLiteral("org.avsprv.zapret2control"), QStringLiteral("Main"));
 
     if (engine.rootObjects().isEmpty())
         return EXIT_FAILURE;
 
+    if (qEnvironmentVariableIsSet("ZAPRET2CONTROL_QML_SMOKE_TEST"))
+        return EXIT_SUCCESS;
+
     QObject *rootWindow = engine.rootObjects().constFirst();
+    if (auto *window = qobject_cast<QWindow *>(rootWindow)) {
+        QObject::connect(&blockcheckController, &BlockcheckJobController::scanFinished,
+                         &app, [window, &trayController](int found, bool canceled) {
+            if (!canceled && !window->isVisible()) {
+                const QString title = QCoreApplication::translate("Main", "Zapret2 Control");
+                const QString message = QCoreApplication::translate(
+                    "Main", "Подбор завершён, найдено стратегий: %1").arg(found);
+                trayController.showNotification(title, message);
+            }
+        });
+        QObject::connect(&updateController, &UpdateController::updateAvailable,
+                         &app, [window, &trayController](const QString &tag) {
+            if (!window->isVisible()) {
+                const QString title = QCoreApplication::translate("Main", "Zapret2 Control");
+                const QString message = QCoreApplication::translate(
+                    "Main", "Доступна новая версия zapret2: %1").arg(tag);
+                trayController.showNotification(title, message);
+            }
+        });
+    }
     QObject::connect(&trayController, &TrayController::activateRequested, &app, [rootWindow] {
-        QMetaObject::invokeMethod(rootWindow, "showWindow");
+        QMetaObject::invokeMethod(rootWindow, "toggleWindow");
     });
     QObject::connect(&trayController, &TrayController::settingsRequested, &app, [rootWindow] {
         QMetaObject::invokeMethod(rootWindow, "openSettings");
     });
-    QObject::connect(&trayController, &TrayController::quitRequested, &app, &QCoreApplication::quit);
+    QObject::connect(&trayController, &TrayController::quitRequested, &app, [rootWindow] {
+        QMetaObject::invokeMethod(rootWindow, "requestQuit");
+    });
     QObject::connect(&trayController, &TrayController::watcherAvailableChanged, &app, [rootWindow, &trayController] {
         if (!trayController.watcherAvailable())
             QMetaObject::invokeMethod(rootWindow, "showWindow");
     });
+    QObject::connect(&trayController, &TrayController::registrationFailedChanged, &app,
+                     [rootWindow, &trayController] {
+        if (trayController.registrationFailed())
+            QMetaObject::invokeMethod(rootWindow, "showWindow");
+    });
+    if (startMinimized && (!trayController.watcherAvailable() || trayController.registrationFailed()))
+        QMetaObject::invokeMethod(rootWindow, "showWindow");
 
     QObject::connect(&settingsManager, &SettingsManager::languageChanged, &app, [&]() {
         for (QTranslator *translator : translators)

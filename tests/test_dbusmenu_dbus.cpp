@@ -28,6 +28,41 @@ public slots:
     }
 };
 
+class FakeNotifications final : public QObject
+{
+    Q_OBJECT
+    Q_CLASSINFO("D-Bus Interface", "org.freedesktop.Notifications")
+
+public:
+    QString appName;
+    uint replacesId = 0;
+    QString appIcon;
+    QString summary;
+    QString body;
+    QStringList actions;
+    QVariantMap hints;
+    int timeout = 0;
+    int calls = 0;
+
+public slots:
+    uint Notify(const QString &name, uint replaces, const QString &icon,
+                const QString &notificationSummary, const QString &notificationBody,
+                const QStringList &notificationActions, const QVariantMap &notificationHints,
+                int expireTimeout)
+    {
+        appName = name;
+        replacesId = replaces;
+        appIcon = icon;
+        summary = notificationSummary;
+        body = notificationBody;
+        actions = notificationActions;
+        hints = notificationHints;
+        timeout = expireTimeout;
+        ++calls;
+        return 42;
+    }
+};
+
 class StatusSignalReceiver final : public QObject
 {
     Q_OBJECT
@@ -72,7 +107,7 @@ private slots:
     {
         QVERIFY2(m_bus.isConnected(), "A private session bus is required (run with dbus-run-session)");
 
-        m_serviceName = QStringLiteral("org.avsprv.zapret2applet.Test_%1")
+        m_serviceName = QStringLiteral("org.avsprv.zapret2control.Test_%1")
                             .arg(QCoreApplication::applicationPid());
         QVERIFY2(m_bus.registerService(m_serviceName), qPrintable(m_bus.lastError().message()));
 
@@ -90,6 +125,41 @@ private slots:
             m_bus.unregisterObject(QStringLiteral("/Menu"));
             m_bus.unregisterService(m_serviceName);
         }
+    }
+
+    void desktopNotificationsUseFreedesktopService()
+    {
+        constexpr auto notificationService = "org.freedesktop.Notifications";
+        FakeNotifications notifications;
+        QVERIFY2(m_bus.registerObject(QStringLiteral("/org/freedesktop/Notifications"),
+                                      &notifications, QDBusConnection::ExportAllSlots),
+                 qPrintable(m_bus.lastError().message()));
+        QVERIFY2(m_bus.registerService(QString::fromLatin1(notificationService)),
+                 qPrintable(m_bus.lastError().message()));
+
+        {
+            TrayController controller;
+            controller.showNotification(QStringLiteral("Zapret2 Control"),
+                                        QStringLiteral("Strategy scan completed: 3"));
+            QTRY_COMPARE(notifications.calls, 1);
+            QCOMPARE(notifications.appName, QCoreApplication::applicationName());
+            QCOMPARE(notifications.replacesId, 0u);
+            QCOMPARE(notifications.appIcon, QStringLiteral("zapret2control"));
+            QCOMPARE(notifications.summary, QStringLiteral("Zapret2 Control"));
+            QCOMPARE(notifications.body, QStringLiteral("Strategy scan completed: 3"));
+            QVERIFY(notifications.actions.isEmpty());
+            QVERIFY(notifications.hints.isEmpty());
+            QCOMPARE(notifications.timeout, -1);
+        }
+
+        QVERIFY(m_bus.unregisterService(QString::fromLatin1(notificationService)));
+        m_bus.unregisterObject(QStringLiteral("/org/freedesktop/Notifications"));
+
+        // Missing notification daemons must be a non-fatal condition.
+        TrayController controller;
+        controller.showNotification(QStringLiteral("Zapret2 Control"),
+                                    QStringLiteral("No notification server"));
+        QTest::qWait(50);
     }
 
     void introspectionExposesCanonicalInterface()
@@ -269,7 +339,7 @@ private slots:
                                 QStringLiteral("org.freedesktop.StatusNotifierItem"), m_bus);
             QVERIFY(item.isValid());
             QCOMPARE(item.property("Category").toString(), QStringLiteral("ApplicationStatus"));
-            QCOMPARE(item.property("Id").toString(), QStringLiteral("zapret2applet"));
+            QCOMPARE(item.property("Id").toString(), QStringLiteral("zapret2control"));
 
             // Read the property through the D-Bus Properties interface. QDBusInterface's
             // property cache is signal-driven and is not a reliable source for a fresh

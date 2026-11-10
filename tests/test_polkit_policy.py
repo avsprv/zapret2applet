@@ -21,7 +21,7 @@ if len(ids) != len(set(ids)):
     duplicates = sorted(value for value in set(ids) if ids.count(value) > 1)
     raise SystemExit("duplicate Polkit action IDs: " + ", ".join(duplicates))
 
-probe_id = "org.zapret2applet.blockcheck-recovery-probe"
+probe_id = "org.zapret2control.blockcheck-recovery-probe"
 probes = [action for action in actions if action.get("id") == probe_id]
 if len(probes) != 1:
     raise SystemExit("Blockcheck recovery probe action must exist exactly once")

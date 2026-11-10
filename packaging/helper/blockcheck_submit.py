@@ -8,10 +8,10 @@ from blockcheck_manager import BlockcheckOptions, OptionsError
 from blockcheck_staging import StagedOptionsStore, StagingError
 from blockcheck_state import StateError, StateStore
 
-WORKER_UNIT = "zapret2applet-blockcheck.service"
-RECOVERY_UNIT = "zapret2applet-blockcheck-recovery.service"
-STATE_DIRECTORY = "/var/lib/zapret2applet/blockcheck"
-RUNTIME_DIRECTORY = "/run/zapret2applet/blockcheck"
+WORKER_UNIT = "zapret2control-blockcheck.service"
+RECOVERY_UNIT = "zapret2control-blockcheck-recovery.service"
+STATE_DIRECTORY = "/var/lib/zapret2control/blockcheck"
+RUNTIME_DIRECTORY = "/run/zapret2control/blockcheck"
 
 class SubmitError(StateError):
     """Raised when a Blockcheck request cannot be safely queued."""
@@ -41,31 +41,34 @@ class BlockcheckSubmitter:
     def submit(self, options: BlockcheckOptions) -> str:
         operation_id = str(uuid.uuid4())
         try:
-            with self.state.locked(create=True, blocking=False):
-                marker = self.state._read_marker()
-                if marker is not None:
-                    raise SubmitError(
-                        "a previous Blockcheck recovery is still pending "
-                        f"(operation_id={marker['operation_id']})"
-                    )
-                for unit in (WORKER_UNIT, RECOVERY_UNIT):
-                    unit_state = self._unit_state(unit)
-                    if unit_state != "inactive":
-                        raise SubmitError(f"{unit} is not idle (state: {unit_state})")
-                self.staged.stage_locked(operation_id, options)
-                try:
-                    result = subprocess.run(
-                        [self.state.systemctl, "start", "--no-block", WORKER_UNIT],
-                        stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL,
-                        stderr=subprocess.PIPE, check=False, timeout=30,
-                    )
-                except (OSError, subprocess.TimeoutExpired) as exc:
-                    self.staged.discard_locked(operation_id)
-                    raise SubmitError(f"cannot queue Blockcheck worker: {exc}") from exc
-                if result.returncode != 0:
-                    detail = result.stderr.decode("utf-8", "replace").strip()
-                    self.staged.discard_locked(operation_id)
-                    raise SubmitError(f"systemd rejected Blockcheck worker ({result.returncode}): {detail}")
+            # All queue mutations and systemd job submissions share this lock
+            # with cancellation and recovery. Lock order is queue -> lifecycle.
+            with self.state.queue_locked(create=True):
+                with self.state.locked(create=True, blocking=False):
+                    marker = self.state._read_marker()
+                    if marker is not None:
+                        raise SubmitError(
+                            "a previous Blockcheck recovery is still pending "
+                            f"(operation_id={marker['operation_id']})"
+                        )
+                    for unit in (WORKER_UNIT, RECOVERY_UNIT):
+                        unit_state = self._unit_state(unit)
+                        if unit_state != "inactive":
+                            raise SubmitError(f"{unit} is not idle (state: {unit_state})")
+                    self.staged.stage_locked(operation_id, options)
+                    try:
+                        result = subprocess.run(
+                            [self.state.systemctl, "start", "--no-block", WORKER_UNIT],
+                            stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL,
+                            stderr=subprocess.PIPE, check=False, timeout=30,
+                        )
+                    except (OSError, subprocess.TimeoutExpired) as exc:
+                        self.staged.discard_locked(operation_id)
+                        raise SubmitError(f"cannot queue Blockcheck worker: {exc}") from exc
+                    if result.returncode != 0:
+                        detail = result.stderr.decode("utf-8", "replace").strip()
+                        self.staged.discard_locked(operation_id)
+                        raise SubmitError(f"systemd rejected Blockcheck worker ({result.returncode}): {detail}")
         except StateError as exc:
             if isinstance(exc, SubmitError):
                 raise
@@ -99,7 +102,7 @@ def main(argv: list[str] | None = None) -> int:
         staged = StagedOptionsStore(state, RUNTIME_DIRECTORY)
         operation_id = BlockcheckSubmitter(state, staged).submit(options)
     except (OptionsError, StateError, StagingError, UnicodeError) as exc:
-        print(f"zapret2applet blockcheck submit: {exc}", file=sys.stderr)
+        print(f"zapret2control blockcheck submit: {exc}", file=sys.stderr)
         return 1
     print(operation_id)
     return 0

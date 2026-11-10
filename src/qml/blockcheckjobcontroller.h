@@ -94,11 +94,12 @@ private:
     bool m_http = true, m_tls12 = true, m_tls13 = false, m_http3 = false;
     int m_repeats = 1;
     QString m_scanLevel = QStringLiteral("standard");
-    QString m_logText, m_status, m_operationId, m_terminalPhase;
+    QString m_logText, m_status, m_operationId, m_terminalPhase, m_cancelOperationId;
     QVariantList m_results;
     StatusType m_statusType = StatusType::Information;
     bool m_busy = false, m_updateBusy = false, m_serviceBusy = false, m_recoveryRequired = false;
-    bool m_cancelRequested = false, m_finalLogsPending = false, m_probePending = false;
+    bool m_cancelRequested = false, m_cancelDispatched = false;
+    bool m_finalLogsPending = false, m_probePending = false;
     bool m_recoveryRetryInProgress = false;
     int m_found = 0, m_pollTicks = 0;
     qint64 m_startedAtSecs = 0;
