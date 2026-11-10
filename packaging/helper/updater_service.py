@@ -112,7 +112,11 @@ def activate_with_service(
         journal_path = Path(journal)
         if journal_path.exists() or journal_path.is_symlink():
             try:
-                recover_transaction(journal_path, Path(active).parent, expected_uid=expected_uid)
+                recover_transaction(
+                    journal_path, Path(active).parent,
+                    expected_uid=expected_uid,
+                    expected_active_name=Path(active).name,
+                )
                 _restore_service(unit, was_active)
                 finalize_transaction(journal_path, expected_uid=expected_uid)
             except Exception as recovery_error:
@@ -147,12 +151,16 @@ def recover_with_service(
     unit: str,
     *,
     expected_uid: int | None = None,
+    expected_active_name: str | None = None,
 ) -> str:
     """Recover filesystem state, restore the recorded service state, then clear journal."""
     if not _UNIT_RE.fullmatch(unit):
         raise ActivationError("invalid systemd unit name")
     document = _read_journal(Path(journal), os.geteuid() if expected_uid is None else expected_uid)
-    result = recover_transaction(journal, parent, expected_uid=expected_uid)
+    result = recover_transaction(
+        journal, parent, expected_uid=expected_uid,
+        expected_active_name=expected_active_name,
+    )
     if document["service_was_active"]:
         _restore_service(unit, True)
     finalize_transaction(journal, expected_uid=expected_uid)
