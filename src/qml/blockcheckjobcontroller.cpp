@@ -125,7 +125,7 @@ void BlockcheckJobController::confirmStop(bool accepted)
     if(!validateOptions(&domains)){finish(false);return;}
     m_startedAtSecs=QDateTime::currentSecsSinceEpoch();
     launch(ProcessTask::Submit,{
-        QStringLiteral("blockcheck-submit"),QStringLiteral("--domains"),domains.join(QLatin1Char(' ')),
+        QStringLiteral("blockcheck-submit"),QStringLiteral("--domains"),domains.join(QLatin1Char(',')),
         QStringLiteral("--ipvs"),m_ipVersion,QStringLiteral("--http"),flag(m_http),
         QStringLiteral("--tls12"),flag(m_tls12),QStringLiteral("--tls13"),flag(m_tls13),
         QStringLiteral("--http3"),flag(m_http3),QStringLiteral("--repeats"),QString::number(m_repeats),
