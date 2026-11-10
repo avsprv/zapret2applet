@@ -57,6 +57,31 @@ private slots:
         QVERIFY(controller.enabled());
     }
 
+    void preservesModifiedLegacyEntry()
+    {
+        QTemporaryDir directory;
+        QVERIFY(directory.isValid());
+        const QString legacyPath = directory.filePath(QStringLiteral("zapret2applet.desktop"));
+        QFile legacy(legacyPath);
+        QVERIFY(legacy.open(QIODevice::WriteOnly | QIODevice::Text));
+        legacy.write("[Desktop Entry]\n"
+                     "Type=Application\n"
+                     "Name=zapret2control\n"
+                     "Comment=Unofficial Qt6 GUI for zapret2\n"
+                     "Exec=\"/usr/bin/zapret2applet\" --minimized\n"
+                     "Icon=zapret2control\n"
+                     "Terminal=false\n"
+                     "X-GNOME-Autostart-enabled=true\n"
+                     "X-Zapret2Applet-Managed=true\n"
+                     "X-User-Setting=keep\n");
+        legacy.close();
+
+        AutostartController controller(nullptr, directory.path(), QStringLiteral("/usr/bin/zapret2control"));
+        QVERIFY(QFile::exists(legacyPath));
+        QVERIFY(!QFile::exists(directory.filePath(QStringLiteral("zapret2control.desktop"))));
+        QVERIFY(!controller.enabled());
+    }
+
     void handlesDesktopExecSpecialCharacters()
     {
         QTemporaryDir directory;
@@ -66,6 +91,11 @@ private slots:
         controller.setEnabled(true);
         QVERIFY2(controller.errorMessage().isEmpty(), qPrintable(controller.errorMessage()));
         QVERIFY(controller.enabled());
+        QFile generated(directory.filePath(QStringLiteral("zapret2control.desktop")));
+        QVERIFY(generated.open(QIODevice::ReadOnly));
+        const QByteArray generatedContent = generated.readAll();
+        QVERIFY(generatedContent.contains("Exec=\"/opt/My App/\\$bin/100%%/tool\\\\part\\\"quoted\\\"\" --minimized"));
+        generated.close();
         controller.setEnabled(false);
         QVERIFY2(controller.errorMessage().isEmpty(), qPrintable(controller.errorMessage()));
         QVERIFY(!controller.enabled());
