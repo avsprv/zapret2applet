@@ -201,6 +201,10 @@ def _validate_preserved_user_data(child: os.DirEntry[str], relative: str) -> Non
     mode = stat.S_IMODE(info.st_mode)
     if mode & 0o022 or mode & ~0o777:
         _fail(f"unsafe permissions on preserved user data: {relative}")
+    if stat.S_ISDIR(info.st_mode) and mode & 0o500 != 0o500:
+        _fail(f"preserved user-data directories must be readable and searchable: {relative}")
+    if stat.S_ISREG(info.st_mode) and not mode & 0o400:
+        _fail(f"preserved user-data files must be owner-readable: {relative}")
 
     if relative == "config" or (len(parts) == 2 and parts[0] == "ipset"):
         if not stat.S_ISREG(info.st_mode) or info.st_nlink != 1:
