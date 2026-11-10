@@ -144,7 +144,14 @@ out=$(QZAPRET_TEST_SYSTEMCTL_START_FAIL=1 run_update_with_service v9.9.9); rc=$?
 grep -q '^9.9.9$' "$W/opt/zapret2/docs/changes.txt" && ok "updated files retained after restart failure" || bad "new files were not retained after restart failure"
 grep -q '^1.0.6$' "$W/opt/zapret2.bak/docs/changes.txt" && ok "previous version retained after restart failure" || bad "previous version backup missing"
 
-# --- 1b. uncertain or unavailable service state must fail closed
+# --- 1b. unsafe installation paths must fail closed
+make_base; make_release v9.9.9
+chmod 777 "$W/opt/zapret2"
+out=$(run_update v9.9.9); rc=$?
+[ $rc -eq 2 ] && echo "$out" | grep -q "safely owned" && ok "group/world-writable installation rejected" || bad "unsafe installation rc=$rc: $out"
+expect_untouched "unsafe installation permissions"
+
+# --- 1c. uncertain or unavailable service state must fail closed
 make_base; make_release v9.9.9
 printf 'activating\n' > "$SERVICE_STATE_FILE"
 out=$(run_update_with_service v9.9.9); rc=$?
