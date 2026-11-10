@@ -27,6 +27,10 @@ def _systemctl(arguments: list[str]) -> subprocess.CompletedProcess[str]:
     }
     if os.environ.get("QZAPRET_TEST_MODE") == "1":
         command = os.environ.get("QZAPRET_TEST_SYSTEMCTL", command)
+        environment.update({
+            key: value for key, value in os.environ.items()
+            if key.startswith("QZAPRET_TEST_")
+        })
     try:
         return subprocess.run(
             [command, *arguments],
