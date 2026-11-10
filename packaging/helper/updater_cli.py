@@ -181,6 +181,29 @@ def _validate_staged(stage: Path, release_tag: str) -> None:
         raise ActivationError("preserved configuration is missing or unsafe")
 
 
+def _remove_partial_stage(stage: Path, parent: Path, expected_uid: int) -> None:
+    try:
+        info = stage.lstat()
+    except FileNotFoundError:
+        return
+    parent_info = parent.lstat()
+    if (
+        stage.parent != parent
+        or stage.name.count("-") < 3
+        or not stat.S_ISDIR(info.st_mode)
+        or info.st_uid != expected_uid
+        or info.st_dev != parent_info.st_dev
+        or stat.S_IMODE(info.st_mode) & 0o022
+    ):
+        raise ActivationError("partial staging tree is unsafe; manual cleanup required")
+    shutil.rmtree(stage)
+    fd = os.open(parent, os.O_RDONLY | getattr(os, "O_DIRECTORY", 0))
+    try:
+        os.fsync(fd)
+    finally:
+        os.close(fd)
+
+
 def run_update(
     upstream_root: str | os.PathLike[str],
     active_root: str | os.PathLike[str],
@@ -202,8 +225,19 @@ def run_update(
     staged = active.parent / f".zapret2control-stage-{transaction_id}"
     backup = active.parent / f".zapret2control-backup-{transaction_id}"
     journal = state / f"{transaction_id}.json"
-    build_staging_tree(upstream, active, staged, release_tag)
-    _validate_staged(staged, release_tag)
+    if staged.exists() or staged.is_symlink():
+        raise ActivationError("transaction staging destination already exists")
+    try:
+        build_staging_tree(upstream, active, staged, release_tag)
+        _validate_staged(staged, release_tag)
+    except Exception as original:
+        try:
+            _remove_partial_stage(staged, active.parent, uid)
+        except Exception as cleanup_error:
+            raise ActivationError(
+                f"staging failed and partial tree cleanup is incomplete: {cleanup_error}"
+            ) from original
+        raise
     activate_with_service(
         active, staged, backup, journal, release_tag, unit,
         no_service=no_service, expected_uid=uid,
