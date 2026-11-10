@@ -246,6 +246,61 @@ def _unlink_journal(path: Path) -> None:
     _fsync_directory(path.parent)
 
 
+def _prepare_activation_document(
+    active_path: Path,
+    stage_path: Path,
+    backup_path: Path,
+    journal_path: Path,
+    release_tag: str,
+    service_was_active: bool,
+    expected_uid: int,
+) -> dict[str, Any]:
+    active_info = _safe_directory(active_path, expected_uid)
+    stage_info = _safe_directory(stage_path, expected_uid)
+    parent = active_path.parent
+    parent_info = _safe_directory(parent, expected_uid)
+    if stage_path.parent != parent or backup_path.parent != parent:
+        _fail("active, staging, and backup directories must be siblings")
+    if (active_info.st_dev, stage_info.st_dev) != (parent_info.st_dev, parent_info.st_dev):
+        _fail("active, staging, and backup directories must share one filesystem")
+    if backup_path.exists() or backup_path.is_symlink():
+        _fail("backup destination already exists")
+    if (
+        active_path.name == stage_path.name
+        or active_path.name == backup_path.name
+        or stage_path.name == backup_path.name
+    ):
+        _fail("transaction directory names must be distinct")
+    _safe_directory(journal_path.parent, expected_uid)
+    return _journal_document(
+        journal_path.stem, release_tag, active_path.name, stage_path.name,
+        backup_path.name, parent_info.st_dev,
+        (active_info.st_dev, active_info.st_ino), (stage_info.st_dev, stage_info.st_ino),
+        service_was_active,
+    )
+
+
+def prepare_activation_journal(
+    active: str | os.PathLike[str],
+    staged: str | os.PathLike[str],
+    backup: str | os.PathLike[str],
+    journal: str | os.PathLike[str],
+    release_tag: str,
+    service_was_active: bool,
+    *,
+    expected_uid: int | None = None,
+) -> dict[str, Any]:
+    """Persist directory identities before the service is stopped."""
+    uid = os.geteuid() if expected_uid is None else expected_uid
+    active_path, stage_path, backup_path, journal_path = map(Path, (active, staged, backup, journal))
+    document = _prepare_activation_document(
+        active_path, stage_path, backup_path, journal_path,
+        release_tag, service_was_active, uid,
+    )
+    _write_journal(journal_path, document, uid)
+    return document
+
+
 def activate_staged_tree(
     active: str | os.PathLike[str],
     staged: str | os.PathLike[str],
@@ -256,41 +311,32 @@ def activate_staged_tree(
     *,
     expected_uid: int | None = None,
 ) -> dict[str, Any]:
-    """Atomically exchange active and staged siblings, then retain old tree as backup."""
+    """Exchange prevalidated sibling trees; journal is durable before this call."""
     uid = os.geteuid() if expected_uid is None else expected_uid
     active_path, stage_path, backup_path, journal_path = map(Path, (active, staged, backup, journal))
-    active_info = _safe_directory(active_path, uid)
-    stage_info = _safe_directory(stage_path, uid)
-    parent = active_path.parent
-    parent_info = _safe_directory(parent, uid)
-    if stage_path.parent != parent or backup_path.parent != parent:
-        _fail("active, staging, and backup directories must be siblings")
-    if (active_info.st_dev, stage_info.st_dev) != (parent_info.st_dev, parent_info.st_dev):
-        _fail("active, staging, and backup directories must share one filesystem")
-    if backup_path.exists() or backup_path.is_symlink():
-        _fail("backup destination already exists")
-    if active_path.name == stage_path.name or active_path.name == backup_path.name or stage_path.name == backup_path.name:
-        _fail("transaction directory names must be distinct")
-    _safe_directory(journal_path.parent, uid)
-    document = _journal_document(
-        journal_path.stem, release_tag, active_path.name, stage_path.name,
-        backup_path.name, parent_info.st_dev,
-        (active_info.st_dev, active_info.st_ino), (stage_info.st_dev, stage_info.st_ino),
-        service_was_active,
+    expected = _prepare_activation_document(
+        active_path, stage_path, backup_path, journal_path,
+        release_tag, service_was_active, uid,
     )
-    _write_journal(journal_path, document, uid)
+    if journal_path.exists() or journal_path.is_symlink():
+        document = _read_journal(journal_path, uid)
+        if document != expected:
+            _fail("prepared transaction journal does not match current directory identities")
+    else:
+        _write_journal(journal_path, expected, uid)
+        document = expected
 
     _renameat2(active_path, stage_path, RENAME_EXCHANGE)
-    if not _matches(active_path, (stage_info.st_dev, stage_info.st_ino), uid):
+    if not _matches(active_path, (expected["new_dev"], expected["new_ino"]), uid):
         _fail("active directory identity mismatch after atomic exchange")
-    if not _matches(stage_path, (active_info.st_dev, active_info.st_ino), uid):
+    if not _matches(stage_path, (expected["old_dev"], expected["old_ino"]), uid):
         _fail("old installation identity mismatch after atomic exchange")
-    _fsync_directory(parent)
+    _fsync_directory(active_path.parent)
 
     _renameat2(stage_path, backup_path, RENAME_NOREPLACE)
-    if not _matches(backup_path, (active_info.st_dev, active_info.st_ino), uid):
+    if not _matches(backup_path, (expected["old_dev"], expected["old_ino"]), uid):
         _fail("backup directory identity mismatch after rename")
-    _fsync_directory(parent)
+    _fsync_directory(active_path.parent)
     document["phase"] = "backup_saved"
     _write_journal(journal_path, document, uid, replace_existing=True)
     return document
