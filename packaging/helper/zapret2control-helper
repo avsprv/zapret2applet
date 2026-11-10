@@ -773,6 +773,70 @@ update-locked)
     if grep -qE '(^/|(^|/)\.\.(/|$))' "$tmp/list"; then die "unsafe paths in archive"; fi
     if grep -qv "^$name/" "$tmp/list"; then die "unexpected content outside $name/"; fi
     # Только обычные файлы и каталоги: ни ссылок, ни устройств.
+    python3 - "$tmp/z.tgz" "$name" <<'PY'
+import sys
+import tarfile
+
+archive, root = sys.argv[1:]
+seen = {}
+total_size = 0
+file_count = 0
+
+def reject(message):
+    print(f"zapret2control-helper: unsafe archive structure: {message}", file=sys.stderr)
+    raise SystemExit(1)
+
+try:
+    with tarfile.open(archive, "r:gz") as bundle:
+        members = bundle.getmembers()
+except (OSError, tarfile.TarError) as exc:
+    reject(f"cannot inspect tar members: {exc}")
+
+if not members or len(members) > 50000:
+    reject("invalid entry count")
+
+for member in members:
+    raw = member.name
+    path = raw[:-1] if raw.endswith("/") else raw
+    if (
+        not path or path.startswith("/") or "\\" in path
+        or any(ord(ch) < 32 or ord(ch) == 127 for ch in path)
+    ):
+        reject("absolute path or forbidden character")
+    parts = path.split("/")
+    if any(part in ("", ".", "..") for part in parts):
+        reject(f"non-normalized path: {raw!r}")
+    if parts[0] != root:
+        reject(f"unexpected top-level path: {raw!r}")
+    if member.isdir():
+        kind = "directory"
+    elif member.isfile() and not getattr(member, "issparse", lambda: False)():
+        kind = "file"
+    else:
+        reject(f"links, sparse files or special objects are forbidden: {raw!r}")
+    if path == root and kind != "directory":
+        reject("archive root is not a directory")
+    if path in seen:
+        reject(f"duplicate archive path: {path}")
+    seen[path] = kind
+    if kind == "file":
+        if member.size < 0:
+            reject(f"negative file size: {path}")
+        total_size += member.size
+        file_count += 1
+
+if file_count > 50000 or total_size > 536870912:
+    reject("expanded archive exceeds extraction limits")
+
+for path in seen:
+    parent = path.rpartition("/")[0]
+    while parent:
+        if parent in seen and seen[parent] != "directory":
+            reject(f"non-directory parent: {parent}")
+        parent = parent.rpartition("/")[0]
+PY
+    [ "$?" -eq 0 ] || die "archive structure validation failed"
+    # Только обычные файлы и каталоги: ни ссылок, ни устройств.
     if tar -tvzf "$tmp/z.tgz" | cut -c1 | grep -qv '[-d]'; then die "links or special files in archive"; fi
 
     mkdir "$tmp/x"
