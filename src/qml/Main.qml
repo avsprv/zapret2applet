@@ -275,7 +275,7 @@ Kirigami.ApplicationWindow {
                         Controls.Button {
                             text: qsTr("Открыть обновления")
                             icon.name: "system-software-update"
-                            onClicked: root.pageStack.replace(updatePageComponent)
+                            onClicked: root.pageStack.push(updatePageComponent)
                         }
                     }
                 }
