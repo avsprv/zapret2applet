@@ -1,20 +1,20 @@
-# Zapret2 Control
+# zapret2control
 
 **Графический интерфейс для управления установленной службой [zapret2](https://github.com/bol-van/zapret2) в Linux.**
 
-[![CI](https://github.com/avsprv/zapret2control/actions/workflows/ci.yml/badge.svg)](https://github.com/avsprv/zapret2control/actions/workflows/ci.yml)
-[![Packages](https://github.com/avsprv/zapret2control/actions/workflows/packages.yml/badge.svg)](https://github.com/avsprv/zapret2control/actions/workflows/packages.yml)
-[![Latest release](https://img.shields.io/github/v/release/avsprv/zapret2control)](https://github.com/avsprv/zapret2control/releases)
-[![License: MIT](https://img.shields.io/github/license/avsprv/zapret2control)](LICENSE)
+[![CI](https://github.com/avsprv/zapret2applet/actions/workflows/ci.yml/badge.svg)](https://github.com/avsprv/zapret2applet/actions/workflows/ci.yml)
+[![Packages](https://github.com/avsprv/zapret2applet/actions/workflows/packages.yml/badge.svg)](https://github.com/avsprv/zapret2applet/actions/workflows/packages.yml)
+[![Latest release](https://img.shields.io/github/v/release/avsprv/zapret2applet)](https://github.com/avsprv/zapret2applet/releases)
+[![License: MIT](https://img.shields.io/github/license/avsprv/zapret2applet)](LICENSE)
 
 [English](README.en.md) · **Русский**
 
 Приложение предоставляет графический интерфейс для управления уже установленной службой zapret2, запуска сетевых тестов blockcheck2 и обновления zapret2.
 
 > [!IMPORTANT]
-> **Независимый проект.** zapret2control не связан с автором или сопровождающими [zapret2](https://github.com/bol-van/zapret2).
+> **Независимый проект.** zapret2applet не связан с автором или сопровождающими [zapret2](https://github.com/bol-van/zapret2).
 >
-> Приложение не включает zapret2 в свой состав. При этом вкладка «Обновления» поддерживает чистую установку zapret2 из upstream-релиза. Найденные стратегии blockcheck2 автоматически не применяются: их необходимо вручную перенести в конфигурацию и проверить.
+> Приложение не выполняет первоначальную установку zapret2. Найденные стратегии необходимо вручную перенести в конфигурацию zapret2 и проверить.
 
 ## Содержание
 
@@ -61,20 +61,20 @@
 
 ## Установка
 
-1. Скачайте пакет zapret2control со страницы [Releases](https://github.com/avsprv/zapret2control/releases).
+1. Скачайте пакет zapret2applet со страницы [Releases](https://github.com/avsprv/zapret2applet/releases).
 2. Установите его:
 
 **Fedora (.rpm):**
 ```bash
-sudo dnf install ./zapret2control-*.rpm
+sudo dnf install ./zapret2applet-*.rpm
 ```
 
 **Debian / Ubuntu (.deb):**
 ```bash
-sudo apt install ./zapret2control_*.deb
+sudo apt install ./zapret2applet_*.deb
 ```
 
-3. Запустите Zapret2 Control из меню приложений. Если zapret2 ещё не установлен, откройте вкладку «Обновления» и выполните чистую установку. Перед запуском службы настройте конфигурацию и зависимости.
+3. Запустите zapret2applet из меню приложений. Если zapret2 ещё не установлен, откройте вкладку «Обновления» и выполните чистую установку. Перед запуском службы настройте конфигурацию и зависимости.
 
 Если готовый пакет недоступен, используйте [сборку из исходников](#сборка-из-исходников).
 
@@ -130,25 +130,25 @@ Helper принимает ограниченный набор операций �
 
 **Fedora:**
 ```bash
-sudo dnf install cmake ninja-build gcc-c++ extra-cmake-modules kf6-kirigami-devel qt6-qtbase-devel qt6-qtdeclarative-devel qt6-qttools-devel desktop-file-utils appstream util-linux-core dbus-daemon systemd curl tar python3 polkit
+sudo dnf install cmake ninja-build gcc-c++ qt6-qtbase-devel qt6-qttools-devel polkit
 ```
 
 **Debian / Ubuntu:**
 ```bash
-sudo apt install build-essential cmake ninja-build extra-cmake-modules libkirigami-dev qt6-base-dev qt6-declarative-dev qt6-tools-dev qt6-l10n-tools desktop-file-utils appstream dbus-daemon systemd curl tar python3 pkexec
+sudo apt install build-essential cmake ninja-build qt6-base-dev qt6-tools-dev qt6-l10n-tools pkexec
 ```
 
 ### Сборка и тесты
 
 ```bash
-git clone https://github.com/avsprv/zapret2control.git
-cd zapret2control
+git clone https://github.com/avsprv/zapret2applet.git
+cd zapret2applet
 cmake -S . -B build -G Ninja
 cmake --build build
 ctest --test-dir build --output-on-failure
 ```
 
-Запуск без установки: ./build/zapret2control.
+Запуск без установки: ./build/zapret2applet.
 
 Установка в систему:
 ```bash
@@ -161,7 +161,7 @@ sudo cmake --install build --prefix /usr
 
 Ручные инструкции находятся в [packaging/README.md](packaging/README.md).
 
-GitHub Actions собирает пакеты для Debian 13 и Fedora при push в настроенные workflow ветки и при pull request в main. Готовые файлы доступны как workflow artifacts в [запусках сборки пакетов](https://github.com/avsprv/zapret2control/actions/workflows/packages.yml). Артефакты предназначены для проверки сборки; для обычной установки используйте пакеты из [Releases](https://github.com/avsprv/zapret2control/releases).
+GitHub Actions собирает пакеты для Debian 13 и Fedora при push в main и pull request в main. Готовые файлы доступны как workflow artifacts в [запусках сборки пакетов](https://github.com/avsprv/zapret2applet/actions/workflows/packages.yml). Артефакты предназначены для проверки сборки; для обычной установки используйте пакеты из [Releases](https://github.com/avsprv/zapret2applet/releases).
 
 ## Разработка и тестирование
 
@@ -175,9 +175,9 @@ ctest --test-dir build --output-on-failure
 
 ## Сообщить об ошибке
 
-Перед созданием обращения проверьте [существующие Issues](https://github.com/avsprv/zapret2control/issues). Укажите дистрибутив и версию, версии приложения и zapret2, шаги воспроизведения, ожидаемое и фактическое поведение, а также релевантные сообщения об ошибках без личных данных.
+Перед созданием обращения проверьте [существующие Issues](https://github.com/avsprv/zapret2applet/issues). Укажите дистрибутив и версию, версии приложения и zapret2, шаги воспроизведения, ожидаемое и фактическое поведение, а также релевантные сообщения об ошибках без личных данных.
 
-[Создать issue](https://github.com/avsprv/zapret2control/issues/new).
+[Создать issue](https://github.com/avsprv/zapret2applet/issues/new).
 
 ## Правовая информация
 
@@ -189,4 +189,4 @@ ctest --test-dir build --output-on-failure
 
 ## Лицензия
 
-Исходный код zapret2control распространяется по лицензии [MIT](LICENSE). Она относится к коду этого приложения и не заменяет лицензии сторонних компонентов. Сведения о подключённом проекте zapret2 приведены в [NOTICE.md](NOTICE.md).
+Исходный код zapret2applet распространяется по лицензии [MIT](LICENSE). Она относится к коду этого приложения и не заменяет лицензии сторонних компонентов. Сведения о подключённом проекте zapret2 приведены в [NOTICE.md](NOTICE.md).
