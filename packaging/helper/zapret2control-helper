@@ -723,11 +723,18 @@ update-locked)
     prepare_runtime_dir || die "runtime directory must be root-owned and private (0700)"
     bc_pid >/dev/null && die "blockcheck is running, cancel it first"
 
+    command -v flock >/dev/null 2>&1 || die "flock is required for crash-safe update locking"
+    if [ ! -e "$RUNDIR/update.lock" ] && [ ! -L "$RUNDIR/update.lock" ]; then
+        ( umask 077; : > "$RUNDIR/update.lock" ) || die "cannot create update lock file"
+    fi
+    secure_runtime_file "$RUNDIR/update.lock" || die "update lock file must be a private root-owned regular file"
+    exec 9<> "$RUNDIR/update.lock" || die "cannot open update lock file"
+    flock -n 9 || die "another update is in progress"
+
     umask 022
-    mkdir "$RUNDIR/update.lock" 2>/dev/null || die "another update is in progress"
     name="zapret2-$tag"
-    tmp=$(mktemp -d /var/tmp/zapret2control-update.XXXXXX) || { rmdir "$RUNDIR/update.lock"; die "mktemp failed"; }
-    trap 'rm -rf "$tmp"; rmdir "$RUNDIR/update.lock" 2>/dev/null || true' EXIT
+    tmp=$(mktemp -d /var/tmp/zapret2control-update.XXXXXX) || die "mktemp failed"
+    trap 'rm -rf "$tmp"' EXIT
 
     module_dir=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd) || die "cannot locate updater modules"
     if [ ! -f "$module_dir/updater_cli.py" ]; then module_dir=/usr/share/zapret2control; fi
