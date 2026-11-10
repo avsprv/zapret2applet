@@ -1,10 +1,6 @@
 zapret2control (0.5.0) unstable; urgency=medium
 
   * Rename application, binary, helper, desktop, Polkit and systemd IDs.
-  * Migrate existing QSettings profiles and managed XDG autostart entries.
-  * Preserve legacy Blockcheck recovery state during package transition.
-  * Retain the previous package name as a transition alias.
-  * Stop legacy Blockcheck units before replacing package files.
 
  -- avsprv <avsprv@users.noreply.github.com>  Sun, 08 Nov 2026 09:00:00 +0300
 
