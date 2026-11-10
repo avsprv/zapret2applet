@@ -866,24 +866,24 @@ PY
         if [ "$NOSVC" = 1 ]; then
             QZAPRET_TEST_MODE=1 python3 "$module_dir/updater_cli.py" update \
                 --upstream "$stage" --base "$BASE" --journal-dir "$STATE_DIR" \
-                --tag "$tag" --unit "$UNIT" --no-service \
+                --tag "$tag" --unit "$UNIT" --checksums "$tmp/sums.txt" --no-service \
                 || die "transactional update failed"
         else
             QZAPRET_TEST_MODE=1 python3 "$module_dir/updater_cli.py" update \
                 --upstream "$stage" --base "$BASE" --journal-dir "$STATE_DIR" \
-                --tag "$tag" --unit "$UNIT" \
+                --tag "$tag" --unit "$UNIT" --checksums "$tmp/sums.txt" \
                 || die "transactional update failed"
         fi
     else
         if [ "$NOSVC" = 1 ]; then
             python3 "$module_dir/updater_cli.py" update \
                 --upstream "$stage" --base "$BASE" --journal-dir "$STATE_DIR" \
-                --tag "$tag" --unit "$UNIT" --no-service \
+                --tag "$tag" --unit "$UNIT" --checksums "$tmp/sums.txt" --no-service \
                 || die "transactional update failed"
         else
             python3 "$module_dir/updater_cli.py" update \
                 --upstream "$stage" --base "$BASE" --journal-dir "$STATE_DIR" \
-                --tag "$tag" --unit "$UNIT" \
+                --tag "$tag" --unit "$UNIT" --checksums "$tmp/sums.txt" \
                 || die "transactional update failed"
         fi
     fi
