@@ -1,9 +1,4 @@
-"""Strict upstream ownership manifest primitives for the transactional updater.
-
-This module is intentionally not wired into the production update path yet.
-The legacy overlay updater remains active until tree construction, atomic
-activation, and crash-recovery behavior have their own regression coverage.
-"""
+"""Strict upstream ownership manifest primitives used by the transactional updater."""
 
 from __future__ import annotations
 
