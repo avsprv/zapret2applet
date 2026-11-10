@@ -38,6 +38,7 @@ class UpdaterStagingTests(unittest.TestCase):
         self.put(self.active, "local/notes.txt", b"keep me")
         self.put(self.active, "config", b"user config", 0o600)
         self.put(self.active, "ipset/zapret-hosts-user.txt", b"user hostlist")
+        self.put(self.active, "init.d/README.md", b"init notes")
         self.put(self.active, "init.d/linux/custom.d/hook.sh", b"user hook", 0o700)
         self.put(self.upstream, "config", b"upstream config")
         self.put(self.upstream, "docs/new.txt", b"new upstream")
@@ -47,6 +48,7 @@ class UpdaterStagingTests(unittest.TestCase):
         self.assertEqual((self.stage / "local/notes.txt").read_bytes(), b"keep me")
         self.assertEqual((self.stage / "config").read_bytes(), b"user config")
         self.assertEqual((self.stage / "ipset/zapret-hosts-user.txt").read_bytes(), b"user hostlist")
+        self.assertEqual((self.stage / "init.d/README.md").read_bytes(), b"init notes")
         self.assertEqual((self.stage / "init.d/linux/custom.d/hook.sh").read_bytes(), b"user hook")
         self.assertEqual((self.stage / "docs/new.txt").read_bytes(), b"new upstream")
         self.assertNotIn("config", [entry["path"] for entry in manifest["entries"]])
@@ -79,6 +81,20 @@ class UpdaterStagingTests(unittest.TestCase):
 
     def test_symlink_in_preserved_user_config_fails_closed(self):
         (self.active / "config").symlink_to("/etc/passwd")
+        with self.assertRaises(ManifestError):
+            build_staging_tree(self.upstream, self.active, self.stage, "v1.2.3")
+
+    def test_rejects_hardlinked_preserved_config(self):
+        self.put(self.active, "config", b"shared config", 0o600)
+        (self.active / "config-link").hardlink_to(self.active / "config")
+        with self.assertRaisesRegex(ManifestError, "single-link regular file"):
+            build_staging_tree(self.upstream, self.active, self.stage, "v1.2.3")
+
+    def test_rejects_special_file_in_custom_directory(self):
+        import os
+        custom = self.active / "init.d/linux/custom.d"
+        custom.mkdir(parents=True)
+        os.mkfifo(custom / "named-pipe")
         with self.assertRaises(ManifestError):
             build_staging_tree(self.upstream, self.active, self.stage, "v1.2.3")
 
