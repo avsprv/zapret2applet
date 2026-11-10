@@ -83,6 +83,18 @@ class UpdaterManifestTests(unittest.TestCase):
         with self.assertRaisesRegex(ManifestError, "mode mismatch"):
             verify_manifest(self.root, manifest)
 
+    def test_rejects_symlink_in_preserved_config(self):
+        (self.root / "config").symlink_to("/etc/passwd")
+        with self.assertRaisesRegex(ManifestError, "single-link regular file"):
+            build_manifest(self.root, "v1.2.3")
+
+    def test_rejects_symlink_custom_directory(self):
+        (self.root / "init.d").mkdir()
+        (self.root / "init.d/linux").mkdir()
+        (self.root / "init.d/linux/custom.d").symlink_to("/etc")
+        with self.assertRaisesRegex(ManifestError, "custom.d must be a real directory"):
+            build_manifest(self.root, "v1.2.3")
+
     def test_rejects_escaping_symlink(self):
         (self.root / "outside").symlink_to("../../etc/passwd")
         with self.assertRaisesRegex(ManifestError, "escapes"):
