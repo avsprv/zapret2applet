@@ -56,8 +56,8 @@ def _copy_regular(source: Path, destination: Path, mode: int) -> None:
             with os.fdopen(source_fd, "rb", closefd=False) as src, os.fdopen(destination_fd, "wb", closefd=False) as dst:
                 shutil.copyfileobj(src, dst, 1024 * 1024)
                 dst.flush()
+                os.fchmod(destination_fd, mode)
                 os.fsync(dst.fileno())
-            os.fchmod(destination_fd, mode)
         finally:
             os.close(destination_fd)
     finally:
