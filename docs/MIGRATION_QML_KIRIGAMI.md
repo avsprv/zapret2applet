@@ -17,7 +17,7 @@ The installed desktop entry and package executable name remain `zapret2control`.
 
 ## Current implementation status
 
-The following areas have a QML/Kirigami implementation in the preview target:
+The following areas are implemented in the production QML/Kirigami application:
 
 | Area | Status | Notes |
 | --- | --- | --- |
@@ -33,20 +33,20 @@ The following areas have a QML/Kirigami implementation in the preview target:
 | Tray and desktop lifecycle | Implemented | StatusNotifierItem, DBusMenu, watcher re-registration, notifications, close-to-tray, minimized startup fallback and quit guards |
 
 “Implemented” means that the QML page and its current workflow are wired into the production
-application. Full parity still requires package-level installation checks and removal of the
-remaining legacy Widgets-only code and test targets.
+application. The obsolete Widgets UI source and its Widgets-specific tests have been removed;
+package-level installation and runtime checks remain.
 
 ## Planned stages
 
 1. Establish the Qt Quick/Kirigami build and application shell. **Complete**
-2. Extract and expose typed C++ controller APIs for the migrated workflows. **In progress**
+2. Extract and expose typed C++ controller APIs for the migrated workflows. **Complete**
 3. Migrate configuration and profile management. **Complete**
 4. Migrate lists and journal monitoring. **Complete**
 5. Migrate blockcheck2 orchestration and strategy results. **Implemented; reliability review continues**
 6. Migrate update checking, clean installation, update and recovery workflows. **Implemented; final CI verification in progress**
 7. Complete settings, theme, tray and desktop lifecycle integration. **Implemented; production CI verification pending**.
 8. Switch the production executable and QML lint target to Kirigami. **Complete**
-9. Remove obsolete Widgets-only implementation and tests after replacing any remaining coverage with QML/controller tests. **In progress**
+9. Remove obsolete Widgets-only implementation and tests after replacing coverage with QML/controller tests. **Complete**
 10. Validate clean installation, upgrade, runtime QML dependencies and package contents. **In progress**
 
 ## Architectural boundaries
@@ -112,4 +112,4 @@ The Kirigami production application is considered fully migrated only when all o
 - accessibility, keyboard navigation and responsive layouts have been reviewed;
 - CI and package validation pass on the candidate release commit.
 
-The production executable is now Kirigami. Remaining gate items block declaring the migration complete and removing the transitional Widgets-only test code.
+The production executable is Kirigami, and the obsolete Widgets GUI sources and Widgets-only tests have been removed. Remaining gate items are package installation/runtime validation, CI, translations and accessibility review.
