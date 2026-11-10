@@ -146,6 +146,8 @@ def validate_manifest(document: Any) -> dict[str, Any]:
             mode = 0o777
         else:
             mode = _mode(entry["mode"])
+            if kind == "directory" and mode & 0o500 != 0o500:
+                _fail("directories must retain owner read and execute permissions")
         if kind == "file":
             digest = entry["sha256"]
             if not isinstance(digest, str) or not _SHA256_RE.fullmatch(digest):
