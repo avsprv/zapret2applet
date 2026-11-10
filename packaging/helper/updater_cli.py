@@ -163,9 +163,10 @@ def _validate_staged(stage: Path, release_tag: str) -> None:
     if not unit.is_file() or unit.is_symlink():
         raise ActivationError("staged systemd unit is missing or unsafe")
     content = unit.read_text(encoding="utf-8")
+    unit_lines = set(content.splitlines())
     if (
-        "ExecStart=/opt/zapret2/init.d/sysv/zapret2 start" not in content
-        or "ExecStop=/opt/zapret2/init.d/sysv/zapret2 stop" not in content
+        "ExecStart=/opt/zapret2/init.d/sysv/zapret2 start" not in unit_lines
+        or "ExecStop=/opt/zapret2/init.d/sysv/zapret2 stop" not in unit_lines
     ):
         raise ActivationError("staged systemd unit does not match fixed installation paths")
     config = stage / "config"
