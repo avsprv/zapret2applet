@@ -65,6 +65,16 @@ class UpdaterStagingTests(unittest.TestCase):
         self.assertEqual((self.stage / "docs/local.txt").read_bytes(), b"local addition")
         self.assertEqual((self.stage / "docs/current.txt").read_bytes(), b"new upstream")
 
+    def test_tampered_previous_manifest_fails_before_staging(self):
+        self.put(self.active, "docs/owned.txt", b"owned")
+        write_manifest(self.active, "v1.0.0")
+        (self.active / "docs/owned.txt").write_bytes(b"tampered")
+        self.put(self.upstream, "docs/current.txt", b"new")
+        with self.assertRaisesRegex(ManifestError, "checksum mismatch"):
+            build_staging_tree(self.upstream, self.active, self.stage, "v1.1.0")
+        self.assertEqual((self.active / "docs/owned.txt").read_bytes(), b"tampered")
+        self.assertFalse(self.stage.exists())
+
     def test_new_upstream_file_wins_unknown_legacy_collision(self):
         self.put(self.active, "shared.txt", b"local stale file")
         self.put(self.upstream, "shared.txt", b"upstream replacement")
