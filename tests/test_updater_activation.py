@@ -12,7 +12,7 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "packaging/helper"))
 
 import updater_activation as activation
-from updater_activation import ActivationError, activate_staged_tree, recover_transaction
+from updater_activation import ActivationError, activate_staged_tree, finalize_transaction, recover_transaction
 
 
 class UpdaterActivationTests(unittest.TestCase):
@@ -54,6 +54,8 @@ class UpdaterActivationTests(unittest.TestCase):
         self.assertEqual((self.active / "new.txt").read_text(encoding="utf-8"), "new")
         self.assertEqual((self.backup / "old.txt").read_text(encoding="utf-8"), "old")
         self.assertFalse(self.stage.exists())
+        self.assertTrue(self.journal.exists())
+        finalize_transaction(self.journal)
         self.assertFalse(self.journal.exists())
 
     def test_recovery_discards_only_recorded_unactivated_stage(self):
@@ -62,6 +64,8 @@ class UpdaterActivationTests(unittest.TestCase):
         self.assertEqual(result, "discarded_unactivated_stage")
         self.assertEqual((self.active / "old.txt").read_text(encoding="utf-8"), "old")
         self.assertFalse(self.stage.exists())
+        self.assertTrue(self.journal.exists())
+        finalize_transaction(self.journal)
         self.assertFalse(self.journal.exists())
 
     def test_recovery_finishes_backup_rename_after_exchange(self):
@@ -72,6 +76,8 @@ class UpdaterActivationTests(unittest.TestCase):
         self.assertEqual((self.active / "new.txt").read_text(encoding="utf-8"), "new")
         self.assertEqual((self.backup / "old.txt").read_text(encoding="utf-8"), "old")
         self.assertFalse(self.stage.exists())
+        self.assertTrue(self.journal.exists())
+        finalize_transaction(self.journal)
         self.assertFalse(self.journal.exists())
 
     def test_recovery_refuses_unexpected_directory_identity(self):
@@ -121,6 +127,7 @@ class UpdaterActivationTests(unittest.TestCase):
             recover_transaction(self.journal, self.base),
             "discarded_unactivated_stage",
         )
+        finalize_transaction(self.journal)
 
     def test_duplicate_journal_keys_are_rejected(self):
         self.journal.write_text(
