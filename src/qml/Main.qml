@@ -36,7 +36,7 @@ Kirigami.ApplicationWindow {
         id: discardListsChangesDialog
         modal: true
         title: qsTr("Несохранённые изменения")
-        standardButtons: Controls.Dialog.Discard | Controls.Dialog.Cancel
+        standardButtons: Controls.Dialog.Yes | Controls.Dialog.No
 
         Controls.Label {
             width: parent.width
