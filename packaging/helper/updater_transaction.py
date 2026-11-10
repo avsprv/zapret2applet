@@ -146,6 +146,8 @@ def validate_manifest(document: Any) -> dict[str, Any]:
             if kind == "directory" and mode & 0o500 != 0o500:
                 _fail("directories must retain owner read and execute permissions")
         if kind == "file":
+            if not mode & 0o400:
+                _fail("upstream files must be owner-readable")
             digest = entry["sha256"]
             if not isinstance(digest, str) or not _SHA256_RE.fullmatch(digest):
                 _fail("invalid file checksum")
