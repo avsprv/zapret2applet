@@ -162,6 +162,7 @@ install(FILES
         packaging/helper/updater_staging.py
         packaging/helper/updater_activation.py
         packaging/helper/updater_service.py
+        packaging/helper/updater_cli.py
         DESTINATION ${CMAKE_INSTALL_DATADIR}/zapret2control)
 install(FILES ${CMAKE_BINARY_DIR}/org.zapret2control.policy
         DESTINATION ${CMAKE_INSTALL_DATADIR}/polkit-1/actions)
@@ -322,6 +323,9 @@ if(BUILD_TESTING)
 
     add_test(NAME updater_service
              COMMAND ${Python3_EXECUTABLE} ${CMAKE_SOURCE_DIR}/tests/test_updater_service.py)
+
+    add_test(NAME updater_cli
+             COMMAND ${Python3_EXECUTABLE} ${CMAKE_SOURCE_DIR}/tests/test_updater_cli.py)
 
     add_test(NAME package_layout
              COMMAND ${Python3_EXECUTABLE} ${CMAKE_SOURCE_DIR}/tests/test_package_layout.py)
