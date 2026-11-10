@@ -2,6 +2,7 @@
 """Integration tests for the transactional updater CLI."""
 
 from pathlib import Path
+import hashlib
 import os
 import sys
 import tempfile
@@ -28,6 +29,18 @@ class UpdaterCliTests(unittest.TestCase):
         (self.active / "config").chmod(0o600)
         (self.active / "legacy.txt").write_text("retain", encoding="utf-8")
         self.make_upstream()
+        self.checksums = self.base / "sha256sum.txt"
+        checksum_lines = []
+        for relative in (
+            "binaries/x86_64/nfqws2",
+            "binaries/x86_64/ip2net",
+            "binaries/x86_64/mdig",
+        ):
+            binary = self.upstream / relative
+            checksum_lines.append(
+                f"{hashlib.sha256(binary.read_bytes()).hexdigest()}  upstream/{relative}"
+            )
+        self.checksums.write_text("\n".join(checksum_lines) + "\n", encoding="utf-8")
 
     def tearDown(self):
         self.temp.cleanup()
@@ -65,7 +78,7 @@ class UpdaterCliTests(unittest.TestCase):
     def test_update_builds_and_atomically_activates_manifest_tree(self):
         backup = run_update(
             self.upstream, self.active, self.state, "v1.2.3",
-            "zapret2.service", no_service=True,
+            "zapret2.service", self.checksums, no_service=True,
         )
         self.assertTrue((self.active / ".zapret2control-upstream-manifest.json").is_file())
         self.assertEqual((self.active / "legacy.txt").read_text(encoding="utf-8"), "retain")
