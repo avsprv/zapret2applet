@@ -1,10 +1,10 @@
 # Upstream updater transaction design
 
-Status: implementation design for the updater refactor. This document describes the required behavior; it does not claim that the current updater already implements it.
+Status: transactional updater implementation is integrated in the working branch. Release readiness remains gated on final CI/package/systemd results, code review, and VM-level crash testing.
 
 ## Current behavior and verified constraints
 
-The privileged `update-locked` path downloads and validates the upstream archive, extracts it under `/var/tmp`, copies the current installation to `$BASE.bak`, and overlays the new archive with `cp -a "$stage/." "$BASE/"`. The overlay does not remove obsolete upstream files.
+The privileged `update-locked` path downloads and validates the upstream archive, extracts it under `/var/tmp`, validates the archive member table (including duplicate paths), and checks the release binary checksums. It then invokes `updater_cli.py`, which validates the extracted tree, runs the upstream selector, rechecks binary checksums, constructs a sibling staging tree, and performs service-aware atomic activation. The former `cp -a` overlay path is no longer used for production updates.
 
 The archive contains ordinary files and directories; the helper rejects archive symlinks and special files. The upstream `install_bin.sh` is run after extraction and generates relative symlinks for the selected architecture:
 
@@ -92,7 +92,7 @@ Do not use a two-step `mv active old; mv staged active` sequence: it creates a w
 
 Use Linux `renameat2(..., RENAME_EXCHANGE)` to atomically exchange the active directory and the fully validated staged sibling. Both paths must be on the same filesystem. If the operation is unavailable or unsupported, fail closed and leave the active installation unchanged; do not silently fall back to a non-atomic replacement.
 
-Persist a root-owned transaction journal outside `/opt/zapret2`, under `/var/lib/zapret2control/updater/`. The journal records a schema version, transaction UUID, release tag, staging and backup basenames, the old and new directory device/inode identities, and whether the service was active. Write it atomically with file and directory fsync before the exchange.
+Persist a root-owned transaction journal outside `/opt/zapret2`, under `/var/lib/zapret2control/updater/`. The journal records a schema version, transaction UUID, release tag, staging and backup basenames, the old and new directory device/inode identities, and whether the service was active. Write it atomically with file and directory fsync before stopping the service.
 
 After exchange, the old installation is located at the former staging path. Rename it to a unique backup path in the same parent directory. Recovery must infer the exact completed step from the recorded directory identities, not from a phase string alone, because power loss can occur between a rename and the following journal update.
 
@@ -101,6 +101,7 @@ Recovery cases:
 | Observed identities | Recovery |
 |---|---|
 | Active path is old; staging path is new | Exchange did not happen. Remove only the transaction's validated staging tree and clear the journal. |
+| Active path is old; staging is absent; backup is absent | A previous recovery removed the staging tree but crashed before recording the terminal phase. Mark the transaction aborted and restore the recorded service state. |
 | Active path is new; staging path is old | Exchange happened. Move the old tree to the recorded backup path, then finalize the transaction. |
 | Active path is new; staging is absent; backup is old | Backup rename happened. Finalize the transaction. |
 | Any identity is missing, duplicated, unsafe, or unexpected | Stop and preserve all paths; report manual recovery required. |
@@ -138,65 +139,26 @@ Tests must exercise the real helper against synthetic archives and an isolated f
 The existing CI must not weaken archive, package, QML, or systemd test coverage. Real power-loss behavior still requires a separate VM-level test; deterministic filesystem and process-crash tests are necessary but not equivalent to physical power-loss testing.
 
 
-## Implementation progress
+## Implementation status
 
-The manifest primitives now validate the installation root and every traversed entry for real filesystem types, expected ownership, safe modes, hardlink constraints, and preserved-user-data structure.
+The implementation is split into four Python modules, installed with the application and exercised by separate CTest targets:
 
-A separate `updater_staging.py` module now builds a complete staging tree without changing the active installation. Its current contract is:
+- \`updater_transaction.py\`: strict versioned ownership manifest; root, owner, mode, hardlink, path and symlink validation; preserved-user-data validation; manifest verification and atomic writes.
+- \`updater_staging.py\`: complete sibling staging-tree assembly; explicit user-data precedence; conservative preservation of unknown legacy regular files/directories; pruning only paths owned by a verified previous manifest; fsync of copied files and directories.
+- \`updater_activation.py\`: root-owned bounded journal; transaction-bound stage/backup names; device/inode identity recovery; \`renameat2(RENAME_EXCHANGE)\` and \`RENAME_NOREPLACE\`; no non-atomic fallback.
+- \`updater_service.py\` and \`updater_cli.py\`: journal-before-stop ordering; verified systemd stop/start; persistent-journal recovery before download; partial-failure handling; binary checksum revalidation after \`install_bin.sh\`.
 
-- the upstream tree is validated and its ownership manifest is built before copying;
-- the destination must be a new absolute path under a privately owned, non-symlink parent on the same filesystem as the active installation;
-- upstream-owned files and generated relative links are copied into a new private tree;
-- explicit user data is copied from the active tree and takes precedence over archive paths;
-- unknown legacy regular files and directories absent from the new archive are retained, including unknown children inside previously manifest-owned directories;
-- paths owned by the previous manifest but absent from the new archive are not copied forward;
-- untracked legacy symlinks fail closed and require manual review;
-- the new manifest contains only paths from the validated upstream tree, not preserved legacy/user data;
-- the completed tree and its manifest are verified before the function returns.
+The privileged \`update-locked\` helper now uses this CLI in production. Its own update lock is a process-scoped \`flock\` descriptor, so termination releases the lock automatically. A legacy mkdir lock directory causes a fail-closed error because an older updater may still be running; it must only be removed manually after confirming that no old process remains.
 
-This module is deliberately **not connected to `update-locked`**. The existing overlay updater remains the production path until staging tests, atomic exchange, journaled recovery, service-state handling, and end-to-end transaction tests are complete. A staging failure leaves the active installation untouched; the caller must retain or inspect the failed private staging directory rather than treating it as activated.
+On staging validation failure, the CLI removes only the transaction-specific staging directory it created after checking its basename, owner, type and filesystem identity. The active installation is untouched. Once the journal is written, recovery owns the stage/active/backup lifecycle and will preserve unexpected paths for manual review.
 
+The E2E helper tests now cover normal updates, preserved configuration and hostlists, backup retention, active-service stop/start, restart failure and subsequent recovery, transitional/query-failure states, archive traversal/symlink/special-file/duplicate-member/size/checksum rejection, and runtime validation before activation. Unit tests cover staging merge rules, tampered previous manifests, atomic exchange, journal recovery windows, service lifecycle, and CLI integration.
 
-### Atomic activation implementation progress
+### Remaining release gates
 
-A separate `updater_activation.py` module now provides the next isolated transaction layer:
+1. All CI, systemd E2E, Debian DEB and Fedora RPM workflows must pass on the exact final PR head.
+2. Review any failed or skipped job and rerun the final head if changes are made.
+3. Verify the final package contents and clean install/update/uninstall behavior.
+4. Run a VM-level crash/power-loss matrix across journal creation, service stop, directory exchange, backup rename, service restart and journal finalization. Deterministic unit tests do not substitute for this.
+5. Review the complete PR diff and release notes before marking the PR ready, merging the stacked branches, or publishing a release.
 
-- secure, bounded, root-owned transaction journal with atomic creation and fsync;
-- directory identity tracking by device and inode;
-- Linux `renameat2(RENAME_EXCHANGE)` for the active/staged directory swap;
-- Linux `renameat2(RENAME_NOREPLACE)` for moving the old tree to its backup without overwriting an existing path;
-- no fallback to a two-step or non-atomic replacement;
-- recovery for the pre-exchange, post-exchange/pre-backup, and post-backup/pre-journal-cleanup crash windows;
-- fail-closed handling when paths do not match the journal's recorded identities.
-
-Regression tests cover successful exchange, both principal recovery windows, unexpected inode replacement, existing backup paths, simulated unsupported exchange, and symlinked journals.
-
-This activation module is also **not connected to `update-locked`**. Service stop/start orchestration, service-state persistence and recovery, full production-helper integration, and VM-level crash testing remain prerequisites.
-
-
-### Service lifecycle implementation progress
-
-The separate `updater_service.py` layer now wraps the activation primitives with systemd state checks:
-
-- accepts only a definitive `active` or `inactive` pre-update state;
-- stops an active service and verifies `inactive` before exchanging directories;
-- starts the service after activation and verifies `active`;
-- retains the transaction journal and old backup if restart fails;
-- recovers the filesystem transaction first, then restores the previously recorded service state, and only then finalizes the journal;
-- attempts to restore service state if stop verification or pre-activation work fails;
-- supports an explicit no-service mode for isolated operations.
-
-Mocked systemd tests cover normal active-service updates, restart failure followed by recovery, transitional-state rejection, and no-service operation.
-
-The transaction layers are now wired into the privileged `update-locked` helper through `updater_cli.py`:
-
-The helper uses a process-scoped `flock` descriptor rather than a persistent lock directory, so SIGKILL releases the lock automatically. A legacy lock directory causes a fail-closed error because an older updater process may still own it; it must be removed manually only after confirming that no old updater is running. The transaction journal is written and fsynced before the service stop, closing the crash window between stopping the service and recording recovery state.
-
-
-1. The helper acquires its existing update lock and invokes persistent-journal recovery before downloading a new release.
-2. Existing archive path/type/size checks, duplicate-member rejection and upstream binary checksums remain in the shell helper.
-3. The CLI validates the extracted tree before executing upstream `install_bin.sh`, rechecks the binary checksums after the script runs, builds the sibling staging tree, and validates the manifest, generated links, runtime probes and systemd unit.
-4. The service-aware activation layer stops and verifies an active service, performs the atomic directory exchange, retains the old tree as a unique sibling backup, restarts and verifies the service, then removes the journal.
-5. If service restart fails, the new installation, previous-version backup and journal remain. The next update invocation attempts recovery and restores the previously recorded service state before downloading anything.
-
-The previous overlay-copy implementation has been removed from the production update path. The updated shell E2E suite now exercises successful updates, active/inactive service behavior, restart failure, archive/checksum rejection and pre-activation runtime validation. These integration changes are not considered release-ready until the new CI, package, and systemd E2E workflows pass on the same final commit and the failure/recovery cases are reviewed.
