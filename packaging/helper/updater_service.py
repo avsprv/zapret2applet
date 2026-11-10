@@ -11,6 +11,7 @@ from updater_activation import (
     ActivationError,
     activate_staged_tree,
     finalize_transaction,
+    prepare_activation_journal,
     recover_transaction,
     _read_journal,
 )
@@ -91,45 +92,34 @@ def activate_with_service(
     if not no_service:
         state = _service_state(unit)
         was_active = state == "active"
-        if was_active:
-            try:
-                _set_service_state(unit, "stop", "inactive")
-            except Exception as stop_error:
-                try:
-                    _restore_service(unit, True)
-                except Exception as restore_error:
-                    raise ActivationError(
-                        f"service stop verification failed and service state could not be restored: {restore_error}"
-                    ) from stop_error
-                raise
 
+    # The durable journal must exist before stopping the service. A crash in
+    # the stop/exchange gap can then restore the recorded service state.
+    prepare_activation_journal(
+        active, staged, backup, journal, release_tag, was_active,
+        expected_uid=expected_uid,
+    )
     try:
+        if was_active:
+            _set_service_state(unit, "stop", "inactive")
         document = activate_staged_tree(
             active, staged, backup, journal, release_tag, was_active,
             expected_uid=expected_uid,
         )
     except Exception as original:
         journal_path = Path(journal)
-        if journal_path.exists() or journal_path.is_symlink():
-            try:
-                recover_transaction(
-                    journal_path, Path(active).parent,
-                    expected_uid=expected_uid,
-                    expected_active_name=Path(active).name,
-                )
-                _restore_service(unit, was_active)
-                finalize_transaction(journal_path, expected_uid=expected_uid)
-            except Exception as recovery_error:
-                raise ActivationError(
-                    f"activation failed and automatic recovery is incomplete: {recovery_error}"
-                ) from original
-        else:
-            try:
-                _restore_service(unit, was_active)
-            except Exception as service_error:
-                raise ActivationError(
-                    f"activation failed and previous service state could not be restored: {service_error}"
-                ) from original
+        try:
+            recover_transaction(
+                journal_path, Path(active).parent,
+                expected_uid=expected_uid,
+                expected_active_name=Path(active).name,
+            )
+            _restore_service(unit, was_active)
+            finalize_transaction(journal_path, expected_uid=expected_uid)
+        except Exception as recovery_error:
+            raise ActivationError(
+                f"activation failed and automatic recovery is incomplete: {recovery_error}"
+            ) from original
         raise
 
     if was_active:
