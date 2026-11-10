@@ -14,7 +14,7 @@ The application provides a graphical interface for managing an existing zapret2 
 > [!IMPORTANT]
 > **Independent project.** zapret2control is not affiliated with the author or maintainers of [zapret2](https://github.com/bol-van/zapret2).
 >
-> The application does not perform the initial zapret2 installation. Strategies found by the app must be transferred to your zapret2 configuration and verified manually.
+> The application does not bundle zapret2. The **Updates** page supports a clean installation from an upstream release. Strategies found by Blockcheck are not applied automatically; transfer them to your zapret2 configuration and verify them manually.
 
 ## Contents
 
@@ -130,12 +130,12 @@ zapret2 release files are checked against the SHA-256 checksums in sha256sum.txt
 
 **Fedora:**
 ```bash
-sudo dnf install cmake ninja-build gcc-c++ qt6-qtbase-devel qt6-qttools-devel polkit
+sudo dnf install cmake ninja-build gcc-c++ extra-cmake-modules kf6-kirigami-devel qt6-qtbase-devel qt6-qtdeclarative-devel qt6-qttools-devel desktop-file-utils appstream util-linux-core dbus-daemon systemd curl tar python3 polkit
 ```
 
 **Debian / Ubuntu:**
 ```bash
-sudo apt install build-essential cmake ninja-build qt6-base-dev qt6-tools-dev qt6-l10n-tools pkexec
+sudo apt install build-essential cmake ninja-build extra-cmake-modules libkirigami-dev qt6-base-dev qt6-declarative-dev qt6-tools-dev qt6-l10n-tools desktop-file-utils appstream dbus-daemon systemd curl tar python3 pkexec
 ```
 
 ### Build and test
