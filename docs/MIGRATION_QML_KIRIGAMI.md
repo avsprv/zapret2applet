@@ -6,16 +6,14 @@
 - Preserve existing C++ service, helper, configuration, profile, blockcheck, and update logic.
 - Keep privileged operations behind the existing Polkit-protected helper.
 - Follow KDE HIG and use the active KDE/Qt platform theme rather than hard-coded palettes.
-- Keep the production application functional while the replacement UI is developed incrementally.
+- Make the Qt Quick/Kirigami application the only production GUI and keep the privileged backend independent of the presentation layer.
 
 ## Migration strategy
 
-The migration uses a separately built, non-installed QML preview target. The existing Qt Widgets
-executable remains the production target until feature parity and regression tests are complete.
-The preview is compiled and linted in CI but is not installed or packaged as the application.
-
-This separation is intentional: an incomplete QML implementation must not remove working
-features from release packages.
+The production executable is now built from `src/qml/main.cpp` and the Kirigami QML module.
+The old preview target has been removed. The Qt Widgets dependency is no longer linked to the
+production executable; it remains temporarily available only to legacy regression-test targets.
+The installed desktop entry and package executable name remain `zapret2control`.
 
 ## Current implementation status
 
@@ -32,11 +30,11 @@ The following areas have a QML/Kirigami implementation in the preview target:
 | Settings | Implemented with platform caveat | System/light/dark preference is persisted and applied at runtime through Qt color-scheme hints; forcing a scheme depends on platform support |
 | About | Implemented | Version, dependencies, licensing, project separation and relevant links |
 | Update and clean install | Implemented | Release check, clean install, update, confirmation, bounded log and privileged helper integration |
-| Tray and desktop lifecycle | Not migrated | Production Widgets behavior remains in use |
+| Tray and desktop lifecycle | Implemented | StatusNotifierItem, DBusMenu, watcher re-registration, notifications, close-to-tray, minimized startup fallback and quit guards |
 
-“Implemented” means that the page and its current workflow exist in the preview target; it does
-not mean the entire application has reached production parity. The QML preview remains
-non-production and is not installed.
+“Implemented” means that the QML page and its current workflow are wired into the production
+application. Full parity still requires package-level installation checks and removal of the
+remaining legacy Widgets-only code and test targets.
 
 ## Planned stages
 
@@ -46,8 +44,10 @@ non-production and is not installed.
 4. Migrate lists and journal monitoring. **Complete**
 5. Migrate blockcheck2 orchestration and strategy results. **Implemented; reliability review continues**
 6. Migrate update checking, clean installation, update and recovery workflows. **Implemented; final CI verification in progress**
-7. Complete settings behavior and theme integration. **Implemented; CI verification pending**. Tray integration and desktop lifecycle remain outstanding.
-8. Remove the legacy Widgets UI only after feature parity, tests and package validation.
+7. Complete settings, theme, tray and desktop lifecycle integration. **Implemented; production CI verification pending**.
+8. Switch the production executable and QML lint target to Kirigami. **Complete**
+9. Remove obsolete Widgets-only implementation and tests after replacing any remaining coverage with QML/controller tests. **In progress**
+10. Validate clean installation, upgrade, runtime QML dependencies and package contents. **In progress**
 
 ## Architectural boundaries
 
@@ -100,7 +100,7 @@ Each migrated page must have:
 
 ## Production replacement gate
 
-The QML preview must not replace the Widgets application until all of the following are true:
+The Kirigami production application is considered fully migrated only when all of the following are true:
 
 - all existing user-visible features have functional parity;
 - no navigation placeholders remain;
@@ -112,4 +112,4 @@ The QML preview must not replace the Widgets application until all of the follow
 - accessibility, keyboard navigation and responsive layouts have been reviewed;
 - CI and package validation pass on the candidate release commit.
 
-The Widgets executable remains the production application until this gate is satisfied.
+The production executable is now Kirigami. Remaining gate items block declaring the migration complete and removing the transitional Widgets-only test code.
