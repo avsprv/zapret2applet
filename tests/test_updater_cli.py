@@ -94,6 +94,17 @@ class UpdaterCliTests(unittest.TestCase):
         with self.assertRaisesRegex(ActivationError, "unexpected object"):
             recover_pending(self.state, self.active, "zapret2.service")
 
+    def test_invalid_staged_unit_cleans_partial_tree_without_touching_active(self):
+        unit = self.upstream / "init.d/systemd/zapret2.service"
+        unit.write_text("[Service]\\nExecStart=/wrong/path\\n", encoding="utf-8")
+        with self.assertRaisesRegex(ActivationError, "systemd unit"):
+            run_update(
+                self.upstream, self.active, self.state, "v1.2.3",
+                "zapret2.service", self.checksums, no_service=True,
+            )
+        self.assertFalse(any(self.base.glob(".zapret2control-stage-*")))
+        self.assertEqual((self.active / "legacy.txt").read_text(encoding="utf-8"), "retain")
+
     def test_install_script_cannot_modify_checksummed_binaries(self):
         script = self.upstream / "install_bin.sh"
         script.write_text(
