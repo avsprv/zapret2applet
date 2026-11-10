@@ -124,7 +124,12 @@ def validate_manifest(document: Any) -> dict[str, Any]:
         path = _relative_path(entry["path"])
         if path in seen:
             _fail("duplicate manifest path")
-        mode = _mode(entry["mode"])
+        if kind == "symlink":
+            if isinstance(entry["mode"], bool) or entry["mode"] != 0o777:
+                _fail("symlink mode must be 0777")
+            mode = 0o777
+        else:
+            mode = _mode(entry["mode"])
         if kind == "file":
             digest = entry["sha256"]
             if not isinstance(digest, str) or not _SHA256_RE.fullmatch(digest):
@@ -134,8 +139,6 @@ def validate_manifest(document: Any) -> dict[str, Any]:
             normalized.append({"path": path, "type": kind, "mode": mode})
         else:
             target = _safe_symlink_target(path, entry["target"])
-            if mode != 0o777:
-                _fail("symlink mode must be 0777")
             normalized.append({"path": path, "type": kind, "mode": mode, "target": target})
         seen[path] = kind
 
@@ -162,7 +165,7 @@ def _sha256(path: Path) -> str:
     return digest.hexdigest()
 
 
-def _walk_entries(root: Path, *, allow_manifest: bool) -> list[dict[str, Any]]:
+def _walk_entries(root: Path) -> list[dict[str, Any]]:
     entries: list[dict[str, Any]] = []
 
     def visit(directory: Path, relative: str) -> None:
@@ -173,12 +176,7 @@ def _walk_entries(root: Path, *, allow_manifest: bool) -> list[dict[str, Any]]:
         for child in children:
             path = f"{relative}/{child.name}" if relative else child.name
             if path == MANIFEST_NAME:
-                if not allow_manifest:
-                    _fail("upstream tree contains the reserved manifest path")
-                info = child.stat(follow_symlinks=False)
-                if not stat.S_ISREG(info.st_mode):
-                    _fail("existing manifest path is not a regular file")
-                continue
+                _fail("upstream tree contains the reserved manifest path")
             if is_user_data_path(path):
                 continue
             info = child.stat(follow_symlinks=False)
@@ -226,7 +224,7 @@ def build_manifest(root: str | os.PathLike[str], release_tag: str) -> dict[str, 
     return validate_manifest({
         "schema_version": SCHEMA_VERSION,
         "release_tag": release_tag,
-        "entries": _walk_entries(root_path, allow_manifest=False),
+        "entries": _walk_entries(root_path),
     })
 
 
