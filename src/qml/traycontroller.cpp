@@ -93,11 +93,8 @@ TrayImageList renderTrayPixmap(int size, const QColor &indicator)
     QPainter painter(&image);
     painter.setRenderHint(QPainter::Antialiasing, true);
     const qreal scale = size / 32.0;
-    QColor foreground;
-    if (qGuiApp)
-        foreground = qGuiApp->palette().color(QPalette::WindowText);
-    if (!foreground.isValid())
-        foreground = QColor(QStringLiteral("#232629"));
+    const QPalette palette = qGuiApp ? qGuiApp->palette() : QPalette();
+    const QColor foreground = palette.color(QPalette::WindowText);
     QPen pen(foreground, 2.5 * scale, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin);
     painter.setPen(pen);
     painter.setBrush(Qt::NoBrush);
@@ -117,7 +114,8 @@ TrayImageList renderTrayPixmap(int size, const QColor &indicator)
         painter.setPen(Qt::NoPen);
         painter.setBrush(indicator);
         painter.drawEllipse(QPointF(25.5 * scale, 6.5 * scale), 4.0 * scale, 4.0 * scale);
-        painter.setPen(QPen(QColor(QStringLiteral("#232629")), 1.0 * scale));
+        const QPalette palette = qGuiApp ? qGuiApp->palette() : QPalette();
+        painter.setPen(QPen(palette.color(QPalette::WindowText), 1.0 * scale));
         painter.setBrush(Qt::NoBrush);
         painter.drawEllipse(QPointF(25.5 * scale, 6.5 * scale), 4.0 * scale, 4.0 * scale);
     }
@@ -154,7 +152,8 @@ TrayImageList renderIndicatorPixmaps(const QColor &indicator)
         QPainter painter(&image);
         painter.setRenderHint(QPainter::Antialiasing, true);
         const qreal scale = size / 32.0;
-        painter.setPen(QPen(QColor(QStringLiteral("#232629")), 1.0 * scale));
+        const QPalette palette = qGuiApp ? qGuiApp->palette() : QPalette();
+        painter.setPen(QPen(palette.color(QPalette::WindowText), 1.0 * scale));
         painter.setBrush(indicator);
         painter.drawEllipse(QPointF(25.5 * scale, 6.5 * scale), 4.0 * scale, 4.0 * scale);
         painter.end();
@@ -199,11 +198,13 @@ public:
     TrayImageList iconPixmap() const { return renderTrayPixmaps(QColor{}); }
     TrayImageList overlayIconPixmap() const
     {
-        return m_inactive ? renderIndicatorPixmaps(QColor(QStringLiteral("#fdbc4b"))) : TrayImageList{};
+        const QPalette palette = qGuiApp ? qGuiApp->palette() : QPalette();
+        return m_inactive ? renderIndicatorPixmaps(palette.color(QPalette::Highlight)) : TrayImageList{};
     }
     TrayImageList attentionIconPixmap() const
     {
-        return m_failed ? renderIndicatorPixmaps(QColor(QStringLiteral("#da4453"))) : TrayImageList{};
+        const QPalette palette = qGuiApp ? qGuiApp->palette() : QPalette();
+        return m_failed ? renderIndicatorPixmaps(palette.color(QPalette::BrightText)) : TrayImageList{};
     }
     QString overlayIconName() const { return {}; }
     QString attentionIconName() const { return {}; }
