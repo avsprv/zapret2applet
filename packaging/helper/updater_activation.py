@@ -171,6 +171,15 @@ def _write_journal(path: Path, document: dict[str, Any], expected_uid: int) -> N
         raise
 
 
+def _reject_duplicate_pairs(pairs: list[tuple[str, Any]]) -> dict[str, Any]:
+    result: dict[str, Any] = {}
+    for key, value in pairs:
+        if key in result:
+            _fail(f"duplicate transaction journal key: {key}")
+        result[key] = value
+    return result
+
+
 def _read_journal(path: Path, expected_uid: int) -> dict[str, Any]:
     _safe_directory(path.parent, expected_uid)
     try:
@@ -187,10 +196,17 @@ def _read_journal(path: Path, expected_uid: int) -> dict[str, Any]:
         _fail(f"cannot securely open transaction journal: {exc}")
     try:
         opened = os.fstat(fd)
-        if (opened.st_dev, opened.st_ino) != (info.st_dev, info.st_ino):
-            _fail("transaction journal changed while opening")
+        if (
+            not stat.S_ISREG(opened.st_mode)
+            or opened.st_uid != expected_uid
+            or opened.st_nlink != 1
+            or stat.S_IMODE(opened.st_mode) != 0o600
+            or opened.st_size > MAX_JOURNAL_BYTES
+            or (opened.st_dev, opened.st_ino) != (info.st_dev, info.st_ino)
+        ):
+            _fail("opened transaction journal changed or has unsafe metadata")
         with os.fdopen(fd, "r", encoding="utf-8", closefd=False) as stream:
-            document = json.load(stream)
+            document = json.load(stream, object_pairs_hook=_reject_duplicate_pairs)
     except (OSError, UnicodeError, json.JSONDecodeError) as exc:
         _fail(f"cannot read transaction journal: {exc}")
     finally:
