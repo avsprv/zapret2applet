@@ -188,4 +188,12 @@ The separate `updater_service.py` layer now wraps the activation primitives with
 
 Mocked systemd tests cover normal active-service updates, restart failure followed by recovery, transitional-state rejection, and no-service operation.
 
-All three Python layers (`updater_staging.py`, `updater_activation.py`, and `updater_service.py`) remain isolated and are **not yet wired into the privileged shell helper**. The next integration phase must first add persistent-journal discovery/recovery at helper startup, then replace the overlay-copy section with staging plus service-aware atomic activation. The old overlay path must not be removed until the integrated helper passes end-to-end tests.
+The transaction layers are now wired into the privileged `update-locked` helper through `updater_cli.py`:
+
+1. The helper acquires its existing update lock and invokes persistent-journal recovery before downloading a new release.
+2. Existing archive path/type/size checks and upstream binary checksums remain in the shell helper.
+3. The CLI runs upstream `install_bin.sh` in the extracted tree, builds the sibling staging tree, validates the manifest, generated links, runtime probes and systemd unit.
+4. The service-aware activation layer stops and verifies an active service, performs the atomic directory exchange, retains the old tree as a unique sibling backup, restarts and verifies the service, then removes the journal.
+5. If service restart fails, the new installation, previous-version backup and journal remain. The next update invocation attempts recovery and restores the previously recorded service state before downloading anything.
+
+The previous overlay-copy implementation has been removed from the production update path. The updated shell E2E suite now exercises successful updates, active/inactive service behavior, restart failure, archive/checksum rejection and pre-activation runtime validation. These integration changes are not considered release-ready until the new CI, package, and systemd E2E workflows pass on the same final commit and the failure/recovery cases are reviewed.
