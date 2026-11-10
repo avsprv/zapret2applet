@@ -20,7 +20,7 @@ find_package(KF6 REQUIRED COMPONENTS Kirigami)
 ecm_find_qmlmodule(org.kde.kirigami REQUIRED)
 
 find_package(Qt6 ${QZAPRET_QT_MIN} REQUIRED COMPONENTS
-    Widgets Network LinguistTools
+    Network LinguistTools
     Core Gui Qml Quick QuickControls2 QuickDialogs2 DBus
 )
 
@@ -103,20 +103,8 @@ qt_add_translations(zapret2control_i18n
     INCLUDE_DIRECTORIES src
 )
 
-# Current production application. It remains the installed executable until the
-# QML implementation reaches feature parity and passes the full regression suite.
-qt_add_executable(zapret2control ${QZAPRET_SOURCES})
-target_include_directories(zapret2control PRIVATE src)
-target_link_libraries(zapret2control PRIVATE Qt6::Widgets Qt6::Network zapret2control_i18n)
-target_compile_definitions(zapret2control PRIVATE
-    QZAPRET_VERSION="${PROJECT_VERSION}"
-    QZAPRET_HELPER_PATH="${QZAPRET_HELPER}")
-target_compile_options(zapret2control PRIVATE -Wall -Wextra)
-target_link_options(zapret2control PRIVATE -Wl,-z,now)
-
-# Parallel Kirigami application shell. This target is deliberately not installed
-# or packaged yet; it is built in CI while features are migrated incrementally.
-qt_add_executable(zapret2control-qml-preview
+# The Kirigami application is the sole production executable.
+qt_add_executable(zapret2control
     src/qml/main.cpp
     src/settingsmigration.cpp
     src/settingsmigration.h
@@ -156,7 +144,7 @@ qt_add_executable(zapret2control-qml-preview
     src/backend/zapretbackend.h
     src/backend/helperpath.h
 )
-qt_add_qml_module(zapret2control-qml-preview
+qt_add_qml_module(zapret2control
     URI org.avsprv.zapret2control
     VERSION 1.0
     QML_FILES
@@ -170,23 +158,22 @@ qt_add_qml_module(zapret2control-qml-preview
         src/qml/pages/BlockcheckPage.qml
         src/qml/pages/UpdatePage.qml
 )
-target_include_directories(zapret2control-qml-preview PRIVATE src src/qml)
-target_link_libraries(zapret2control-qml-preview PRIVATE
+target_include_directories(zapret2control PRIVATE src src/qml)
+target_link_libraries(zapret2control PRIVATE
     Qt6::Core Qt6::Gui Qt6::Network Qt6::Qml Qt6::Quick Qt6::QuickControls2 Qt6::QuickDialogs2 Qt6::DBus
     zapret2control_i18n
 )
-
-# Keep the QML process independent from Qt Widgets. This is an architectural
-# boundary, not merely a current implementation detail.
-get_target_property(QZAPRET_QML_LINK_LIBRARIES zapret2control-qml-preview LINK_LIBRARIES)
-if("Qt6::Widgets" IN_LIST QZAPRET_QML_LINK_LIBRARIES)
-    message(FATAL_ERROR "The QML preview target must not link Qt6::Widgets")
-endif()
-
-target_compile_definitions(zapret2control-qml-preview PRIVATE
+target_compile_definitions(zapret2control PRIVATE
     QZAPRET_VERSION="${PROJECT_VERSION}"
     QZAPRET_HELPER_PATH="${QZAPRET_HELPER}")
-target_compile_options(zapret2control-qml-preview PRIVATE -Wall -Wextra)
+target_compile_options(zapret2control PRIVATE -Wall -Wextra)
+target_link_options(zapret2control PRIVATE -Wl,-z,now)
+
+# The production executable must never acquire a Qt Widgets dependency.
+get_target_property(QZAPRET_PRODUCTION_LINK_LIBRARIES zapret2control LINK_LIBRARIES)
+if("Qt6::Widgets" IN_LIST QZAPRET_PRODUCTION_LINK_LIBRARIES)
+    message(FATAL_ERROR "The production QML target must not link Qt6::Widgets")
+endif()
 
 configure_file(data/org.zapret2control.policy.in ${CMAKE_BINARY_DIR}/org.zapret2control.policy @ONLY)
 
@@ -226,7 +213,7 @@ install(FILES data/icons/hicolor/symbolic/apps/zapret2control-tray-symbolic.svg
         DESTINATION ${CMAKE_INSTALL_DATADIR}/icons/hicolor/symbolic/apps)
 
 if(BUILD_TESTING)
-    find_package(Qt6 ${QZAPRET_QT_MIN} REQUIRED COMPONENTS Test)
+    find_package(Qt6 ${QZAPRET_QT_MIN} REQUIRED COMPONENTS Test Widgets)
     find_program(DBUS_RUN_SESSION_EXECUTABLE dbus-run-session REQUIRED)
     qt_add_executable(test_blockcheck tests/test_blockcheck.cpp
         src/backend/blockcheckrunner.cpp src/backend/blockcheckrunner.h)
