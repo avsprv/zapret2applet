@@ -97,6 +97,10 @@ def _copy_user_data(source_root: Path, stage: Path) -> None:
         mode = stat.S_IMODE(info.st_mode)
         if mode & 0o022 or mode & ~0o777:
             raise ManifestError(f"unsafe permissions on preserved user data: {relative}")
+        if stat.S_ISDIR(info.st_mode) and mode & 0o500 != 0o500:
+            raise ManifestError(f"preserved user-data directory is not traversable: {relative}")
+        if stat.S_ISREG(info.st_mode) and not mode & 0o400:
+            raise ManifestError(f"preserved user-data file is not readable: {relative}")
         dst = _safe_parent(stage, relative)
         if stat.S_ISDIR(info.st_mode):
             if dst.exists():
