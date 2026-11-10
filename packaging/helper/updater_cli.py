@@ -50,6 +50,7 @@ def ensure_journal_directory(path: str | os.PathLike[str], *, expected_uid: int 
     if not target.is_absolute() or target.name != _STATE_SUBDIR or target.parent.name != _STATE_COMPONENT:
         raise ActivationError("journal directory must be the updater subdirectory of zapret2control state")
     state_root = target.parent
+    _secure_dir(state_root.parent, uid)
     if not state_root.exists():
         state_root.mkdir(mode=0o755)
     _secure_dir(state_root, uid)
