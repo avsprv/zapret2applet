@@ -1,11 +1,13 @@
 #!/usr/bin/env python3
 """Regression tests for updater ownership manifest validation."""
 
-import json
 import os
 from pathlib import Path
 import tempfile
 import unittest
+import sys
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "packaging/helper"))
 
 from updater_transaction import (
     MANIFEST_NAME,
