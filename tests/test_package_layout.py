@@ -55,7 +55,7 @@ def main() -> None:
     assert f"/run/{LEGACY_ID}" not in lifecycle_doc
 
     for path in ROOT.rglob("*"):
-        if not path.is_file() or any(part in {".git", "build", "dist", "__pycache__"} for part in path.parts):
+        if not path.is_file() or any(part in {".git", "build", "dist", "__pycache__", "third_party"} for part in path.parts):
             continue
         try:
             content = path.read_text(encoding="utf-8")
