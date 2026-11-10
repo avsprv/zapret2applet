@@ -707,9 +707,8 @@ update)
 update-locked)
     [ "${QZAPRET_BLOCKCHECK_GUARD:-}" = "held-v1" ] || die "update requires the Blockcheck lifecycle admission guard"
     # The admission process holds the shared StateStore lock for this entire operation.
-    # update vX.Y.Z — скачать релиз zapret2 с github.com/bol-van/zapret2 и обновить $BASE.
-    # Файлы пользователя (config, ipset/zapret-hosts-user*.txt, init.d/*/custom.d) в архиве
-    # отсутствуют, поэтому наложение файлов поверх их не затрагивает.
+    # update vX.Y.Z — скачать, проверить и транзакционно активировать релиз zapret2.
+    # Пользовательские config, hostlists и init.d/*/custom.d переносятся в staging tree.
     [ "$#" -eq 2 ] || die "usage: update vX.Y.Z"
     tag=$2
     case "$tag" in v[0-9]*) ;; *) die "bad tag" ;; esac
@@ -744,7 +743,6 @@ update-locked)
             --base "$BASE" --journal-dir "$STATE_DIR" --unit "$UNIT" \
             || die "pending updater transaction recovery failed"
     fi
-
 
     fetch() {
         curl -fsSL --proto "$PROTO" --proto-redir '=https' --tlsv1.2 \
