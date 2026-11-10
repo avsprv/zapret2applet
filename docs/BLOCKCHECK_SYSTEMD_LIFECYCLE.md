@@ -2,14 +2,14 @@
 
 ## Status
 
-Architecture decision for the QML/Kirigami migration branch. The durable state store, strict options schema, runtime staging protocol, worker,
+Production architecture for the QML/Kirigami application. The durable state store, strict options schema, runtime staging protocol, worker,
 submission admission control, recovery entry point, helper commands, and systemd unit
 templates are implemented. The unit templates and UUID-bound status helper are installed by CMake and
 included in Debian/Fedora packaging metadata. The status helper reports queued,
 running, ExecStopPost recovery, pending/failed recovery, completion, and stale job
 identifiers while serializing reads against the lifecycle lock. It treats a removed
 systemd RuntimeDirectory as an absent staging file, but fails closed on unsafe paths
-or malformed state. The QML preview now uses an asynchronous job client for submit,
+or malformed state. The production QML application uses an asynchronous job client for submit,
 status polling, cancellation, bounded journal reads, strategy extraction, and recovery
 state handling. A shared privileged admission guard now serializes service start/stop/
 enable/disable and the complete upstream update transaction with Blockcheck submission
@@ -19,7 +19,7 @@ unverifiable systemd state; a failed worker unit is tolerated only when no durab
 recovery marker remains. Submit, UUID-bound cancellation, and recovery share a
 dedicated queue lock; the worker does not hold it during diagnostics, and the QML
 client preserves the original cancellation UUID even if it adopts a successor job.
-Real systemd lifecycle E2E validation now passes on a disposable systemd VM. It covers normal recovery of a previously active service, preservation of an initially inactive service, marker retention and boot-recovery retry after a failed restore, and recovery after worker-main-process SIGKILL. A full machine reboot during an interrupted package upgrade is not covered by this E2E test. The installed production Widgets application continues to use its legacy Blockcheck path.
+Real systemd lifecycle E2E validation now passes on a disposable systemd VM. It covers normal recovery of a previously active service, preservation of an initially inactive service, marker retention and boot-recovery retry after a failed restore, and recovery after worker-main-process SIGKILL. A full machine reboot during an interrupted package upgrade is not covered by this E2E test. The production application uses this systemd-backed Blockcheck lifecycle.
 
 ## Runtime and persistent storage paths
 
@@ -30,14 +30,9 @@ The staged options directory is `/run/zapret2control/blockcheck/`. It is
 volatile: systemd creates the root-owned `/run/zapret2control/` RuntimeDirectory,
 and the helper securely creates and validates its `blockcheck/` subdirectory.
 
-Package upgrades migrate the durable state directory from the legacy
-`/var/lib/zapret2applet/blockcheck/` location after stopping the old worker and
-recovery units. The migration preserves the directory contents and fails closed
-if both old and new state directories exist or either path is unsafe. The old
-`/run/zapret2applet/` RuntimeDirectory is not copied: it contains volatile
-staging data and is removed by systemd when the old worker unit is stopped.
-Legacy path strings in package scripts are compatibility inputs only; they are
-not active runtime locations.
+No legacy Blockcheck state migration is performed. The persistent directory above is
+created on demand by the current helper and is the sole supported application-owned
+state location.
 
 ## Problem
 
@@ -199,7 +194,7 @@ Replace direct service stop/start orchestration with a systemd job client:
 
 The GUI must not infer successful recovery from the worker exit code alone.
 
-## Packaging and upgrade behavior
+## Packaging behavior
 
 Install both unit files into the distribution's systemd unit directory. Reload systemd
 after installation/removal. Enable the boot recovery unit on package installation and
@@ -210,8 +205,7 @@ is accepted.
 
 The helper's zapret clean-install/update paths must preserve their current behavior,
 must hold the shared Blockcheck admission lock for the full transaction, and must not
-overwrite the application-owned Blockcheck units. The recovery unit must work
-even when the GUI package is upgraded while a marker exists.
+overwrite the application-owned Blockcheck units. The recovery unit must continue to work across ordinary updates of the current package while a marker exists.
 
 ## Required tests
 
@@ -239,8 +233,8 @@ host's real `zapret2.service`.
 - repeated recovery is idempotent;
 - package install/remove and systemd daemon-reload behavior are validated.
 
-## Rollout boundary
+## Validation boundary
 
-Do not switch the production GUI to this flow until the worker unit, recovery unit, helper
-commands, package integration, GUI job client, and regression tests are implemented and
-validated. Keep the existing Widgets production application unchanged during this work.
+The QML/Kirigami application is the production GUI and uses this flow. Changes to the
+worker, recovery unit, helper commands, package integration, or GUI job client must
+retain the regression and systemd E2E coverage described above before release.
