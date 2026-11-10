@@ -1304,6 +1304,17 @@
         <source>Выход</source>
         <translation>Quit</translation>
     </message>
+
+    <message>
+        <location filename="../src/qml/Main.qml" line="38"/>
+        <source>Несохранённые изменения</source>
+        <translation>Unsaved changes</translation>
+    </message>
+    <message>
+        <location filename="../src/qml/Main.qml" line="44"/>
+        <source>Текущий хостлист изменён. Отбросить несохранённые изменения и перейти в другой раздел?</source>
+        <translation>The current hostlist has been modified. Discard unsaved changes and navigate to another section?</translation>
+    </message>
 </context>
 <context>
     <name>MainWindow</name>
