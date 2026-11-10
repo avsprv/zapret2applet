@@ -28,7 +28,7 @@ jobs:
             /usr/local/lib/systemd/system/zapret2control-blockcheck.service \
             /usr/local/lib/systemd/system/zapret2control-blockcheck-recovery.service
       - name: Lint QML
-        run: cmake --build build --target zapret2control-qml-preview_qmllint
+        run: cmake --build build --target zapret2control_qmllint
       - name: Test
         run: ctest --test-dir build --output-on-failure
 
