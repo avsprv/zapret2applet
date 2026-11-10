@@ -97,11 +97,6 @@ QString AutostartController::entryPath() const
 {
     return QDir(m_autostartDirectory).filePath(QStringLiteral("zapret2control.desktop"));
 }
-QString AutostartController::expectedExec() const
-{
-    return escapeDesktopExecArgument(m_executablePath) + QStringLiteral(" --minimized");
-}
-
 bool AutostartController::isManagedEntry() const
 {
     if (m_executablePath.isEmpty() || !QFileInfo(m_executablePath).isAbsolute())
