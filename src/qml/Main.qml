@@ -287,12 +287,6 @@ Kirigami.ApplicationWindow {
                     text: root.appController.errorMessage
                 }
 
-                Kirigami.InlineMessage {
-                    Layout.fillWidth: true
-                    visible: true
-                    type: Kirigami.MessageType.Information
-                    text: qsTr("QML-интерфейс находится в стадии поэтапной миграции. Для повседневного использования пока доступна стабильная версия приложения.")
-                }
             }
         }
     }
