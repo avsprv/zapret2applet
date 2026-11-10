@@ -27,6 +27,7 @@ jobs:
         run: |
           set -eux
           pwd
+          git config --global --add safe.directory "$GITHUB_WORKSPACE"
           git rev-parse --show-toplevel
           cmake --build build --target zapret2control_i18n_lupdate
           git config user.name "github-actions[bot]"
