@@ -40,7 +40,7 @@ def _systemctl(arguments: list[str]) -> subprocess.CompletedProcess[str]:
             stderr=subprocess.PIPE,
             text=True,
             check=False,
-            timeout=30,
+            timeout=240,
             env=environment,
         )
     except (OSError, subprocess.TimeoutExpired) as exc:
