@@ -19,6 +19,16 @@ jobs:
           appstreamcli validate --no-net data/org.avsprv.zapret2control.metainfo.xml
       - name: Configure
         run: cmake -S . -B build -G Ninja
+      - name: Regenerate translation catalog for migration review
+        run: |
+          cmake --build build --target zapret2control_i18n_lupdate
+          mkdir -p translation-refresh
+          cp i18n/zapret2control_en.ts translation-refresh/
+      - uses: actions/upload-artifact@v6
+        with:
+          name: translation-refresh
+          path: translation-refresh/zapret2control_en.ts
+          if-no-files-found: error
       - name: Build
         run: cmake --build build
       - name: Verify systemd units
