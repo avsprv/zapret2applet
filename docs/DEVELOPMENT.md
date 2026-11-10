@@ -2,8 +2,8 @@
 
 ## Архитектурные принципы
 
-- Production-приложение сейчас использует Qt Widgets. Его точка входа — `src/main.cpp`, главное окно — `src/mainwindow.*`.
-- Параллельная реализация Qt Quick/Kirigami собирается как preview-цель. Её точка входа — `src/qml/main.cpp`, корневой интерфейс — `src/qml/Main.qml`. Preview не устанавливается и не заменяет production UI до завершения миграции и прохождения gate из [MIGRATION_QML_KIRIGAMI.md](MIGRATION_QML_KIRIGAMI.md).
+- Production-приложение использует Qt Quick и KDE Kirigami 6. Точка входа — `src/qml/main.cpp`, корневой интерфейс — `src/qml/Main.qml`.
+- `zapret2control` — единственная production-цель; отдельной preview-цели и Qt Widgets GUI больше нет. Текущие критерии завершения миграции описаны в [MIGRATION_QML_KIRIGAMI.md](MIGRATION_QML_KIRIGAMI.md).
 - Повторно используемая прикладная логика и интеграции с системой размещаются в `src/backend/`. Контроллеры QML — адаптеры между UI и backend; они не должны дублировать доменную логику.
 - GUI работает **без root**. Привилегированные действия выполняет `zapret2control-helper` через `pkexec` и Polkit.
 - QML не запускает shell-команды, не обращается к привилегированным файлам и не вызывает `pkexec` напрямую.
@@ -26,11 +26,11 @@ src/
   backend/              прикладная логика и системные адаптеры
   qml/
     components/         общие переиспользуемые QML-компоненты
-    pages/              страницы Kirigami preview
-    *controller.*       QObject-контроллеры preview
+    pages/              страницы production-интерфейса Kirigami
+    *controller.*       QObject-контроллеры
     Main.qml            корневой QML-интерфейс
-    main.cpp            точка входа QML preview
-  *.cpp, *.h            Qt Widgets production UI и общие классы
+    main.cpp            production-точка входа QGuiApplication / QQmlApplicationEngine
+  backend/              общие backend-компоненты и системные интеграции
   main.cpp              точка входа production UI
 tests/                  C++, Python и shell-тесты
 third_party/zapret2/    закреплённый Git submodule upstream-проекта
@@ -48,7 +48,7 @@ third_party/zapret2/    закреплённый Git submodule upstream-прое
 cmake -S . -B build -G Ninja
 cmake --build build
 ctest --test-dir build --output-on-failure
-cmake --build build --target zapret2control-qml-preview_qmllint
+cmake --build build --target zapret2control_qmllint
 ```
 
 CI дополнительно проверяет desktop/AppStream metadata и собирает DEB/RPM пакеты. Не ослабляйте lint/test проверки и не отключайте категории предупреждений ради зелёной сборки.
