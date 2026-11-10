@@ -27,6 +27,8 @@ BuildRequires:  curl
 BuildRequires:  tar
 BuildRequires:  dbus-daemon
 Requires:       polkit
+Requires:       kf6-kirigami
+Requires:       qt6-qtdeclarative
 Requires:       curl
 Requires:       python3
 Requires:       tar
