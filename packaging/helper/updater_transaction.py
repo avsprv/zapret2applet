@@ -37,7 +37,7 @@ def _fail(message: str) -> None:
 def _relative_path(value: Any) -> str:
     if not isinstance(value, str) or not value or value.startswith("/"):
         _fail("manifest path must be a non-empty relative path")
-    if "\\" in value or "\x00" in value:
+    if "\\" in value or any(ord(character) < 32 or ord(character) == 127 for character in value):
         _fail("manifest path contains a forbidden character")
     parts = value.split("/")
     if any(part in ("", ".", "..") for part in parts):
@@ -45,7 +45,6 @@ def _relative_path(value: Any) -> str:
     if value == MANIFEST_NAME:
         _fail("manifest cannot own itself")
     return value
-
 
 def is_user_data_path(path: str) -> bool:
     """Return whether path belongs to the explicit user-data preservation set."""
@@ -60,13 +59,12 @@ def is_user_data_path(path: str) -> bool:
 def _safe_symlink_target(path: str, target: Any) -> str:
     if not isinstance(target, str) or not target or target.startswith("/"):
         _fail("symlink target must be a non-empty relative path")
-    if "\\" in target or "\x00" in target:
+    if "\\" in target or any(ord(character) < 32 or ord(character) == 127 for character in target):
         _fail("symlink target contains a forbidden character")
     resolved = posixpath.normpath(posixpath.join(posixpath.dirname(path), target))
     if resolved in ("", ".", "..") or resolved.startswith("../"):
         _fail("symlink target escapes the installation root")
     return target
-
 
 def _verify_symlink_containment(root: Path, path: str, target: str) -> None:
     candidate = root / posixpath.dirname(path) / target
