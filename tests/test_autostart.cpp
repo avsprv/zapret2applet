@@ -23,7 +23,7 @@ private slots:
             "Type=Application\n"
             "Name=zapret2applet\n"
             "Comment=Unofficial Qt6 GUI for zapret2\n"
-            "Exec=\\"/usr/bin/zapret2applet\\" --minimized\n"
+            "Exec=\"/usr/bin/zapret2applet\" --minimized\n"
             "Icon=zapret2applet\n"
             "Terminal=false\n"
             "X-GNOME-Autostart-enabled=true\n");
@@ -36,7 +36,7 @@ private slots:
         QVERIFY(current.open(QIODevice::ReadOnly));
         const QByteArray migrated = current.readAll();
         QVERIFY(migrated.contains("Name=Zapret2 Control"));
-        QVERIFY(migrated.contains("Exec=\\"/usr/bin/zapret2control\\" --minimized"));
+        QVERIFY(migrated.contains("Exec=\"/usr/bin/zapret2control\" --minimized"));
         QVERIFY(migrated.contains("Icon=zapret2control"));
         QVERIFY(!QFile::exists(legacyPath));
     }
