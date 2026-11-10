@@ -134,7 +134,7 @@ grep -q '^9.9.9$' "$W/opt/zapret2/docs/changes.txt" && ok "new version installed
 [ "$("$W/opt/zapret2/nfq2/nfqws2")" = "nfqws2 9.9.9" ] && ok "binary linked and runs" || bad "binary link broken"
 backup=$(find "$W/opt" -maxdepth 1 -type d -name '.zapret2control-backup-*' | head -n 1)
 [ -n "$backup" ] && grep -q '^1.0.6$' "$backup/docs/changes.txt" && ok "backup of previous version kept" || bad "no backup"
-[ ! -e "$W/run/update.lock" ] && ok "lock released" || bad "lock left behind"
+flock -n "$W/run/update.lock" -c true && ok "process lock released" || bad "update lock is still held"
 
 # --- 1a. active service is stopped and restored around the update
 make_base; make_release v9.9.9
