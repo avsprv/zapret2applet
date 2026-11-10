@@ -10,7 +10,7 @@ import unittest
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "packaging/helper"))
 
-from updater_cli import run_update
+from updater_cli import recover_pending, run_update
 from updater_activation import ActivationError
 
 
@@ -74,6 +74,12 @@ class UpdaterCliTests(unittest.TestCase):
         self.assertEqual((backup / "config").read_text(encoding="utf-8"), "NFQWS2_ENABLE=0\n")
         self.assertTrue(backup.is_dir())
         self.assertEqual(list(self.state.glob("*.json")), [])
+
+    def test_recovery_rejects_unrecognized_journal_directory_entries(self):
+        self.state.mkdir(parents=True, mode=0o700)
+        (self.state / ".orphaned-journal.tmp").write_text("partial", encoding="utf-8")
+        with self.assertRaisesRegex(ActivationError, "unexpected object"):
+            recover_pending(self.state, self.active.parent, "zapret2.service")
 
     def test_invalid_upstream_does_not_change_active_installation(self):
         (self.upstream / "install_bin.sh").write_text("#!/bin/sh\nexit 9\n", encoding="utf-8")
