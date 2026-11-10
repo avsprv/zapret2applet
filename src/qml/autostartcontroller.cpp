@@ -23,10 +23,10 @@ QString legacyDesktopEntry(const QString &legacyExecutable)
     return QStringLiteral(
         "[Desktop Entry]\n"
         "Type=Application\n"
-        "Name=zapret2applet\n"
+        "Name=zapret2control\n"
         "Comment=Unofficial Qt6 GUI for zapret2\n"
-        "Exec=%1\n"
-        "Icon=zapret2applet\n"
+        "Exec=%1 --minimized\n"
+        "Icon=zapret2control\n"
         "Terminal=false\n"
         "X-GNOME-Autostart-enabled=true\n"
         "X-Zapret2Applet-Managed=true\n").arg(escapeDesktopExecArgument(legacyExecutable));
@@ -42,8 +42,7 @@ QString currentDesktopEntry(const QString &executablePath)
         "Exec=%1 --minimized\n"
         "Icon=zapret2control\n"
         "Terminal=false\n"
-        "X-GNOME-Autostart-enabled=true\n"
-        "X-Zapret2Control-Managed=true\n").arg(escapeDesktopExecArgument(executablePath));
+        "X-GNOME-Autostart-enabled=true\n").arg(escapeDesktopExecArgument(executablePath));
 }
 
 bool fileHasExactContents(const QString &path, const QByteArray &expected)
