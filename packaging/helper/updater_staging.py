@@ -171,6 +171,7 @@ def _copy_unknown_legacy(
             if destination.exists():
                 if not destination.is_dir() or destination.is_symlink():
                     continue
+                os.chmod(destination, entry["mode"])
             else:
                 destination.mkdir(mode=entry["mode"])
         elif entry["type"] == "file":
@@ -272,7 +273,7 @@ def build_staging_tree(
         _validate_root(stage)
         verify_manifest(stage, new_manifest)
         # Validate every preserved and untracked object in the completed tree.
-        _walk_entries(stage)
+        _walk_entries(stage, allow_manifest=True)
         return new_manifest
     except Exception:
         # This destination is a newly-created, private transaction path. The
