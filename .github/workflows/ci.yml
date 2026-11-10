@@ -5,6 +5,8 @@ on:
 
 jobs:
   build:
+    permissions:
+      contents: write
     runs-on: ubuntu-latest
     container: fedora:latest
     steps:
@@ -19,12 +21,27 @@ jobs:
           appstreamcli validate --no-net data/org.avsprv.zapret2control.metainfo.xml
       - name: Configure
         run: cmake -S . -B build -G Ninja
-      - name: Regenerate translation catalog for migration review
+      - name: Regenerate and commit the current translation catalog
+        if: github.event_name == 'push' && github.ref == 'refs/heads/feature/rename-zapret2control'
         run: |
           cmake --build build --target zapret2control_i18n_lupdate
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add i18n/zapret2control_en.ts
+          if ! git diff --cached --quiet; then
+            git commit -m "Refresh QML translation catalog"
+            git push origin HEAD:feature/rename-zapret2control
+          fi
+      - name: Extract current translations for pull request checks
+        if: github.event_name == 'pull_request'
+        run: cmake --build build --target zapret2control_i18n_lupdate
+      - name: Prepare translation artifact for pull request review
+        if: github.event_name == 'pull_request'
+        run: |
           mkdir -p translation-refresh
           cp i18n/zapret2control_en.ts translation-refresh/
       - uses: actions/upload-artifact@v6
+        if: github.event_name == 'pull_request'
         with:
           name: translation-refresh
           path: translation-refresh/zapret2control_en.ts
