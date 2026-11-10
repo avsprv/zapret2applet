@@ -44,7 +44,7 @@ def _validate_root(root: Path, expected_uid: int | None = None) -> None:
         _fail("installation root must be a real directory owned by the expected user")
     mode = stat.S_IMODE(info.st_mode)
     if mode & 0o022 or mode & ~0o777:
-        _fail("installation root has unsafe permissions")
+        _fail("installation root has unsafe permissions: group/world-writable or special permission bits")
 
 
 def _relative_path(value: Any) -> str:
