@@ -84,7 +84,16 @@ def activate_with_service(
         state = _service_state(unit)
         was_active = state == "active"
         if was_active:
-            _set_service_state(unit, "stop", "inactive")
+            try:
+                _set_service_state(unit, "stop", "inactive")
+            except Exception as stop_error:
+                try:
+                    _restore_service(unit, True)
+                except Exception as restore_error:
+                    raise ActivationError(
+                        f"service stop verification failed and service state could not be restored: {restore_error}"
+                    ) from stop_error
+                raise
 
     try:
         document = activate_staged_tree(
@@ -124,7 +133,6 @@ def recover_with_service(
     parent: str | os.PathLike[str],
     unit: str,
     *,
-    no_service: bool = False,
     expected_uid: int | None = None,
 ) -> str:
     """Recover filesystem state, restore the recorded service state, then clear journal."""
@@ -132,7 +140,7 @@ def recover_with_service(
         raise ActivationError("invalid systemd unit name")
     document = _read_journal(Path(journal), os.geteuid() if expected_uid is None else expected_uid)
     result = recover_transaction(journal, parent, expected_uid=expected_uid)
-    if document["service_was_active"] and not no_service:
+    if document["service_was_active"]:
         _restore_service(unit, True)
     finalize_transaction(journal, expected_uid=expected_uid)
     return result
