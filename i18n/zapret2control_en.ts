@@ -7,97 +7,97 @@
         <location filename="../src/qml/pages/AboutPage.qml" line="7"/>
         <location filename="../tests/test_i18n.cpp" line="81"/>
         <source>О программе</source>
-        <translation type="unfinished">About</translation>
+        <translation>About</translation>
     </message>
     <message>
         <location filename="../src/qml/pages/AboutPage.qml" line="16"/>
         <source>Zapret2 Control</source>
-        <translation type="unfinished">Zapret2 Control</translation>
+        <translation>Zapret2 Control</translation>
     </message>
     <message>
         <location filename="../src/qml/pages/AboutPage.qml" line="22"/>
         <source>Независимый графический интерфейс на Qt 6 для управления zapret2 в Linux.</source>
-        <translation type="unfinished">An independent Qt 6 graphical interface for managing zapret2 on Linux.</translation>
+        <translation>An independent Qt 6 graphical interface for managing zapret2 on Linux.</translation>
     </message>
     <message>
         <location filename="../src/qml/pages/AboutPage.qml" line="28"/>
         <source>Версия и компоненты</source>
-        <translation type="unfinished">Version and components</translation>
+        <translation>Version and components</translation>
     </message>
     <message>
         <location filename="../src/qml/pages/AboutPage.qml" line="34"/>
         <source>Версия приложения: %1</source>
-        <translation type="unfinished">Application version: %1</translation>
+        <translation>Application version: %1</translation>
     </message>
     <message>
         <location filename="../src/qml/pages/AboutPage.qml" line="40"/>
         <source>Qt 6 — графическая платформа приложения.</source>
-        <translation type="unfinished">Qt 6 — the application&apos;s graphical platform.</translation>
+        <translation>Qt 6 is the application's graphical framework.</translation>
     </message>
     <message>
         <location filename="../src/qml/pages/AboutPage.qml" line="46"/>
         <source>zapret2 — отдельный upstream-компонент; он не входит в состав приложения.</source>
-        <translation type="unfinished">zapret2 is a separate upstream component; it is not included with the application.</translation>
+        <translation>zapret2 is a separate upstream component and is not part of this application.</translation>
     </message>
     <message>
         <location filename="../src/qml/pages/AboutPage.qml" line="52"/>
         <source>systemd и Polkit используются для системной интеграции и авторизации операций.</source>
-        <translation type="unfinished">systemd and Polkit are used for system integration and operation authorization.</translation>
+        <translation>systemd and Polkit are used for system integration and operation authorization.</translation>
     </message>
     <message>
         <location filename="../src/qml/pages/AboutPage.qml" line="58"/>
         <source>Лицензии</source>
-        <translation type="unfinished">Licenses</translation>
+        <translation>Licenses</translation>
     </message>
     <message>
         <location filename="../src/qml/pages/AboutPage.qml" line="64"/>
         <source>Код Zapret2 Control распространяется по лицензии MIT. Лицензии сторонних компонентов сохраняют собственную область действия. Подробности приведены в NOTICE и в документации upstream.</source>
-        <translation type="unfinished">Zapret2 Control code is distributed under the MIT License. Third-party components retain their own applicable licenses. See NOTICE and the upstream documentation for details.</translation>
+        <translation>Zapret2 Control is distributed under the MIT License. Third-party components retain their own applicable licenses. See NOTICE and the upstream documentation for details.</translation>
     </message>
     <message>
         <location filename="../src/qml/pages/AboutPage.qml" line="69"/>
         <source>Лицензия приложения (MIT)</source>
-        <translation type="unfinished">Application license (MIT)</translation>
+        <translation>Application license (MIT)</translation>
     </message>
     <message>
         <location filename="../src/qml/pages/AboutPage.qml" line="76"/>
         <source>Проект и документация</source>
-        <translation type="unfinished">Project and documentation</translation>
+        <translation>Project and documentation</translation>
     </message>
     <message>
         <location filename="../src/qml/pages/AboutPage.qml" line="81"/>
         <source>Репозиторий Zapret2 Control</source>
-        <translation type="unfinished">Zapret2 Control repository</translation>
+        <translation>Zapret2 Control repository</translation>
     </message>
     <message>
         <location filename="../src/qml/pages/AboutPage.qml" line="87"/>
         <source>Документация приложения</source>
-        <translation type="unfinished">Application documentation</translation>
+        <translation>Application documentation</translation>
     </message>
     <message>
         <location filename="../src/qml/pages/AboutPage.qml" line="93"/>
         <source>Релизы приложения</source>
-        <translation type="unfinished">Application releases</translation>
+        <translation>Application releases</translation>
     </message>
     <message>
         <location filename="../src/qml/pages/AboutPage.qml" line="99"/>
         <source>Сообщить об ошибке</source>
-        <translation type="unfinished">Report an issue</translation>
+        <translation>Report an issue</translation>
     </message>
     <message>
         <location filename="../src/qml/pages/AboutPage.qml" line="105"/>
         <source>Уведомления о сторонних компонентах</source>
-        <translation type="unfinished">Third-party notices</translation>
+        <translation>Third-party notices</translation>
     </message>
     <message>
         <location filename="../src/qml/pages/AboutPage.qml" line="111"/>
         <source>Upstream-проект zapret2</source>
-        <translation type="unfinished">zapret2 upstream project</translation>
+        <translation>zapret2 upstream project</translation>
     </message>
     <message>
         <location filename="../src/qml/pages/AboutPage.qml" line="118"/>
         <source>Zapret2 Control — независимый проект и не связан с автором или сопровождающими upstream-проекта zapret2.</source>
-        <translation type="unfinished">Zapret2 Control is an independent project and is not affiliated with the zapret2 upstream author or maintainers.</translation>
+        <translation>Zapret2 Control is an independent project and is not affiliated with the author or maintainers of the zapret2 upstream project.</translation>
     </message>
 </context>
 <context>
@@ -241,7 +241,7 @@
     <message>
         <location filename="../src/qml/blockcheckjobcontroller.cpp" line="246"/>
         <source>Задание уже завершено или заменено; новое задание не затронуто.</source>
-        <translation type="unfinished"></translation>
+        <translation>The job has already completed or been replaced; the new job was not affected.</translation>
     </message>
     <message>
         <location filename="../src/qml/blockcheckjobcontroller.cpp" line="248"/>
@@ -291,17 +291,17 @@
     <message>
         <location filename="../src/qml/blockcheckjobcontroller.cpp" line="342"/>
         <source>Идентификатор задания устарел; обнаружено незавершённое восстановление. Журнал другой операции не будет прочитан.</source>
-        <translation type="unfinished"></translation>
+        <translation>The job ID is stale; an unfinished recovery was detected. The log of another operation will not be read.</translation>
     </message>
     <message>
         <location filename="../src/qml/blockcheckjobcontroller.cpp" line="355"/>
         <source>Обнаружено другое задание Blockcheck в очереди; отслеживание продолжено.</source>
-        <translation type="unfinished"></translation>
+        <translation>Another Blockcheck job was found in the queue; monitoring continues.</translation>
     </message>
     <message>
         <location filename="../src/qml/blockcheckjobcontroller.cpp" line="362"/>
         <source>Идентификатор задания устарел; состояние новой операции не удалось проверить. Операции заблокированы.</source>
-        <translation type="unfinished"></translation>
+        <translation>The job ID is stale; the state of the new operation could not be verified. Operations are blocked.</translation>
     </message>
     <message>
         <location filename="../src/qml/blockcheckjobcontroller.cpp" line="367"/>
@@ -559,22 +559,22 @@
     <message>
         <location filename="../src/backend/blockcheckrunner.cpp" line="97"/>
         <source>код %1</source>
-        <translation type="unfinished"></translation>
+        <translation>exit code %1</translation>
     </message>
     <message>
         <location filename="../src/backend/blockcheckrunner.cpp" line="97"/>
         <source>процесс завершился аварийно</source>
-        <translation type="unfinished"></translation>
+        <translation>the process terminated abnormally</translation>
     </message>
     <message>
         <location filename="../src/backend/blockcheckrunner.cpp" line="98"/>
         <source>Не удалось подтвердить отправку запроса отмены Blockcheck (%1). Диагностика может продолжиться.</source>
-        <translation type="unfinished"></translation>
+        <translation>Could not confirm that the Blockcheck cancellation request was sent (%1). Diagnostics may continue.</translation>
     </message>
     <message>
         <location filename="../src/backend/blockcheckrunner.cpp" line="109"/>
         <source>Не удалось запустить helper отмены Blockcheck: %1. Диагностика может продолжиться.</source>
-        <translation type="unfinished"></translation>
+        <translation>Could not start the Blockcheck cancellation helper: %1. Diagnostics may continue.</translation>
     </message>
 </context>
 <context>
@@ -1642,7 +1642,7 @@
     <message>
         <location filename="../src/backend/systemdbackend.cpp" line="59"/>
         <source>Ошибка systemctl: %1</source>
-        <translation type="unfinished"></translation>
+        <translation>systemctl error: %1</translation>
     </message>
     <message>
         <location filename="../src/backend/systemdbackend.cpp" line="208"/>
@@ -1652,7 +1652,7 @@
     <message>
         <location filename="../src/backend/systemdbackend.cpp" line="217"/>
         <source>Не удалось запустить операцию systemd: %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Failed to start the systemd operation: %1</translation>
     </message>
     <message>
         <location filename="../src/backend/systemdbackend.cpp" line="40"/>
