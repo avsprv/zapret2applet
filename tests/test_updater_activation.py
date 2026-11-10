@@ -122,6 +122,14 @@ class UpdaterActivationTests(unittest.TestCase):
             "discarded_unactivated_stage",
         )
 
+    def test_duplicate_journal_keys_are_rejected(self):
+        self.journal.write_text(
+            '{"schema_version":1,"schema_version":1}', encoding="utf-8"
+        )
+        self.journal.chmod(0o600)
+        with self.assertRaisesRegex(ActivationError, "duplicate transaction journal key"):
+            recover_transaction(self.journal, self.base)
+
     def test_symlinked_journal_is_rejected(self):
         target = self.journal_dir / "target"
         target.write_text("{}", encoding="utf-8")
