@@ -126,7 +126,7 @@ def _copy_user_data(source_root: Path, stage: Path) -> None:
 def _copy_unknown_legacy(
     active: Path, stage: Path, previous_paths: set[str], new_paths: set[str],
     active_entries: list[dict[str, Any]], new_manifest_entries: list[dict[str, Any]]
- ) -> dict[str, int]:
+) -> dict[str, int]:
     """Retain untracked regular files/directories absent from the new upstream tree."""
     entries = {entry["path"]: entry for entry in active_entries}
     preserve: list[str] = []
