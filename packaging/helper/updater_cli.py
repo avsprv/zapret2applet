@@ -70,7 +70,7 @@ def recover_pending(
     entries = sorted(state.iterdir())
     for item in entries:
         if (
-            not re.fullmatch(r"[0-9a-f]{32}\\.json", item.name)
+            not re.fullmatch(r"[0-9a-f]{32}\.json", item.name)
             or item.is_symlink()
             or not item.is_file()
         ):
