@@ -68,6 +68,16 @@ def _safe_symlink_target(path: str, target: Any) -> str:
     return target
 
 
+def _verify_symlink_containment(root: Path, path: str, target: str) -> None:
+    candidate = root / posixpath.dirname(path) / target
+    try:
+        resolved_root = root.resolve(strict=True)
+        resolved_target = candidate.resolve(strict=True)
+        resolved_target.relative_to(resolved_root)
+    except (OSError, RuntimeError, ValueError):
+        _fail(f"symlink does not resolve to an existing path inside the installation: {path}")
+
+
 def _mode(value: Any) -> int:
     if isinstance(value, bool) or not isinstance(value, int) or not 0 <= value <= 0o777:
         _fail("invalid file mode")
@@ -189,6 +199,8 @@ def _walk_entries(root: Path, *, allow_manifest: bool) -> list[dict[str, Any]]:
                 })
             elif stat.S_ISLNK(info.st_mode):
                 target = os.readlink(child.path)
+                target = _safe_symlink_target(path, target)
+                _verify_symlink_containment(root, path, target)
                 entries.append({
                     "path": path,
                     "type": "symlink",
@@ -265,6 +277,7 @@ def verify_manifest(
             target = os.readlink(root_path / entry["path"])
             if _safe_symlink_target(entry["path"], target) != entry["target"]:
                 _fail(f"symlink target mismatch: {entry['path']}")
+            _verify_symlink_containment(root_path, entry["path"], target)
         if kind != "symlink" and stat.S_IMODE(info.st_mode) != entry["mode"]:
             _fail(f"mode mismatch: {entry['path']}")
     return manifest
@@ -275,14 +288,16 @@ def write_manifest(root: str | os.PathLike[str], release_tag: str) -> dict[str, 
     if root_path.is_symlink() or not root_path.is_dir():
         _fail("installation root must be a real directory")
     manifest_path = root_path / MANIFEST_NAME
-    if manifest_path.is_symlink():
-        _fail("existing manifest path must not be a symlink")
-    if manifest_path.exists() and not manifest_path.is_file():
-        _fail("existing manifest path must be a regular file")
+    try:
+        manifest_path.lstat()
+    except FileNotFoundError:
+        pass
+    else:
+        _fail("upstream tree already contains the reserved manifest path")
     document = validate_manifest({
         "schema_version": SCHEMA_VERSION,
         "release_tag": release_tag,
-        "entries": _walk_entries(root_path, allow_manifest=True),
+        "entries": _walk_entries(root_path, allow_manifest=False),
     })
     payload = (json.dumps(document, sort_keys=True, indent=2) + "\n").encode("utf-8")
     if len(payload) > MAX_MANIFEST_BYTES:
