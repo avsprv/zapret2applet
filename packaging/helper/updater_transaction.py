@@ -183,11 +183,17 @@ def _validate_preserved_user_data(child: os.DirEntry[str], relative: str) -> Non
         info = child.stat(follow_symlinks=False)
     except OSError as exc:
         _fail(f"cannot inspect preserved user data {relative}: {exc}")
+    parts = relative.split("/")
+    if stat.S_ISLNK(info.st_mode):
+        if relative == "config" or (len(parts) == 2 and parts[0] == "ipset"):
+            _fail(f"preserved user data must be a single-link regular file: {relative}")
+        if len(parts) == 3 and parts[0] == "init.d" and parts[2] == "custom.d":
+            _fail(f"custom.d must be a real directory: {relative}")
+        _fail(f"unsupported preserved user-data object: {relative}")
     mode = stat.S_IMODE(info.st_mode)
     if mode & 0o022 or mode & ~0o777:
         _fail(f"unsafe permissions on preserved user data: {relative}")
 
-    parts = relative.split("/")
     if relative == "config" or (len(parts) == 2 and parts[0] == "ipset"):
         if not stat.S_ISREG(info.st_mode) or info.st_nlink != 1:
             _fail(f"preserved user data must be a single-link regular file: {relative}")
