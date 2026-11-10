@@ -21,9 +21,6 @@ Rules-Requires-Root: no
 
 Package: zapret2control
 Architecture: any
-Provides: zapret2applet
-Conflicts: zapret2applet
-Replaces: zapret2applet
 Depends: ${shlibs:Depends}, ${misc:Depends},
          pkexec | policykit-1,
          qml6-module-org-kde-kirigami,
