@@ -158,6 +158,7 @@ install(FILES
         packaging/helper/blockcheck_probe.py
         packaging/helper/blockcheck_admission.py
         packaging/helper/blockcheck_cancel.py
+        packaging/helper/updater_transaction.py
         DESTINATION ${CMAKE_INSTALL_DATADIR}/zapret2control)
 install(FILES ${CMAKE_BINARY_DIR}/org.zapret2control.policy
         DESTINATION ${CMAKE_INSTALL_DATADIR}/polkit-1/actions)
@@ -306,6 +307,9 @@ if(BUILD_TESTING)
 
     add_test(NAME blockcheck_admission
              COMMAND ${Python3_EXECUTABLE} ${CMAKE_SOURCE_DIR}/tests/test_blockcheck_admission.py)
+
+    add_test(NAME updater_transaction
+             COMMAND ${Python3_EXECUTABLE} ${CMAKE_SOURCE_DIR}/tests/test_updater_transaction.py)
 
     add_test(NAME package_layout
              COMMAND ${Python3_EXECUTABLE} ${CMAKE_SOURCE_DIR}/tests/test_package_layout.py)
