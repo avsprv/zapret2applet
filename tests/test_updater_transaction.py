@@ -36,6 +36,14 @@ class UpdaterManifestTests(unittest.TestCase):
         path.chmod(mode)
         return path
 
+    def test_rejects_group_or_world_writable_installation_root(self):
+        self.put("docs/changes.txt")
+        self.root.chmod(0o777)
+        with self.assertRaisesRegex(ManifestError, "group/world-writable"):
+            build_manifest(self.root, "v1.2.3")
+        with self.assertRaisesRegex(ManifestError, "group/world-writable"):
+            write_manifest(self.root, "v1.2.3")
+
     def test_manifest_tracks_upstream_files_directories_and_relative_links(self):
         self.put("docs/changes.txt", b"release notes")
         self.put("binaries/x86_64/nfqws2", b"binary", 0o755)
