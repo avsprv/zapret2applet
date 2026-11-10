@@ -37,7 +37,6 @@ qt_add_translations(zapret2control_i18n
     SOURCES
         src/i18n.cpp
         src/qml/main.cpp
-        src/settingsmigration.cpp
         src/qml/applicationcontroller.cpp
         src/qml/configcontroller.cpp
         src/qml/profilecontroller.cpp
@@ -80,8 +79,6 @@ qt_add_translations(zapret2control_i18n
 # The Kirigami application is the sole production executable.
 qt_add_executable(zapret2control
     src/qml/main.cpp
-    src/settingsmigration.cpp
-    src/settingsmigration.h
     src/qml/applicationcontroller.cpp
     src/qml/applicationcontroller.h
     src/qml/settingsmanager.cpp
@@ -204,12 +201,6 @@ if(BUILD_TESTING)
     target_compile_definitions(test_zapretcompatibility PRIVATE QZAPRET_HELPER_PATH="/nonexistent" QZAPRET_SOURCE_DIR="${CMAKE_CURRENT_SOURCE_DIR}" QZAPRET_UPSTREAM_SOURCE_DIR="${CMAKE_CURRENT_SOURCE_DIR}/third_party/zapret2")
     add_test(NAME zapretcompatibility COMMAND test_zapretcompatibility)
 
-    qt_add_executable(test_settingsmigration tests/test_settingsmigration.cpp
-        src/settingsmigration.cpp src/settingsmigration.h)
-    target_include_directories(test_settingsmigration PRIVATE src)
-    target_link_libraries(test_settingsmigration PRIVATE Qt6::Test Qt6::Core)
-    add_test(NAME settingsmigration COMMAND test_settingsmigration)
-
     qt_add_executable(test_autostartcontroller tests/test_autostartcontroller.cpp
         src/qml/autostartcontroller.cpp src/qml/autostartcontroller.h)
     target_include_directories(test_autostartcontroller PRIVATE src src/qml)
@@ -325,8 +316,8 @@ if(BUILD_TESTING)
     add_test(NAME blockcheck_admission
              COMMAND ${Python3_EXECUTABLE} ${CMAKE_SOURCE_DIR}/tests/test_blockcheck_admission.py)
 
-    add_test(NAME package_migration
-             COMMAND ${Python3_EXECUTABLE} ${CMAKE_SOURCE_DIR}/tests/test_package_migration.py)
+    add_test(NAME package_layout
+             COMMAND ${Python3_EXECUTABLE} ${CMAKE_SOURCE_DIR}/tests/test_package_layout.py)
 
     add_test(NAME polkit_policy
              COMMAND ${Python3_EXECUTABLE} ${CMAKE_SOURCE_DIR}/tests/test_polkit_policy.py
