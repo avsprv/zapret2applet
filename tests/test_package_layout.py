@@ -43,10 +43,13 @@ def main() -> None:
     assert "data/zapret2control.1" in cmake
     assert "%{_mandir}/man1/zapret2control.1*" in spec
     assert manpage.is_file()
-    assert package_workflow.count("rpm -ql zapret2control | grep -Eq") == 2
+    assert package_workflow.count("rpm -ql zapret2control | grep -Eq") == 1
     deb_workflow = package_workflow.split("\n  rpm:\n", 1)[0]
     assert "rpm -ql zapret2control" not in deb_workflow
-    assert deb_workflow.count("dpkg-query -L zapret2control | grep -Eq") == 2
+    assert deb_workflow.count("dpkg-query -L zapret2control | grep -Eq") == 1
+
+    assert LEGACY_ID not in package_workflow
+    assert "legacy-source" not in package_workflow
 
     for source in (preinst, spec.split("%changelog", 1)[0], control, cmake,
                    main_cpp, autostart, autostart_tests):
