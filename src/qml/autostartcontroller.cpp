@@ -18,27 +18,6 @@ QString escapeDesktopExecArgument(QString value)
     return QLatin1Char('"') + value + QLatin1Char('"');
 }
 
-QString escapeLegacyDesktopExecArgument(QString value)
-{
-    value.replace(QLatin1Char('\\'), QStringLiteral("\\\\"));
-    value.replace(QLatin1Char('"'), QStringLiteral("\\\""));
-    return QLatin1Char('"') + value + QLatin1Char('"');
-}
-
-QString legacyDesktopEntry(const QString &legacyExecutable)
-{
-    return QStringLiteral(
-        "[Desktop Entry]\n"
-        "Type=Application\n"
-        "Name=zapret2control\n"
-        "Comment=Unofficial Qt6 GUI for zapret2\n"
-        "Exec=%1 --minimized\n"
-        "Icon=zapret2control\n"
-        "Terminal=false\n"
-        "X-GNOME-Autostart-enabled=true\n"
-        "X-Zapret2Applet-Managed=true\n").arg(escapeLegacyDesktopExecArgument(legacyExecutable));
-}
-
 QString currentDesktopEntry(const QString &executablePath)
 {
     return QStringLiteral(
@@ -74,30 +53,7 @@ AutostartController::AutostartController(QObject *parent, const QString &autosta
           : autostartDirectory)
     , m_executablePath(executablePath.isEmpty() ? QCoreApplication::applicationFilePath() : executablePath)
 {
-    const QString legacyPath = QDir(m_autostartDirectory).filePath(QStringLiteral("zapret2applet.desktop"));
-    const QFileInfo legacyInfo(legacyPath);
-    const QFileInfo newInfo(entryPath());
-    if (!legacyInfo.exists() || legacyInfo.isSymLink() || !legacyInfo.isFile()
-        || newInfo.exists() || newInfo.isSymLink() || m_executablePath.isEmpty()
-        || !QFileInfo(m_executablePath).isAbsolute())
-        return;
 
-    const QString legacyExecutable = QDir(QFileInfo(m_executablePath).absolutePath())
-        .filePath(QStringLiteral("zapret2applet"));
-    if (!fileHasExactContents(legacyPath, legacyDesktopEntry(legacyExecutable).toUtf8()))
-        return;
-
-    if (!QDir().mkpath(m_autostartDirectory))
-        return;
-
-    QSaveFile migrated(entryPath());
-    if (!migrated.open(QIODevice::WriteOnly | QIODevice::Text))
-        return;
-    const QByteArray data = currentDesktopEntry(m_executablePath).toUtf8();
-    if (migrated.write(data) != data.size() || !migrated.commit())
-        return;
-    if (!QFile::remove(legacyPath))
-        QFile::remove(entryPath());
 }
 
 bool AutostartController::enabled() const
