@@ -139,7 +139,7 @@ def _validate_checksum_manifest(checksum_file: Path, upstream: Path, expected_ui
     seen: set[str] = set()
     prefix = upstream.name + "/binaries/"
     for line in lines:
-        match = re.fullmatch(r"([0-9a-f]{64})  ([^\\s]+)", line)
+        match = re.fullmatch(r"([0-9a-f]{64})  ([^\s]+)", line)
         if not match:
             raise ActivationError("invalid release checksum manifest entry")
         relative = match.group(2)
