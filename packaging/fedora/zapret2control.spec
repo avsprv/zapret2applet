@@ -1,8 +1,6 @@
 Name:           zapret2control
 Version:        0.5.0
 Release:        1%{?dist}
-Obsoletes:      zapret2applet < 0.5.0
-Provides:       zapret2applet = %{version}-%{release}
 Summary:        Network Control for Linux
 License:        MIT
 URL:            https://github.com/avsprv/zapret2control
@@ -56,66 +54,18 @@ installed separately.
 %postun
 %systemd_postun zapret2control-blockcheck.service zapret2control-blockcheck-recovery.service
 
-# Stop and disable legacy units before replacing their helper and unit files.
+# Stop active application-managed jobs before replacing their unit files.
 %pretrans
 for unit in \
     zapret2control-blockcheck.service \
-    zapret2control-blockcheck-recovery.service \
-    zapret2applet-blockcheck.service \
-    zapret2applet-blockcheck-recovery.service
+    zapret2control-blockcheck-recovery.service
 do
     if [ -e "/usr/lib/systemd/system/$unit" ] || [ -e "/lib/systemd/system/$unit" ]; then
         if [ -d /run/systemd/system ] && command -v systemctl >/dev/null 2>&1; then
             systemctl stop "$unit" || exit 1
         fi
-        case "$unit" in
-            zapret2applet-*)
-                if command -v systemctl >/dev/null 2>&1; then
-                    systemctl disable "$unit" || exit 1
-                fi
-                ;;
-        esac
     fi
 done
-
-old=/var/lib/zapret2applet/blockcheck
-new=/var/lib/zapret2control/blockcheck
-old_parent=/var/lib/zapret2applet
-new_parent=/var/lib/zapret2control
-if [ -L "$old_parent" ] || [ -L "$new_parent" ]; then
-    echo "zapret2control: refusing symlinked Blockcheck state parent" >&2
-    exit 1
-fi
-if [ -e "$old" ] || [ -L "$old" ]; then
-    [ -d "$old_parent" ] && [ ! -L "$old_parent" ] || {
-        echo "zapret2control: legacy Blockcheck state parent is not a real directory" >&2
-        exit 1
-    }
-    [ "$(stat -c '%u %a' "$old_parent")" = "0 700" ] || {
-        echo "zapret2control: legacy Blockcheck state parent has unsafe ownership or permissions" >&2
-        exit 1
-    }
-    [ -d "$old" ] && [ ! -L "$old" ] || {
-        echo "zapret2control: legacy Blockcheck state is not a real directory" >&2
-        exit 1
-    }
-    [ "$(stat -c '%u %a' "$old")" = "0 700" ] || {
-        echo "zapret2control: legacy Blockcheck state has unsafe ownership or permissions" >&2
-        exit 1
-    }
-    if [ -e "$new" ] || [ -L "$new" ]; then
-        echo "zapret2control: both legacy and current Blockcheck state exist; refusing ambiguous migration" >&2
-        exit 1
-    fi
-    [ -d "$new_parent" ] || mkdir -m 700 "$new_parent"
-    [ -d "$new_parent" ] && [ ! -L "$new_parent" ] && \
-        [ "$(stat -c '%u %a' "$new_parent")" = "0 700" ] || {
-        echo "zapret2control: current Blockcheck state parent is unsafe" >&2
-        exit 1
-    }
-    mv "$old" "$new"
-    rmdir "$old_parent" 2>/dev/null || :
-fi
 %posttrans
 if command -v systemctl >/dev/null 2>&1; then
     systemctl daemon-reload >/dev/null 2>&1 || :
@@ -152,8 +102,6 @@ appstream-util validate-relax --nonet %{buildroot}%{_datadir}/metainfo/org.avspr
 %changelog
 * Sun Nov 08 2026 avsprv <avsprv@users.noreply.github.com> - 0.5.0-1
 - Rename the application, executable, helper, desktop, Polkit and systemd identifiers
-- Migrate user settings and managed autostart entries from zapret2applet
-- Preserve legacy Blockcheck recovery state across package upgrades
 
 * Sat Nov 07 2026 avsprv <avsprv@users.noreply.github.com> - 0.4.0-1
 - Add safe configuration and profile management with validation and backups
