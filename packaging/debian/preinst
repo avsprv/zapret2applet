@@ -1,81 +1,23 @@
 #!/bin/sh
 set -e
 
-legacy_unit_installed() {
+unit_installed() {
     [ -e "/usr/lib/systemd/system/$1" ] || [ -e "/lib/systemd/system/$1" ]
-}
-
-migrate_blockcheck_state() {
-    old=/var/lib/zapret2applet/blockcheck
-    new=/var/lib/zapret2control/blockcheck
-    old_parent=/var/lib/zapret2applet
-    new_parent=/var/lib/zapret2control
-
-    if [ -L "$old_parent" ] || [ -L "$new_parent" ]; then
-        echo "zapret2control: refusing symlinked Blockcheck state parent" >&2
-        exit 1
-    fi
-    if [ -e "$old" ] || [ -L "$old" ]; then
-        [ -d "$old_parent" ] && [ ! -L "$old_parent" ] || {
-            echo "zapret2control: legacy Blockcheck state parent is not a real directory" >&2
-            exit 1
-        }
-        old_parent_meta=$(stat -c '%u %a' "$old_parent")
-        [ "$old_parent_meta" = "0 700" ] || {
-            echo "zapret2control: legacy Blockcheck state parent has unsafe ownership or permissions" >&2
-            exit 1
-        }
-        [ -d "$old" ] && [ ! -L "$old" ] || {
-            echo "zapret2control: legacy Blockcheck state is not a real directory" >&2
-            exit 1
-        }
-        old_meta=$(stat -c '%u %a' "$old")
-        [ "$old_meta" = "0 700" ] || {
-            echo "zapret2control: legacy Blockcheck state has unsafe ownership or permissions" >&2
-            exit 1
-        }
-        if [ -e "$new" ] || [ -L "$new" ]; then
-            echo "zapret2control: both legacy and current Blockcheck state exist; refusing ambiguous migration" >&2
-            exit 1
-        fi
-        [ -d "$new_parent" ] || mkdir -m 700 "$new_parent"
-        [ -d "$new_parent" ] && [ ! -L "$new_parent" ] || {
-            echo "zapret2control: current Blockcheck state parent is unsafe" >&2
-            exit 1
-        }
-        new_parent_meta=$(stat -c '%u %a' "$new_parent")
-        [ "$new_parent_meta" = "0 700" ] || {
-            echo "zapret2control: current Blockcheck state parent has unsafe ownership or permissions" >&2
-            exit 1
-        }
-        mv "$old" "$new"
-        rmdir "$old_parent" 2>/dev/null || true
-    fi
 }
 
 case "$1" in
     install|upgrade)
         for unit in \
             zapret2control-blockcheck.service \
-            zapret2control-blockcheck-recovery.service \
-            zapret2applet-blockcheck.service \
-            zapret2applet-blockcheck-recovery.service
+            zapret2control-blockcheck-recovery.service
         do
-            if legacy_unit_installed "$unit"; then
+            if unit_installed "$unit"; then
                 if ! command -v deb-systemd-invoke >/dev/null 2>&1; then
                     echo "zapret2control: deb-systemd-invoke is required to stop $unit" >&2
                     exit 1
                 fi
                 deb-systemd-invoke stop "$unit"
-                case "$unit" in
-                    zapret2applet-*)
-                        if command -v deb-systemd-helper >/dev/null 2>&1; then
-                            deb-systemd-helper disable "$unit"
-                        fi
-                        ;;
-                esac
             fi
         done
-        migrate_blockcheck_state
         ;;
 esac
