@@ -88,7 +88,8 @@ EOS
         ( cd "$W/src" && tar -czf "$rel/$name.tar.gz" --transform "s|^$name/docs/changes.txt|$name/../evil|" "$name" )
     else
         ( cd "$W/src" && tar -czf "$rel/$name.tar.gz" "$name" )
-    fi}
+    fi
+}
 
 # make_base — «установленный» старый zapret2 с пользовательскими файлами
 make_base() {
