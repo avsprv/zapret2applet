@@ -20,7 +20,7 @@ from typing import Sequence
 from updater_activation import ActivationError
 from updater_service import activate_with_service, recover_with_service
 from updater_staging import build_staging_tree
-from updater_transaction import ManifestError, load_manifest, verify_manifest
+from updater_transaction import ManifestError, build_manifest, load_manifest, verify_manifest
 
 _STATE_COMPONENT = "zapret2control"
 _STATE_SUBDIR = "updater"
@@ -123,6 +123,8 @@ def _prepare_upstream(upstream: Path, release_tag: str) -> None:
     install_script = upstream / "install_bin.sh"
     if not install_script.is_file() or install_script.is_symlink():
         raise ActivationError("upstream install_bin.sh is missing or unsafe")
+    # Validate the extracted tree before executing any upstream helper code.
+    build_manifest(upstream, release_tag)
     _run_checked(["/bin/sh", str(install_script)], cwd=upstream)
     for relative in ("nfq2/nfqws2", "ip2net/ip2net", "mdig/mdig"):
         binary = upstream / relative
