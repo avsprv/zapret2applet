@@ -83,11 +83,12 @@ class UpdaterActivationTests(unittest.TestCase):
 
     def test_recovery_refuses_unexpected_directory_identity(self):
         self.prepare_journal()
-        (self.stage / "new.txt").unlink()
-        self.stage.rmdir()
-        self.stage.mkdir()
-        marker = self.stage / "untrusted.txt"
+        replacement = self.base / "replacement"
+        replacement.mkdir()
+        marker = replacement / "untrusted.txt"
         marker.write_text("leave", encoding="utf-8")
+        self.stage.rmdir()
+        replacement.rename(self.stage)
         with self.assertRaisesRegex(ActivationError, "manual recovery required"):
             recover_transaction(self.journal, self.base)
         self.assertEqual(marker.read_text(encoding="utf-8"), "leave")
