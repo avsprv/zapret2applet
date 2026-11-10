@@ -11,6 +11,7 @@ RUNDIR=/run/zapret2control
 URLBASE=https://github.com/bol-van/zapret2/releases/download
 PROTO='=https'
 NOSVC=0
+STATE_DIR=/var/lib/zapret2control/updater
 JOURNALCTL=journalctl
 UNIT_DIR=/etc/systemd/system
 TEST_MODE=0
@@ -28,6 +29,7 @@ case "$0" in
         if [ -n "${QZAPRET_TEST_RUNDIR:-}" ]; then RUNDIR=$QZAPRET_TEST_RUNDIR; fi
         if [ -n "${QZAPRET_TEST_URLBASE:-}" ]; then URLBASE=$QZAPRET_TEST_URLBASE; PROTO='=https,file'; fi
         if [ -n "${QZAPRET_TEST_NO_SERVICE:-}" ]; then NOSVC=1; fi
+        if [ -n "${QZAPRET_TEST_UPDATER_STATE_DIR:-}" ]; then STATE_DIR=$QZAPRET_TEST_UPDATER_STATE_DIR; fi
         if [ -n "${QZAPRET_TEST_JOURNALCTL:-}" ]; then JOURNALCTL=$QZAPRET_TEST_JOURNALCTL; fi
         if [ -n "${QZAPRET_TEST_UNIT_DIR:-}" ]; then UNIT_DIR=$QZAPRET_TEST_UNIT_DIR; fi
         ;;
@@ -768,67 +770,47 @@ update-locked)
     newver=$(grep -E '^[0-9]+(\.[0-9]+)+[[:space:]]*$' "$stage/docs/changes.txt" | tail -n 1 | tr -d '[:space:]')
     [ "$newver" = "${tag#v}" ] || die "version mismatch: archive says '$newver', expected '${tag#v}'"
 
-    svc() { [ "$NOSVC" = 1 ] || systemctl "$1" "$UNIT"; }
-    was_active=0
-    if [ "$NOSVC" != 1 ]; then
-        active_state=$(systemctl show --property=ActiveState --value "$UNIT" 2>/dev/null) \
-            || die "cannot determine the current state of $UNIT; update aborted"
-        case "$active_state" in
-            active) was_active=1 ;;
-            inactive) was_active=0 ;;
-            *) die "cannot safely update while $UNIT is in state '$active_state'" ;;
-        esac
-    fi
-    if [ "$was_active" = 1 ]; then
-        echo "Stopping $UNIT ..."
-        svc stop || die "cannot stop $UNIT"
-        stopped_state=$(systemctl show --property=ActiveState --value "$UNIT" 2>/dev/null) \
-            || die "cannot verify that $UNIT stopped; update aborted"
-        [ "$stopped_state" = inactive ] || die "$UNIT did not reach the inactive state; update aborted"
+    module_dir=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd) || die "cannot locate updater modules"
+    if [ ! -f "$module_dir/updater_cli.py" ]; then module_dir=/usr/share/zapret2control; fi
+    [ -f "$module_dir/updater_cli.py" ] || die "transactional updater modules are missing"
+
+    # Recover any interrupted transaction before starting a new download.
+    if [ "$TEST_MODE" = 1 ]; then
+        QZAPRET_TEST_MODE=1 python3 "$module_dir/updater_cli.py" recover \
+            --base "$BASE" --journal-dir "$STATE_DIR" --unit "$UNIT" \
+            || die "pending updater transaction recovery failed"
+    else
+        python3 "$module_dir/updater_cli.py" recover \
+            --base "$BASE" --journal-dir "$STATE_DIR" --unit "$UNIT" \
+            || die "pending updater transaction recovery failed"
     fi
 
-    bak="$BASE.bak"
-    rm -rf "$bak"
-    echo "Backing up the current installation to $bak ..."
-    if ! cp -a "$BASE" "$bak"; then
-        rm -rf "$bak"
-        [ "$was_active" = 1 ] && svc start || true
-        die "backup failed, nothing was changed"
+    echo "Preparing and activating $tag transactionally ..."
+    if [ "$TEST_MODE" = 1 ]; then
+        if [ "$NOSVC" = 1 ]; then
+            QZAPRET_TEST_MODE=1 python3 "$module_dir/updater_cli.py" update \
+                --upstream "$stage" --base "$BASE" --journal-dir "$STATE_DIR" \
+                --tag "$tag" --unit "$UNIT" --no-service \
+                || die "transactional update failed"
+        else
+            QZAPRET_TEST_MODE=1 python3 "$module_dir/updater_cli.py" update \
+                --upstream "$stage" --base "$BASE" --journal-dir "$STATE_DIR" \
+                --tag "$tag" --unit "$UNIT" \
+                || die "transactional update failed"
+        fi
+    else
+        if [ "$NOSVC" = 1 ]; then
+            python3 "$module_dir/updater_cli.py" update \
+                --upstream "$stage" --base "$BASE" --journal-dir "$STATE_DIR" \
+                --tag "$tag" --unit "$UNIT" --no-service \
+                || die "transactional update failed"
+        else
+            python3 "$module_dir/updater_cli.py" update \
+                --upstream "$stage" --base "$BASE" --journal-dir "$STATE_DIR" \
+                --tag "$tag" --unit "$UNIT" \
+                || die "transactional update failed"
+        fi
     fi
-
-    rollback() {
-        echo "Rolling back to the previous version ..." >&2
-        rm -rf "$BASE" && mv "$bak" "$BASE" || echo "zapret2control-helper: ROLLBACK FAILED, previous version is in $bak" >&2
-        [ "$was_active" = 1 ] && svc start || true
-    }
-
-    echo "Installing $tag into $BASE ..."
-    cp -a "$stage/." "$BASE/" || { rollback; die "copy failed"; }
-    env -i PATH=/usr/sbin:/usr/bin:/sbin:/bin HOME=/root LANG=C.UTF-8 \
-        sh "$BASE/install_bin.sh" </dev/null >"$tmp/install_bin.log" 2>&1 \
-        || { cat "$tmp/install_bin.log" >&2; rollback; die "install_bin.sh failed"; }
-    for binary in nfq2/nfqws2 ip2net/ip2net mdig/mdig; do
-        binary_path="$BASE/$binary"
-        [ -f "$binary_path" ] && [ -x "$binary_path" ] || { rollback; die "required runtime binary is missing or not executable: $binary"; }
-        binary_target=$(readlink -f -- "$binary_path") || { rollback; die "cannot resolve runtime binary: $binary"; }
-        case "$binary_target" in
-            "$BASE"/binaries/*) ;;
-            *) rollback; die "runtime binary resolves outside the installation: $binary" ;;
-        esac
-    done
-    "$BASE/nfq2/nfqws2" --version >/dev/null 2>&1 || { rollback; die "nfqws2 does not run on this system"; }
-    printf '0.0.0.0\n' | "$BASE/ip2net/ip2net" > "$tmp/ip2net-probe.log" 2>&1 \
-        || { rollback; die "ip2net does not run on this system"; }
-    [ -s "$tmp/ip2net-probe.log" ] || { rollback; die "ip2net returned no output"; }
-
-    if [ "$was_active" = 1 ]; then
-        echo "Starting $UNIT ..."
-        svc start || die "zapret2 was updated to $tag, but $UNIT failed to restart; previous version kept in $bak"
-        started_state=$(systemctl show --property=ActiveState --value "$UNIT" 2>/dev/null) \
-            || die "zapret2 was updated to $tag, but the service state could not be verified; previous version kept in $bak"
-        [ "$started_state" = active ] || die "zapret2 was updated to $tag, but $UNIT did not become active; previous version kept in $bak"
-    fi
-    echo "OK: zapret2 updated to $tag (previous version kept in $bak)"
     ;;
 *)
     die "usage: zapret2control-helper logs-read {50|100|200|500} | lists-read NAME | lists-write NAME | config-read | config-write [EXPECTED_SHA256] | config-rollback | unit {start|stop|enable|disable} | blockcheck-submit [opts] | blockcheck-worker | blockcheck-recover | blockcheck-recovery-probe | blockcheck-job-status OPERATION_UUID | blockcheck-job-logs {50|100|200|500} START_EPOCH | blockcheck-job-cancel OPERATION_UUID | blockcheck [opts] | blockcheck-cancel | install vX.Y.Z | update vX.Y.Z"
