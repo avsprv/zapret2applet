@@ -19,7 +19,6 @@
 #include "listscontroller.h"
 #include "updatecontroller.h"
 #include "settingsmanager.h"
-#include "settingsmigration.h"
 #include "autostartcontroller.h"
 #include "traycontroller.h"
 
@@ -48,7 +47,6 @@ int main(int argc, char *argv[])
     parser.addOption(minimizedOption);
     parser.process(app);
     const bool startMinimized = parser.isSet(minimizedOption);
-    SettingsMigration::migrateLegacyProfile();
 
     ApplicationController controller;
     SettingsManager settingsManager;
