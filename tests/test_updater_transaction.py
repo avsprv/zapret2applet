@@ -118,6 +118,18 @@ class UpdaterManifestTests(unittest.TestCase):
         with self.assertRaisesRegex(ManifestError, "reserved manifest path"):
             write_manifest(self.root, "v1.2.3")
 
+    def test_manifest_cannot_claim_user_data(self):
+        document = {
+            "schema_version": 1,
+            "release_tag": "v1.2.3",
+            "entries": [{
+                "path": "config", "type": "file", "mode": 0o600,
+                "sha256": "0" * 64,
+            }],
+        }
+        with self.assertRaisesRegex(ManifestError, "cannot claim preserved user data"):
+            validate_manifest(document)
+
     def test_rejects_boolean_schema_version(self):
         with self.assertRaisesRegex(ManifestError, "schema version"):
             validate_manifest({"schema_version": True, "release_tag": "v1.2.3", "entries": []})
