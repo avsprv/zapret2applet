@@ -1169,6 +1169,17 @@
         <translation>Zapret2 Control</translation>
     </message>
     <message>
+        <location filename="../src/qml/Main.qml" line="38"/>
+        <source>Несохранённые изменения</source>
+        <translation>Unsaved changes</translation>
+    </message>
+    <message>
+        <location filename="../src/qml/Main.qml" line="44"/>
+        <source>Текущий хостлист изменён. Отбросить несохранённые изменения и перейти в другой раздел?</source>
+        <translation>The current hostlist has been modified. Discard unsaved changes and navigate to another section?</translation>
+    </message>
+
+    <message>
         <location filename="../src/qml/main.cpp" line="144"/>
         <source>Подбор завершён, найдено стратегий: %1</source>
         <translation>Strategy scan completed; strategies found: %1</translation>
@@ -1304,6 +1315,7 @@
         <source>Выход</source>
         <translation>Quit</translation>
     </message>
+
 </context>
 <context>
     <name>MainWindow</name>

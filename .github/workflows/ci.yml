@@ -25,12 +25,34 @@ jobs:
           cmake --build build --target zapret2control_i18n_lupdate
           python3 - <<'PY'
           import xml.etree.ElementTree as ET
-          from pathlib import Path
 
           def canonical_catalog(path):
               root = ET.parse(path).getroot()
-              for location in root.iter("location"):
-                  location.attrib.pop("line", None)
+
+              for element in root.iter():
+                  element.attrib.pop("line", None)
+                  if element.text is not None and not element.text.strip():
+                      element.text = None
+                  if element.tail is not None and not element.tail.strip():
+                      element.tail = None
+
+              for context in root.findall("context"):
+                  for message in context.findall("message"):
+                      locations = message.findall("location")
+                      other_children = [child for child in message if child.tag != "location"]
+                      locations.sort(key=lambda item: tuple(sorted(item.attrib.items())))
+                      message[:] = locations + other_children
+
+                  messages = context.findall("message")
+                  messages.sort(key=lambda item: ET.tostring(item, encoding="unicode"))
+                  other_children = [child for child in context if child.tag != "message"]
+                  context[:] = other_children + messages
+
+              context_positions = [index for index, child in enumerate(root) if child.tag == "context"]
+              contexts = [root[index] for index in context_positions]
+              contexts.sort(key=lambda item: item.findtext("name", default=""))
+              for index, context in zip(context_positions, contexts):
+                  root[index] = context
               return ET.tostring(root, encoding="utf-8")
 
           before = canonical_catalog("/tmp/zapret2control_en.ts.before")
