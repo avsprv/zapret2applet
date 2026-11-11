@@ -7,6 +7,61 @@ Item {
     width: 800
     height: 600
 
+    QtObject {
+        id: appControllerStub
+        property string serviceState: "Неизвестно"
+        property string serviceStateCode: "inactive"
+        property bool bootEnabled: false
+        property bool serviceActive: false
+        property bool operationsBusy: false
+        property string errorMessage: ""
+        function refresh() {}
+        function setBootEnabled(value) {}
+        function startService() {}
+        function stopService() {}
+    }
+
+    QtObject {
+        id: listsControllerStub
+        property bool dirty: false
+        property bool busy: false
+        property bool loaded: false
+        property bool editable: false
+        property string content: ""
+        property string status: ""
+        property string loadedName: ""
+        signal contentChanged()
+        function readList(fileName) {}
+        function setContent(value) {}
+        function saveList() {}
+    }
+
+    QtObject {
+        id: settingsManagerStub
+        property string theme: "system"
+        property string language: "system"
+        property bool closeToTray: false
+        property bool autoCheckUpdates: true
+    }
+
+    QtObject {
+        id: autostartControllerStub
+        property bool enabled: false
+        property string errorMessage: ""
+        function setEnabled(value) {}
+    }
+
+    QtObject {
+        id: trayControllerStub
+        property bool registered: true
+    }
+
+    QtObject {
+        id: updateControllerStub
+        property string installedVersion: "test"
+        property bool installed: true
+    }
+
     TestCase {
         id: testCase
         name: "MainNavigation"
@@ -14,67 +69,30 @@ Item {
 
         property var window: null
         property var mainComponent: null
-        property var appControllerStub: null
-        property var listsControllerStub: null
-
         function createMainWindow() {
             mainComponent = Qt.createComponent(Qt.resolvedUrl("../src/qml/Main.qml"))
             tryCompare(mainComponent, "status", Component.Ready)
             compare(mainComponent.status, Component.Ready, mainComponent.errorString())
 
-            appControllerStub = {
-                serviceState: "Неизвестно",
-                serviceStateCode: "inactive",
-                bootEnabled: false,
-                serviceActive: false,
-                operationsBusy: false,
-                errorMessage: "",
-                refresh: function() {},
-                setBootEnabled: function() {},
-                startService: function() {},
-                stopService: function() {}
-            }
-            listsControllerStub = {
-                dirty: false,
-                busy: false,
-                loaded: false,
-                editable: false,
-                content: "",
-                status: "",
-                loadedName: "",
-                readList: function(fileName) {},
-                setContent: function(value) {},
-                saveList: function() {}
-            }
-
             return mainComponent.createObject(null, {
                 startMinimized: true,
                 appController: appControllerStub,
-                settingsManager: {
-                    theme: "system",
-                    language: "system",
-                    closeToTray: false,
-                    autoCheckUpdates: true
-                },
-                autostartController: {
-                    enabled: false,
-                    errorMessage: "",
-                    setEnabled: function(value) {}
-                },
-                trayController: { registered: true },
+                settingsManager: settingsManagerStub,
+                autostartController: autostartControllerStub,
+                trayController: trayControllerStub,
                 configController: ({}),
                 profileController: ({}),
                 logsController: ({}),
                 listsController: listsControllerStub,
                 blockcheckController: ({}),
-                updateController: {
-                    installedVersion: "test",
-                    installed: true
-                }
+                updateController: updateControllerStub
             })
         }
 
         function init() {
+            appControllerStub.operationsBusy = false
+            listsControllerStub.dirty = false
+            settingsManagerStub.closeToTray = false
             window = createMainWindow()
             verify(window !== null)
             wait(50)
