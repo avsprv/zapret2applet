@@ -18,4 +18,5 @@ add_test(NAME qml_navigation COMMAND test_qml_navigation)
 
 set_tests_properties(qml_navigation PROPERTIES
     ENVIRONMENT "QT_QPA_PLATFORM=offscreen"
+    PASS_REGULAR_EXPRESSION "Totals: 11 passed, 0 failed"
 )

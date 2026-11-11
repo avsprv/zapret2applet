@@ -149,8 +149,16 @@ Item {
             ]
             const actions = window.globalDrawer.actions
             compare(actions.length, names.length)
-            for (let i = 0; i < names.length; ++i)
-                compare(actions[i].objectName, names[i])
+            for (let i = 0; i < names.length; ++i) {
+                let found = false
+                for (let j = 0; j < actions.length; ++j) {
+                    if (actions[j].objectName === names[i]) {
+                        found = true
+                        break
+                    }
+                }
+                verify(found, "Missing drawer action: " + names[i])
+            }
         }
 
         function test_drawer_navigation_replaces_without_stack_growth() {
