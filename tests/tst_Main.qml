@@ -201,7 +201,7 @@ Item {
             const originalPage = window.pageStack.currentItem
 
             const backEvent = { accepted: false }
-            window.pageStack.currentItem.backRequested(backEvent)
+            window.pageStack.goBack(backEvent)
             compare(backEvent.accepted, true)
             verify(discardDialog().visible)
             discardDialog().standardButton(Controls.Dialog.No).click()
@@ -215,7 +215,7 @@ Item {
             listsControllerStub.dirty = true
 
             const backEvent = { accepted: false }
-            window.pageStack.currentItem.backRequested(backEvent)
+            window.pageStack.goBack(backEvent)
             compare(backEvent.accepted, true)
             verify(discardDialog().visible)
             discardDialog().standardButton(Controls.Dialog.Yes).click()
