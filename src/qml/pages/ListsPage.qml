@@ -5,6 +5,7 @@ import org.kde.kirigami as Kirigami
 
 Kirigami.ScrollablePage {
     id: page
+    objectName: "listsPage"
     required property var listsController
 
     title: qsTr("Списки")
