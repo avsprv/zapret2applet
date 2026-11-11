@@ -200,7 +200,9 @@ Item {
             listsControllerStub.dirty = true
             const originalPage = window.pageStack.currentItem
 
-            window.confirmListsPageBack()
+            const backEvent = { accepted: false }
+            window.pageStack.currentItem.backRequested(backEvent)
+            compare(backEvent.accepted, true)
             verify(discardDialog().visible)
             discardDialog().standardButton(Controls.Dialog.No).click()
             tryCompare(discardDialog(), "visible", false)
@@ -212,7 +214,9 @@ Item {
             openListsPage()
             listsControllerStub.dirty = true
 
-            window.confirmListsPageBack()
+            const backEvent = { accepted: false }
+            window.pageStack.currentItem.backRequested(backEvent)
+            compare(backEvent.accepted, true)
             verify(discardDialog().visible)
             discardDialog().standardButton(Controls.Dialog.Yes).click()
             tryCompare(window.pageStack.currentItem, "title", "Обзор")
