@@ -10,10 +10,9 @@ TestCase {
     property var listsControllerStub: null
 
     function createMainWindow() {
-        const component = Qt.createComponent(Qt.resolvedUrl("../src/qml/Main.qml"))
-        if (component.status === Component.Loading)
-            waitForSignal(component, "statusChanged")
-        compare(component.status, Component.Ready, component.errorString())
+        mainComponent = Qt.createComponent(Qt.resolvedUrl("../src/qml/Main.qml"))
+        tryCompare(mainComponent, "status", Component.Ready)
+        compare(mainComponent.status, Component.Ready, mainComponent.errorString())
 
         appControllerStub = {
             serviceState: "Неизвестно",
@@ -57,7 +56,7 @@ TestCase {
             installed: true
         }
 
-        return component.createObject(null, {
+        return mainComponent.createObject(null, {
             startMinimized: true,
             appController: appControllerStub,
             settingsManager: settingsManagerStub,
@@ -82,6 +81,10 @@ TestCase {
         if (window) {
             window.destroy()
             window = null
+        }
+        if (mainComponent) {
+            mainComponent.destroy()
+            mainComponent = null
         }
     }
 
@@ -214,5 +217,6 @@ TestCase {
         verify(blockedDialog !== null)
         verify(blockedDialog.visible)
         compare(window.allowCloseAfterDiscard, false)
+    }
     }
 }
