@@ -30,7 +30,6 @@ Item {
         property string content: ""
         property string status: ""
         property string loadedName: ""
-        signal contentChanged()
         function readList(fileName) {}
         function setContent(value) {}
         function saveList() {}
