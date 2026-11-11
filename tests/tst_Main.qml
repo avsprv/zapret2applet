@@ -95,6 +95,7 @@ Item {
             settingsManagerStub.closeToTray = false
             window = createMainWindow()
             verify(window !== null)
+            window.show()
             wait(50)
         }
 
