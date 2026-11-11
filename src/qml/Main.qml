@@ -30,6 +30,8 @@ Kirigami.ApplicationWindow {
     minimumHeight: Kirigami.Units.gridUnit * 27
     pageStack.initialPage: dashboardPage
     property var pendingNavigationPage: null
+    property bool pendingNavigationPush: false
+    property bool pendingNavigationBack: false
 
 
     Controls.Dialog {
@@ -47,11 +49,26 @@ Kirigami.ApplicationWindow {
         onAccepted: {
             const destination = root.pendingNavigationPage
             root.pendingNavigationPage = null
-            if (destination)
-                root.pageStack.replace(destination)
+            const shouldPush = root.pendingNavigationPush
+            const shouldPop = root.pendingNavigationBack
+            root.pendingNavigationPage = null
+            root.pendingNavigationPush = false
+            root.pendingNavigationBack = false
+            if (shouldPop) {
+                root.pageStack.pop()
+            } else if (destination) {
+                if (shouldPush)
+                    root.pageStack.push(destination)
+                else
+                    root.pageStack.replace(destination)
+            }
         }
 
-        onRejected: root.pendingNavigationPage = null
+        onRejected: {
+            root.pendingNavigationPage = null
+            root.pendingNavigationPush = false
+            root.pendingNavigationBack = false
+        }
     }
 
     Kirigami.Dialog {
@@ -103,20 +120,32 @@ Kirigami.ApplicationWindow {
 
     function openSettings() {
         showWindow()
-        pageStack.push(settingsPageComponent)
+        navigateTo(settingsPageComponent, true)
     }
 
-    function navigateTo(pageComponent) {
+    function confirmListsPageBack() {
+        pendingNavigationPage = null
+        pendingNavigationPush = false
+        pendingNavigationBack = true
+        discardListsChangesDialog.open()
+    }
+
+    function navigateTo(pageComponent, shouldPush) {
         const leavingEditedListsPage = pageStack.currentItem
                 && pageStack.currentItem.objectName === "listsPage"
         if (leavingEditedListsPage && pageComponent === listsPageComponent)
             return
         if (leavingEditedListsPage && listsController.dirty) {
             pendingNavigationPage = pageComponent
+            pendingNavigationPush = shouldPush === true
+            pendingNavigationBack = false
             discardListsChangesDialog.open()
             return
         }
-        pageStack.replace(pageComponent)
+        if (shouldPush === true)
+            pageStack.push(pageComponent)
+        else
+            pageStack.replace(pageComponent)
     }
 
     globalDrawer: Kirigami.GlobalDrawer {
@@ -130,47 +159,47 @@ Kirigami.ApplicationWindow {
             Kirigami.Action {
                 text: qsTr("Статус")
                 icon.name: "network-connect"
-                onTriggered: root.navigateTo(dashboardPage)
+                onTriggered: root.navigateTo(dashboardPage, false)
             },
             Kirigami.Action {
                 text: qsTr("Конфигурация")
                 icon.name: "document-edit"
-                onTriggered: root.navigateTo(configPageComponent)
+                onTriggered: root.navigateTo(configPageComponent, false)
             },
             Kirigami.Action {
                 text: qsTr("Профили")
                 icon.name: "view-list-details"
-                onTriggered: root.navigateTo(profilesPageComponent)
+                onTriggered: root.navigateTo(profilesPageComponent, false)
             },
             Kirigami.Action {
                 text: qsTr("Списки")
                 icon.name: "view-list-text"
-                onTriggered: root.navigateTo(listsPageComponent)
+                onTriggered: root.navigateTo(listsPageComponent, false)
             },
             Kirigami.Action {
                 text: qsTr("Мониторинг")
                 icon.name: "utilities-system-monitor"
-                onTriggered: root.navigateTo(logsPageComponent)
+                onTriggered: root.navigateTo(logsPageComponent, false)
             },
             Kirigami.Action {
                 text: qsTr("Подбор стратегий")
                 icon.name: "search"
-                onTriggered: root.navigateTo(blockcheckPageComponent)
+                onTriggered: root.navigateTo(blockcheckPageComponent, false)
             },
             Kirigami.Action {
                 text: qsTr("Обновления")
                 icon.name: "system-software-update"
-                onTriggered: root.navigateTo(updatePageComponent)
+                onTriggered: root.navigateTo(updatePageComponent, false)
             },
             Kirigami.Action {
                 text: qsTr("Настройки")
                 icon.name: "settings-configure"
-                onTriggered: root.navigateTo(settingsPageComponent)
+                onTriggered: root.navigateTo(settingsPageComponent, false)
             },
             Kirigami.Action {
                 text: qsTr("О программе")
                 icon.name: "help-about"
-                onTriggered: root.navigateTo(aboutPageComponent)
+                onTriggered: root.navigateTo(aboutPageComponent, false)
             },
             Kirigami.Action {
                 text: qsTr("Выход")
@@ -359,7 +388,15 @@ Kirigami.ApplicationWindow {
 
     Component {
         id: listsPageComponent
-        ListsPage { listsController: root.listsController }
+        ListsPage {
+            listsController: root.listsController
+            onBackRequested: event => {
+                if (root.listsController.dirty) {
+                    event.accepted = true
+                    root.confirmListsPageBack()
+                }
+            }
+        }
     }
 
     Component {
