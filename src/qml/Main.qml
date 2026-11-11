@@ -61,6 +61,12 @@ Kirigami.ApplicationWindow {
             root.pendingNavigationBack = false
             root.pendingNavigationQuit = false
             if (shouldQuit) {
+                if (root.appController.operationsBusy) {
+                    root.allowCloseAfterDiscard = false
+                    root.showWindow()
+                    quitBlockedDialog.open()
+                    return
+                }
                 root.allowCloseAfterDiscard = true
                 Qt.quit()
                 return
