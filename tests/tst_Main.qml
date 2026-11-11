@@ -199,10 +199,9 @@ Item {
             listsControllerStub.dirty = true
             const originalPage = window.pageStack.currentItem
 
-            const backEvent = { accepted: false }
-            window.pageStack.goBack(backEvent)
-            compare(backEvent.accepted, true)
+            window.pageStack.goBack()
             verify(discardDialog().visible)
+            compare(window.pageStack.currentItem, originalPage)
             discardDialog().standardButton(Controls.Dialog.No).click()
             tryCompare(discardDialog(), "visible", false)
             compare(window.pageStack.currentItem, originalPage)
@@ -213,9 +212,7 @@ Item {
             openListsPage()
             listsControllerStub.dirty = true
 
-            const backEvent = { accepted: false }
-            window.pageStack.goBack(backEvent)
-            compare(backEvent.accepted, true)
+            window.pageStack.goBack()
             verify(discardDialog().visible)
             discardDialog().standardButton(Controls.Dialog.Yes).click()
             tryCompare(window.pageStack.currentItem, "title", "Обзор")
