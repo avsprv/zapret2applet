@@ -1179,6 +1179,7 @@
         <translation>The current hostlist has been modified. Discard unsaved changes and navigate to another section?</translation>
     </message>
     <message>
+        <location filename="../src/qml/Main.qml" line="49"/>
         <source>Текущий хостлист изменён. Отбросить несохранённые изменения и завершить приложение?</source>
         <translation>The current hostlist has been modified. Discard unsaved changes and quit the application?</translation>
     </message>
