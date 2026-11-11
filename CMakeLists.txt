@@ -181,6 +181,7 @@ install(FILES data/icons/hicolor/symbolic/apps/zapret2control-tray-symbolic.svg
 
 if(BUILD_TESTING)
     find_package(Qt6 ${QZAPRET_QT_MIN} REQUIRED COMPONENTS Test)
+    add_subdirectory(tests)
     find_program(DBUS_RUN_SESSION_EXECUTABLE dbus-run-session REQUIRED)
     qt_add_executable(test_blockcheck tests/test_blockcheck.cpp
         src/backend/blockcheckrunner.cpp src/backend/blockcheckrunner.h)

@@ -38,6 +38,7 @@ Kirigami.ApplicationWindow {
 
     Controls.Dialog {
         id: discardListsChangesDialog
+        objectName: "discardListsChangesDialog"
         modal: true
         title: qsTr("Несохранённые изменения")
         standardButtons: Controls.Dialog.Yes | Controls.Dialog.No
@@ -91,6 +92,7 @@ Kirigami.ApplicationWindow {
 
     Kirigami.Dialog {
         id: quitBlockedDialog
+        objectName: "quitBlockedDialog"
         title: qsTr("Нельзя завершить приложение")
         standardButtons: Controls.Dialog.Ok
 
@@ -198,51 +200,61 @@ Kirigami.ApplicationWindow {
 
         actions: [
             Kirigami.Action {
+                objectName: "dashboardAction"
                 text: qsTr("Статус")
                 icon.name: "network-connect"
                 onTriggered: root.navigateTo(dashboardPage, false)
             },
             Kirigami.Action {
+                objectName: "configAction"
                 text: qsTr("Конфигурация")
                 icon.name: "document-edit"
                 onTriggered: root.navigateTo(configPageComponent, false)
             },
             Kirigami.Action {
+                objectName: "profilesAction"
                 text: qsTr("Профили")
                 icon.name: "view-list-details"
                 onTriggered: root.navigateTo(profilesPageComponent, false)
             },
             Kirigami.Action {
+                objectName: "listsAction"
                 text: qsTr("Списки")
                 icon.name: "view-list-text"
                 onTriggered: root.navigateTo(listsPageComponent, false)
             },
             Kirigami.Action {
+                objectName: "logsAction"
                 text: qsTr("Мониторинг")
                 icon.name: "utilities-system-monitor"
                 onTriggered: root.navigateTo(logsPageComponent, false)
             },
             Kirigami.Action {
+                objectName: "blockcheckAction"
                 text: qsTr("Подбор стратегий")
                 icon.name: "search"
                 onTriggered: root.navigateTo(blockcheckPageComponent, false)
             },
             Kirigami.Action {
+                objectName: "updateAction"
                 text: qsTr("Обновления")
                 icon.name: "system-software-update"
                 onTriggered: root.navigateTo(updatePageComponent, false)
             },
             Kirigami.Action {
+                objectName: "settingsAction"
                 text: qsTr("Настройки")
                 icon.name: "settings-configure"
                 onTriggered: root.navigateTo(settingsPageComponent, false)
             },
             Kirigami.Action {
+                objectName: "aboutAction"
                 text: qsTr("О программе")
                 icon.name: "help-about"
                 onTriggered: root.navigateTo(aboutPageComponent, false)
             },
             Kirigami.Action {
+                objectName: "exitAction"
                 text: qsTr("Выход")
                 icon.name: "application-exit"
                 onTriggered: root.requestQuit()
