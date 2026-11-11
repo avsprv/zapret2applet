@@ -97,8 +97,18 @@ Item {
             return child
         }
 
+        function drawerAction(objectName) {
+            const actions = window.globalDrawer.actions
+            for (let i = 0; i < actions.length; ++i) {
+                if (actions[i].objectName === objectName)
+                    return actions[i]
+            }
+            verify(false, "Missing drawer action: " + objectName)
+            return null
+        }
+
         function openListsPage() {
-            findWindowChild("listsAction").trigger()
+            drawerAction("listsAction").trigger()
             tryCompare(window.pageStack.currentItem, "objectName", "listsPage")
         }
 
@@ -119,15 +129,17 @@ Item {
                 "logsAction", "blockcheckAction", "updateAction", "settingsAction",
                 "aboutAction", "exitAction"
             ]
+            const actions = window.globalDrawer.actions
+            compare(actions.length, names.length)
             for (let i = 0; i < names.length; ++i)
-                verify(findChild(window, names[i]) !== null, names[i])
+                compare(actions[i].objectName, names[i])
         }
 
         function test_drawer_navigation_replaces_without_stack_growth() {
             const originalDepth = window.pageStack.depth
-            findWindowChild("aboutAction").trigger()
+            drawerAction("aboutAction").trigger()
             tryCompare(window.pageStack, "depth", originalDepth)
-            findWindowChild("dashboardAction").trigger()
+            drawerAction("dashboardAction").trigger()
             tryCompare(window.pageStack, "depth", originalDepth)
         }
 
@@ -158,7 +170,7 @@ Item {
         function test_reselecting_active_lists_does_not_prompt() {
             openListsPage()
             listsControllerStub.dirty = true
-            findWindowChild("listsAction").trigger()
+            drawerAction("listsAction").trigger()
             verify(!discardDialog().visible)
             compare(window.pageStack.currentItem.objectName, "listsPage")
         }
