@@ -25,6 +25,7 @@ Kirigami.ScrollablePage {
             }
 
             ColumnLayout {
+                Layout.fillWidth: true
                 Kirigami.FormData.label: qsTr("Тема оформления")
                 Kirigami.FormData.labelAlignment: Qt.AlignTop
 
