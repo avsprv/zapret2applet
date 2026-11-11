@@ -5,7 +5,7 @@
     <name>AboutPage</name>
     <message>
         <location filename="../src/qml/pages/AboutPage.qml" line="7"/>
-        <location filename="../tests/test_i18n.cpp" line="81"/>
+        <location filename="../tests/test_i18n.cpp" line="91"/>
         <source>О программе</source>
         <translation>About</translation>
     </message>
@@ -426,9 +426,9 @@
     <name>BlockcheckPage</name>
     <message>
         <location filename="../src/qml/pages/BlockcheckPage.qml" line="122"/>
-        <location filename="../tests/test_i18n.cpp" line="76"/>
-        <location filename="../tests/test_i18n.cpp" line="91"/>
-        <location filename="../tests/test_i18n.cpp" line="97"/>
+        <location filename="../tests/test_i18n.cpp" line="86"/>
+        <location filename="../tests/test_i18n.cpp" line="101"/>
+        <location filename="../tests/test_i18n.cpp" line="107"/>
         <source>Начать подбор</source>
         <translation>Start scan</translation>
     </message>
@@ -692,7 +692,7 @@
     </message>
     <message>
         <location filename="../src/qml/pages/ConfigPage.qml" line="36"/>
-        <location filename="../tests/test_i18n.cpp" line="83"/>
+        <location filename="../tests/test_i18n.cpp" line="93"/>
         <source>Прочитать</source>
         <translation>Read</translation>
     </message>
@@ -1180,7 +1180,7 @@
     </message>
     <message>
         <location filename="../src/qml/Main.qml" line="94"/>
-        <location filename="../tests/test_i18n.cpp" line="80"/>
+        <location filename="../tests/test_i18n.cpp" line="90"/>
         <source>Статус</source>
         <translation>Status</translation>
     </message>
@@ -1308,7 +1308,7 @@
 <context>
     <name>MainWindow</name>
     <message>
-        <location filename="../tests/test_i18n.cpp" line="77"/>
+        <location filename="../tests/test_i18n.cpp" line="87"/>
         <source>Выход</source>
         <translation>Quit</translation>
     </message>
@@ -1483,7 +1483,7 @@
     </message>
     <message>
         <location filename="../src/qml/pages/ProfilesPage.qml" line="64"/>
-        <location filename="../tests/test_i18n.cpp" line="84"/>
+        <location filename="../tests/test_i18n.cpp" line="94"/>
         <source>Новый профиль</source>
         <translation>New profile</translation>
     </message>
@@ -1531,95 +1531,98 @@
 <context>
     <name>SettingsPage</name>
     <message>
-        <location filename="../src/qml/pages/SettingsPage.qml" line="11"/>
+        <location filename="../src/qml/pages/SettingsPage.qml" line="13"/>
         <source>Настройки</source>
         <translation>Settings</translation>
     </message>
     <message>
-        <location filename="../src/qml/pages/SettingsPage.qml" line="20"/>
-        <location filename="../tests/test_i18n.cpp" line="82"/>
+        <location filename="../src/qml/pages/SettingsPage.qml" line="24"/>
+        <location filename="../tests/test_i18n.cpp" line="92"/>
         <source>Внешний вид</source>
         <translation>Appearance</translation>
     </message>
     <message>
-        <location filename="../src/qml/pages/SettingsPage.qml" line="25"/>
-        <location filename="../src/qml/pages/SettingsPage.qml" line="36"/>
+        <location filename="../src/qml/pages/SettingsPage.qml" line="29"/>
+        <location filename="../src/qml/pages/SettingsPage.qml" line="40"/>
         <source>Тема оформления</source>
         <translation>Color theme</translation>
     </message>
     <message>
-        <location filename="../src/qml/pages/SettingsPage.qml" line="31"/>
+        <location filename="../src/qml/pages/SettingsPage.qml" line="35"/>
         <source>Системная</source>
         <translation>System</translation>
     </message>
     <message>
-        <location filename="../src/qml/pages/SettingsPage.qml" line="32"/>
+        <location filename="../src/qml/pages/SettingsPage.qml" line="36"/>
         <source>Светлая</source>
         <translation>Light</translation>
     </message>
     <message>
-        <location filename="../src/qml/pages/SettingsPage.qml" line="33"/>
+        <location filename="../src/qml/pages/SettingsPage.qml" line="37"/>
         <source>Тёмная</source>
         <translation>Dark</translation>
     </message>
     <message>
-        <location filename="../src/qml/pages/SettingsPage.qml" line="52"/>
-        <location filename="../src/qml/pages/SettingsPage.qml" line="63"/>
+        <location filename="../src/qml/pages/SettingsPage.qml" line="58"/>
+        <location filename="../src/qml/pages/SettingsPage.qml" line="65"/>
         <source>Язык интерфейса</source>
         <translation>Interface language</translation>
     </message>
     <message>
-        <location filename="../src/qml/pages/SettingsPage.qml" line="58"/>
+        <location filename="../src/qml/pages/SettingsPage.qml" line="60"/>
         <source>Системный</source>
         <translation>System</translation>
     </message>
     <message>
-        <location filename="../src/qml/pages/SettingsPage.qml" line="59"/>
+        <location filename="../src/qml/pages/SettingsPage.qml" line="61"/>
         <source>Русский</source>
         <translation>Russian</translation>
     </message>
     <message>
-        <location filename="../src/qml/pages/SettingsPage.qml" line="60"/>
+        <location filename="../src/qml/pages/SettingsPage.qml" line="62"/>
         <source>English</source>
         <translation>English</translation>
     </message>
     <message>
-        <location filename="../src/qml/pages/SettingsPage.qml" line="127"/>
+        <location filename="../src/qml/pages/SettingsPage.qml" line="114"/>
         <source>Обновления</source>
         <translation>Updates</translation>
     </message>
     <message>
-        <location filename="../src/qml/pages/SettingsPage.qml" line="132"/>
+        <location filename="../src/qml/pages/SettingsPage.qml" line="118"/>
+<location filename="../src/qml/pages/SettingsPage.qml" line="119"/>
         <source>Автоматически проверять обновления</source>
         <translation>Check for updates automatically</translation>
     </message>
     <message>
-        <location filename="../src/qml/pages/SettingsPage.qml" line="48"/>
+        <location filename="../src/qml/pages/SettingsPage.qml" line="52"/>
         <source>Изменение применяется сразу. Системный режим следует настройкам рабочего стола; принудительная схема зависит от поддержки платформы.</source>
         <translation>Changes are applied immediately. System mode follows desktop settings; forcing a color scheme depends on platform support.</translation>
     </message>
     <message>
-        <location filename="../src/qml/pages/SettingsPage.qml" line="117"/>
+        <location filename="../src/qml/pages/SettingsPage.qml" line="109"/>
         <source>Системный трей недоступен. Сворачивание окна в трей включится после регистрации StatusNotifierItem.</source>
         <translation>The system tray is unavailable. Minimize-to-tray will become available after the StatusNotifierItem is registered.</translation>
     </message>
     <message>
-        <location filename="../src/qml/pages/SettingsPage.qml" line="78"/>
+        <location filename="../src/qml/pages/SettingsPage.qml" line="75"/>
         <source>Запуск приложения</source>
         <translation>Application startup</translation>
     </message>
     <message>
-        <location filename="../src/qml/pages/SettingsPage.qml" line="83"/>
+        <location filename="../src/qml/pages/SettingsPage.qml" line="79"/>
+<location filename="../src/qml/pages/SettingsPage.qml" line="80"/>
         <source>Запускать приложение при входе в систему</source>
         <translation>Start the application when you log in</translation>
     </message>
     <message>
-        <location filename="../src/qml/pages/SettingsPage.qml" line="102"/>
+        <location filename="../src/qml/pages/SettingsPage.qml" line="94"/>
         <source>Поведение окна</source>
         <translation>Window behavior</translation>
     </message>
     <message>
-        <location filename="../src/qml/pages/SettingsPage.qml" line="107"/>
+        <location filename="../src/qml/pages/SettingsPage.qml" line="98"/>
+<location filename="../src/qml/pages/SettingsPage.qml" line="99"/>
         <source>Сворачивать окно в системный трей при закрытии</source>
         <translation>Minimize to the system tray when closing the window</translation>
     </message>
@@ -1866,7 +1869,7 @@
 <context>
     <name>main</name>
     <message>
-        <location filename="../tests/test_i18n.cpp" line="78"/>
+        <location filename="../tests/test_i18n.cpp" line="88"/>
         <source>Запустить скрытым в системном трее</source>
         <translation>Start hidden in the system tray</translation>
     </message>
