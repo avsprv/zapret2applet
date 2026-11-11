@@ -19,6 +19,11 @@ Kirigami.ScrollablePage {
         Kirigami.FormLayout {
             Layout.fillWidth: true
 
+            Kirigami.Separator {
+                Kirigami.FormData.isSection: true
+                Kirigami.FormData.label: qsTr("Внешний вид")
+            }
+
             ColumnLayout {
                 Kirigami.FormData.label: qsTr("Тема оформления")
                 Kirigami.FormData.labelAlignment: Qt.AlignTop
@@ -115,11 +120,6 @@ Kirigami.ScrollablePage {
                 onToggled: root.settingsManager.autoCheckUpdates = checked
             }
 
-            Kirigami.InlineMessage {
-                Layout.fillWidth: true
-                type: Kirigami.MessageType.Information
-                text: qsTr("Параметры сохраняются в прежние ключи QSettings. Изменения темы и языка применяются сразу.")
-            }
         }
     }
 }
