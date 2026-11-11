@@ -142,7 +142,7 @@ Kirigami.ApplicationWindow {
                 && root.pageStack.currentItem.objectName === "listsPage"
                 && root.listsController.dirty) {
             root.pendingNavigationQuit = true
-            root.discardListsChangesDialog.open()
+            discardListsChangesDialog.open()
             return
         }
         root.allowCloseAfterDiscard = true
