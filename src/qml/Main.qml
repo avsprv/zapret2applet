@@ -97,6 +97,7 @@ Kirigami.ApplicationWindow {
 
     onClosing: function(close) {
         if (root.appController.operationsBusy) {
+            root.allowCloseAfterDiscard = false
             close.accepted = false
             root.showWindow()
             quitBlockedDialog.open()
@@ -142,6 +143,7 @@ Kirigami.ApplicationWindow {
                 && root.pageStack.currentItem.objectName === "listsPage"
                 && root.listsController.dirty) {
             root.pendingNavigationQuit = true
+            root.showWindow()
             discardListsChangesDialog.open()
             return
         }
