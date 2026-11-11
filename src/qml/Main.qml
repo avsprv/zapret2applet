@@ -32,6 +32,8 @@ Kirigami.ApplicationWindow {
     property var pendingNavigationPage: null
     property bool pendingNavigationPush: false
     property bool pendingNavigationBack: false
+    property bool pendingNavigationQuit: false
+    property bool allowCloseAfterDiscard: false
 
 
     Controls.Dialog {
@@ -43,7 +45,9 @@ Kirigami.ApplicationWindow {
         Controls.Label {
             width: parent.width
             wrapMode: Text.WordWrap
-            text: qsTr("Текущий хостлист изменён. Отбросить несохранённые изменения и перейти в другой раздел?")
+            text: root.pendingNavigationQuit
+                  ? qsTr("Текущий хостлист изменён. Отбросить несохранённые изменения и завершить приложение?")
+                  : qsTr("Текущий хостлист изменён. Отбросить несохранённые изменения и перейти в другой раздел?")
         }
 
         onAccepted: {
@@ -51,9 +55,16 @@ Kirigami.ApplicationWindow {
             root.pendingNavigationPage = null
             const shouldPush = root.pendingNavigationPush
             const shouldPop = root.pendingNavigationBack
+            const shouldQuit = root.pendingNavigationQuit
             root.pendingNavigationPage = null
             root.pendingNavigationPush = false
             root.pendingNavigationBack = false
+            root.pendingNavigationQuit = false
+            if (shouldQuit) {
+                root.allowCloseAfterDiscard = true
+                Qt.quit()
+                return
+            }
             if (shouldPop) {
                 root.pageStack.pop()
             } else if (destination) {
@@ -68,6 +79,7 @@ Kirigami.ApplicationWindow {
             root.pendingNavigationPage = null
             root.pendingNavigationPush = false
             root.pendingNavigationBack = false
+            root.pendingNavigationQuit = false
         }
     }
 
@@ -90,9 +102,20 @@ Kirigami.ApplicationWindow {
             quitBlockedDialog.open()
             return
         }
+        if (root.allowCloseAfterDiscard)
+            return
         if (root.settingsManager.closeToTray && root.trayController.registered) {
             close.accepted = false
             hide()
+            return
+        }
+        if (root.pageStack.currentItem
+                && root.pageStack.currentItem.objectName === "listsPage"
+                && root.listsController.dirty) {
+            close.accepted = false
+            root.pendingNavigationQuit = true
+            root.showWindow()
+            discardListsChangesDialog.open()
         }
     }
 
@@ -115,6 +138,14 @@ Kirigami.ApplicationWindow {
             quitBlockedDialog.open()
             return
         }
+        if (root.pageStack.currentItem
+                && root.pageStack.currentItem.objectName === "listsPage"
+                && root.listsController.dirty) {
+            root.pendingNavigationQuit = true
+            root.discardListsChangesDialog.open()
+            return
+        }
+        root.allowCloseAfterDiscard = true
         Qt.quit()
     }
 
@@ -127,6 +158,7 @@ Kirigami.ApplicationWindow {
         pendingNavigationPage = null
         pendingNavigationPush = false
         pendingNavigationBack = true
+        pendingNavigationQuit = false
         discardListsChangesDialog.open()
     }
 
@@ -139,6 +171,7 @@ Kirigami.ApplicationWindow {
             pendingNavigationPage = pageComponent
             pendingNavigationPush = shouldPush === true
             pendingNavigationBack = false
+            pendingNavigationQuit = false
             discardListsChangesDialog.open()
             return
         }
