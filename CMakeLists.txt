@@ -359,4 +359,6 @@ if(BUILD_TESTING)
     target_link_libraries(test_profilecontroller PRIVATE Qt6::Test Qt6::Core)
     target_compile_definitions(test_profilecontroller PRIVATE QZAPRET_HELPER_PATH="/nonexistent")
     add_test(NAME profile_controller COMMAND test_profilecontroller)
+
+    add_subdirectory(tests)
 endif()

@@ -29,9 +29,70 @@ Kirigami.ApplicationWindow {
     minimumWidth: Kirigami.Units.gridUnit * 36
     minimumHeight: Kirigami.Units.gridUnit * 27
     pageStack.initialPage: dashboardPage
+    property var pendingNavigationPage: null
+    property bool pendingNavigationPush: false
+    property bool pendingNavigationBack: false
+    property bool pendingNavigationQuit: false
+    property bool allowCloseAfterDiscard: false
+
+
+    Controls.Dialog {
+        id: discardListsChangesDialog
+        objectName: "discardListsChangesDialog"
+        modal: true
+        title: qsTr("Несохранённые изменения")
+        standardButtons: Controls.Dialog.Yes | Controls.Dialog.No
+
+        Controls.Label {
+            width: parent.width
+            wrapMode: Text.WordWrap
+            text: root.pendingNavigationQuit
+                  ? qsTr("Текущий хостлист изменён. Отбросить несохранённые изменения и завершить приложение?")
+                  : qsTr("Текущий хостлист изменён. Отбросить несохранённые изменения и перейти в другой раздел?")
+        }
+
+        onAccepted: {
+            const destination = root.pendingNavigationPage
+            root.pendingNavigationPage = null
+            const shouldPush = root.pendingNavigationPush
+            const shouldPop = root.pendingNavigationBack
+            const shouldQuit = root.pendingNavigationQuit
+            root.pendingNavigationPage = null
+            root.pendingNavigationPush = false
+            root.pendingNavigationBack = false
+            root.pendingNavigationQuit = false
+            if (shouldQuit) {
+                if (root.appController.operationsBusy) {
+                    root.allowCloseAfterDiscard = false
+                    root.showWindow()
+                    quitBlockedDialog.open()
+                    return
+                }
+                root.allowCloseAfterDiscard = true
+                Qt.quit()
+                return
+            }
+            if (shouldPop) {
+                root.pageStack.pop()
+            } else if (destination) {
+                if (shouldPush)
+                    root.pageStack.push(destination)
+                else
+                    root.pageStack.replace(destination)
+            }
+        }
+
+        onRejected: {
+            root.pendingNavigationPage = null
+            root.pendingNavigationPush = false
+            root.pendingNavigationBack = false
+            root.pendingNavigationQuit = false
+        }
+    }
 
     Kirigami.Dialog {
         id: quitBlockedDialog
+        objectName: "quitBlockedDialog"
         title: qsTr("Нельзя завершить приложение")
         standardButtons: Controls.Dialog.Ok
 
@@ -44,14 +105,26 @@ Kirigami.ApplicationWindow {
 
     onClosing: function(close) {
         if (root.appController.operationsBusy) {
+            root.allowCloseAfterDiscard = false
             close.accepted = false
             root.showWindow()
             quitBlockedDialog.open()
             return
         }
+        if (root.allowCloseAfterDiscard)
+            return
         if (root.settingsManager.closeToTray && root.trayController.registered) {
             close.accepted = false
             hide()
+            return
+        }
+        if (root.pageStack.currentItem
+                && root.pageStack.currentItem.objectName === "listsPage"
+                && root.listsController.dirty) {
+            close.accepted = false
+            root.pendingNavigationQuit = true
+            root.showWindow()
+            discardListsChangesDialog.open()
         }
     }
 
@@ -74,12 +147,48 @@ Kirigami.ApplicationWindow {
             quitBlockedDialog.open()
             return
         }
+        if (root.pageStack.currentItem
+                && root.pageStack.currentItem.objectName === "listsPage"
+                && root.listsController.dirty) {
+            root.pendingNavigationQuit = true
+            root.showWindow()
+            discardListsChangesDialog.open()
+            return
+        }
+        root.allowCloseAfterDiscard = true
         Qt.quit()
     }
 
     function openSettings() {
         showWindow()
-        pageStack.push(settingsPageComponent)
+        navigateTo(settingsPageComponent, true)
+    }
+
+    function confirmListsPageBack() {
+        pendingNavigationPage = null
+        pendingNavigationPush = false
+        pendingNavigationBack = true
+        pendingNavigationQuit = false
+        discardListsChangesDialog.open()
+    }
+
+    function navigateTo(pageComponent, shouldPush) {
+        const leavingEditedListsPage = pageStack.currentItem
+                && pageStack.currentItem.objectName === "listsPage"
+        if (leavingEditedListsPage && pageComponent === listsPageComponent)
+            return
+        if (leavingEditedListsPage && listsController.dirty) {
+            pendingNavigationPage = pageComponent
+            pendingNavigationPush = shouldPush === true
+            pendingNavigationBack = false
+            pendingNavigationQuit = false
+            discardListsChangesDialog.open()
+            return
+        }
+        if (shouldPush === true)
+            pageStack.push(pageComponent)
+        else
+            pageStack.replace(pageComponent)
     }
 
     globalDrawer: Kirigami.GlobalDrawer {
@@ -91,51 +200,61 @@ Kirigami.ApplicationWindow {
 
         actions: [
             Kirigami.Action {
+                objectName: "dashboardAction"
                 text: qsTr("Статус")
                 icon.name: "network-connect"
-                onTriggered: root.pageStack.replace(dashboardPage)
+                onTriggered: root.navigateTo(dashboardPage, false)
             },
             Kirigami.Action {
+                objectName: "configAction"
                 text: qsTr("Конфигурация")
                 icon.name: "document-edit"
-                onTriggered: root.pageStack.push(configPageComponent)
+                onTriggered: root.navigateTo(configPageComponent, false)
             },
             Kirigami.Action {
+                objectName: "profilesAction"
                 text: qsTr("Профили")
                 icon.name: "view-list-details"
-                onTriggered: root.pageStack.push(profilesPageComponent)
+                onTriggered: root.navigateTo(profilesPageComponent, false)
             },
             Kirigami.Action {
+                objectName: "listsAction"
                 text: qsTr("Списки")
                 icon.name: "view-list-text"
-                onTriggered: root.pageStack.push(listsPageComponent)
+                onTriggered: root.navigateTo(listsPageComponent, false)
             },
             Kirigami.Action {
+                objectName: "logsAction"
                 text: qsTr("Мониторинг")
                 icon.name: "utilities-system-monitor"
-                onTriggered: root.pageStack.push(logsPageComponent)
+                onTriggered: root.navigateTo(logsPageComponent, false)
             },
             Kirigami.Action {
+                objectName: "blockcheckAction"
                 text: qsTr("Подбор стратегий")
                 icon.name: "search"
-                onTriggered: root.pageStack.push(blockcheckPageComponent)
+                onTriggered: root.navigateTo(blockcheckPageComponent, false)
             },
             Kirigami.Action {
+                objectName: "updateAction"
                 text: qsTr("Обновления")
                 icon.name: "system-software-update"
-                onTriggered: root.pageStack.push(updatePageComponent)
+                onTriggered: root.navigateTo(updatePageComponent, false)
             },
             Kirigami.Action {
+                objectName: "settingsAction"
                 text: qsTr("Настройки")
                 icon.name: "settings-configure"
-                onTriggered: root.pageStack.push(settingsPageComponent)
+                onTriggered: root.navigateTo(settingsPageComponent, false)
             },
             Kirigami.Action {
+                objectName: "aboutAction"
                 text: qsTr("О программе")
                 icon.name: "help-about"
-                onTriggered: root.pageStack.push(aboutPageComponent)
+                onTriggered: root.navigateTo(aboutPageComponent, false)
             },
             Kirigami.Action {
+                objectName: "exitAction"
                 text: qsTr("Выход")
                 icon.name: "application-exit"
                 onTriggered: root.requestQuit()
@@ -322,7 +441,15 @@ Kirigami.ApplicationWindow {
 
     Component {
         id: listsPageComponent
-        ListsPage { listsController: root.listsController }
+        ListsPage {
+            listsController: root.listsController
+            onBackRequested: event => {
+                if (root.listsController.dirty) {
+                    event.accepted = true
+                    root.confirmListsPageBack()
+                }
+            }
+        }
     }
 
     Component {
