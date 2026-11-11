@@ -5,8 +5,6 @@ import QtTest
 TestCase {
     id: testCase
     name: "MainNavigation"
-    when: window !== null
-
     property var window: null
     property var appControllerStub: null
     property var listsControllerStub: null
@@ -88,14 +86,14 @@ TestCase {
     }
 
     function openListsPage() {
-        const action = window.findChild(null, "listsAction")
+        const action = findChild(window, "listsAction")
         verify(action !== null)
         action.trigger()
         tryCompare(window.pageStack.currentItem, "objectName", "listsPage")
     }
 
     function discardDialog() {
-        const dialog = window.findChild(null, "discardListsChangesDialog")
+        const dialog = findChild(window, "discardListsChangesDialog")
         verify(dialog !== null)
         return dialog
     }
@@ -107,7 +105,15 @@ TestCase {
             "aboutAction", "exitAction"
         ]
         for (let i = 0; i < names.length; ++i)
-            verify(window.findChild(null, names[i]) !== null, names[i])
+            verify(findChild(window, names[i]) !== null, names[i])
+    }
+
+    function test_drawer_navigation_replaces_without_stack_growth() {
+        const originalDepth = window.pageStack.depth
+        findChild(window, "aboutAction").trigger()
+        tryCompare(window.pageStack, "depth", originalDepth)
+        findChild(window, "dashboardAction").trigger()
+        tryCompare(window.pageStack, "depth", originalDepth)
     }
 
     function test_dirty_lists_block_navigation_and_cancel_keeps_editor() {
@@ -135,7 +141,7 @@ TestCase {
         window.navigateTo(target, false)
         discardDialog().standardButton(Controls.Dialog.Yes).click()
         tryVerify(function() { return window.pageStack.currentItem !== originalPage })
-        compare(listsControllerStub.dirty, true)
+        compare(window.pendingNavigationPage, null)
     }
 
     function test_reselecting_active_lists_does_not_prompt() {
@@ -159,6 +165,17 @@ TestCase {
         compare(window.pageStack.currentItem, originalPage)
     }
 
+    function test_back_confirmation_accepts_pop() {
+        window.pageStack.push(Qt.createComponent(Qt.resolvedUrl("../src/qml/pages/AboutPage.qml")))
+        openListsPage()
+        listsControllerStub.dirty = true
+
+        window.confirmListsPageBack()
+        verify(discardDialog().visible)
+        discardDialog().standardButton(Controls.Dialog.Yes).click()
+        tryCompare(window.pageStack.currentItem, "title", "О программе")
+    }
+
     function test_settings_from_tray_uses_push_semantics() {
         const originalDepth = window.pageStack.depth
         window.openSettings()
@@ -178,7 +195,7 @@ TestCase {
     function test_tray_quit_is_blocked_during_active_operation() {
         appControllerStub.operationsBusy = true
         window.requestQuit()
-        const blockedDialog = window.findChild(null, "quitBlockedDialog")
+        const blockedDialog = findChild(window, "quitBlockedDialog")
         verify(blockedDialog !== null)
         verify(blockedDialog.visible)
         verify(!discardDialog().visible)
