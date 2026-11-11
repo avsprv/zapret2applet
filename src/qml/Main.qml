@@ -109,6 +109,8 @@ Kirigami.ApplicationWindow {
     function navigateTo(pageComponent) {
         const leavingEditedListsPage = pageStack.currentItem
                 && pageStack.currentItem.objectName === "listsPage"
+        if (leavingEditedListsPage && pageComponent === listsPageComponent)
+            return
         if (leavingEditedListsPage && listsController.dirty) {
             pendingNavigationPage = pageComponent
             discardListsChangesDialog.open()
