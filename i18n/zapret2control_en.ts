@@ -1599,11 +1599,6 @@
         <translation>Changes are applied immediately. System mode follows desktop settings; forcing a color scheme depends on platform support.</translation>
     </message>
     <message>
-        <location filename="../src/qml/pages/SettingsPage.qml" line="140"/>
-        <source>Параметры сохраняются в прежние ключи QSettings. Изменения темы и языка применяются сразу.</source>
-        <translation>Settings are stored using the existing QSettings keys. Theme and language changes are applied immediately.</translation>
-    </message>
-    <message>
         <location filename="../src/qml/pages/SettingsPage.qml" line="117"/>
         <source>Системный трей недоступен. Сворачивание окна в трей включится после регистрации StatusNotifierItem.</source>
         <translation>The system tray is unavailable. Minimize-to-tray will become available after the StatusNotifierItem is registered.</translation>
