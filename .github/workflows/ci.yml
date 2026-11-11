@@ -48,9 +48,11 @@ jobs:
                   other_children = [child for child in context if child.tag != "message"]
                   context[:] = other_children + messages
 
-              contexts = root.findall("context")
+              context_positions = [index for index, child in enumerate(root) if child.tag == "context"]
+              contexts = [root[index] for index in context_positions]
               contexts.sort(key=lambda item: item.findtext("name", default=""))
-              root[:] = contexts
+              for index, context in zip(context_positions, contexts):
+                  root[index] = context
               return ET.tostring(root, encoding="utf-8")
 
           before = canonical_catalog("/tmp/zapret2control_en.ts.before")
